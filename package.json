@@ -1,6 +1,6 @@
 {
   "name": "mcp-feature-test",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Sample MCP server for testing elicitation dialogs (form + URL mode) and graphical MCP Apps UIs in real MCP clients",
   "main": "dist/stdio.js",
   "scripts": {

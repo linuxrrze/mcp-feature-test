@@ -34,6 +34,7 @@ import {
     type InputRequiredResult,
     type ServerContext
 } from '@modelcontextprotocol/server';
+import { serverVersion } from './version.js';
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import * as z from 'zod/v4';
 import {
@@ -416,7 +417,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
         {
             name: 'mcp-feature-test',
             title: 'MCP Feature Test (dialogs & UI)',
-            version: '1.0.0'
+            version: serverVersion()
         },
         {
             // The files extension draft has servers advertise how much inline file data they accept per request.

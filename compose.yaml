@@ -16,7 +16,7 @@ services:
     build:
       context: .
       args:
-        VERSION: "1.0.0"
+        VERSION: ""   # empty: the server reports package.json's version
     image: mcp-feature-test:latest
     restart: unless-stopped
     environment:

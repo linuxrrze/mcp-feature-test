@@ -9,10 +9,13 @@ The image runs the server in **Streamable HTTP mode** by default (`node dist/htt
 CI publishes the image to the GitHub Container Registry:
 
 ```sh
-docker pull ghcr.io/linuxrrze/mcp-feature-test           # latest build of main
-docker pull ghcr.io/linuxrrze/mcp-feature-test:1.0.0     # package.json version
-docker pull ghcr.io/linuxrrze/mcp-feature-test:1.0.0-20261108   # one specific (dated) build, for rollbacks
+docker pull ghcr.io/linuxrrze/mcp-feature-test           # latest release
+docker pull ghcr.io/linuxrrze/mcp-feature-test:1.1       # newest 1.1.x (also :1 for newest 1.x)
+docker pull ghcr.io/linuxrrze/mcp-feature-test:1.1.0     # exactly this release
+docker pull ghcr.io/linuxrrze/mcp-feature-test:1.1.0-20261108   # one specific (dated) build, for rollbacks
 ```
+
+Every change to the server's code is released as a new version, with a git tag `vX.Y.Z` and a [GitHub release](https://github.com/linuxrrze/mcp-feature-test/releases); see [CI and published images](#ci-and-published-images).
 
 In all examples below you can use `ghcr.io/linuxrrze/mcp-feature-test` instead of a locally built `mcp-feature-test`. The image is built for `linux/amd64`.
 
@@ -21,9 +24,9 @@ In all examples below you can use `ghcr.io/linuxrrze/mcp-feature-test` instead o
 ```sh
 docker build -t mcp-feature-test .
 
-# optional: stamp OCI labels
-docker build -t mcp-feature-test:1.0.0 \
-  --build-arg VERSION=1.0.0 \
+# optional: stamp OCI labels and the version the server reports
+docker build -t mcp-feature-test:1.1.0 \
+  --build-arg VERSION=1.1.0 \
   --build-arg REVISION="$(git rev-parse HEAD)" \
   --build-arg CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --build-arg SOURCE=https://github.com/linuxrrze/mcp-feature-test .
@@ -208,9 +211,9 @@ To pass options, add `"-e", "LOG_LEVEL=debug"` or `"-p", "127.0.0.1:3458:3458"` 
 
 | Trigger | What happens |
 |---------|--------------|
-| push to `main` (image-relevant paths only) | tests, build, startup banner, smoke test, Trivy, push to GHCR |
+| push to `main` (image-relevant paths only) | tests, build, startup banner, smoke test, Trivy, push to GHCR as a **new version**, then the git tag `vX.Y.Z` and a GitHub release with generated notes |
 | pull request | the same, without pushing |
-| daily schedule | rebuild and push only if the `node:<tag>` base image was re-published (its digest differs from the pin in the `Dockerfile`); afterwards the bot commits the new digest pin |
+| daily schedule | rebuild and push only if the `node:<tag>` base image was re-published (its digest differs from the pin in the `Dockerfile`), as the **same version** (no bump, no new release); afterwards the bot commits the new digest pin |
 | manual run (`workflow_dispatch`) | like a push; only `main` publishes |
 
 Steps of the image job:
@@ -220,8 +223,18 @@ Steps of the image job:
 3. **Startup banner**: `add-banner.sh` in *builtin* mode (`LABEL de.linux-ng.image-banner=builtin`): it only adds `/usr/local/share/image-banner.txt`, and the server prints it to **stderr** on start (`src/banner.ts`). The usual shell-wrapper banner would print to stdout and break stdio mode, where stdout is the MCP protocol channel.
 4. **Smoke test**: the HTTP endpoint answers, and in stdio mode an `initialize` request gets a clean JSON-RPC reply on stdout.
 5. **Trivy**: fails on fixable CRITICAL/HIGH findings. Accepted findings go into a `.trivyignore` file at the repository root, with a reason.
-6. **Push**: `:<version>`, `:<version>-<YYYYMMDD>` (rollback) and `:latest`.
+6. **Push**: `:X.Y.Z`, `:X.Y`, `:X`, `:X.Y.Z-<YYYYMMDD>` (rollback) and `:latest`.
+7. **Tag and release** (new versions only): `vX.Y.Z` on the built commit and a GitHub release with generated notes.
 
-To release a new version, bump `version` in `package.json`. A rebuild without a version bump re-publishes the same version tag; the dated tag keeps the previous build available.
+### Versions
+
+Versions are automatic ([`.github/scripts/next-version.sh`](../.github/scripts/next-version.sh), tested in `test/unit/next-version.test.mjs`):
+
+- Each push to `main` that changes the image bumps the **patch** version of the latest `vX.Y.Z` tag (1.1.0 → 1.1.1). Docs-only pushes don't run the workflow and don't bump.
+- `[minor]` or `[major]` anywhere in a commit message since the last release bumps the minor (1.1.4 → 1.2.0) or major version (→ 2.0.0) instead.
+- A higher `version` in `package.json` wins, so you can also bump by hand. Without any tag yet, `package.json`'s version is the first release.
+- A re-run of a workflow on an already tagged commit rebuilds that version without a new release; a base-image rebuild re-publishes the latest release, and the dated tag keeps the previous build available.
+
+The image passes the version to the server as `MCP_FEATURE_TEST_VERSION`, so `serverInfo.version` (shown by clients and in `inspect_client`) matches the image tag. Outside the image the server reports `package.json`'s version. `package.json` is not rewritten by CI, so it can lag behind the released version.
 
 The first push creates the package as **private** on GHCR. To allow anonymous `docker pull`, set the package's visibility to public under *Your profile → Packages → mcp-feature-test → Package settings*.

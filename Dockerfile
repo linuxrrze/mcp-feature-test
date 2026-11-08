@@ -45,7 +45,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --ignore-scripts
 # ---------------------------------------------------------------------------
 FROM ${NODE_IMAGE} AS runtime
 
-ARG VERSION=1.0.0
+ARG VERSION=
 ARG REVISION=unknown
 ARG CREATED=unknown
 ARG SOURCE=https://github.com/linuxrrze/mcp-feature-test
@@ -76,6 +76,7 @@ COPY --from=build /app/dist ./dist
 COPY package.json ./
 
 ENV NODE_ENV=production \
+    MCP_FEATURE_TEST_VERSION=${VERSION} \
     HOST=0.0.0.0 \
     PORT=3457 \
     FLOW_PORT=3458 \

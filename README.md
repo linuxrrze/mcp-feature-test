@@ -188,7 +188,7 @@ See [docs/openwebui.md](docs/openwebui.md).
 
 ### Docker
 
-A ready-made image is published to `ghcr.io/linuxrrze/mcp-feature-test` (`latest`, the package version, and dated rollback tags):
+A ready-made image is published to `ghcr.io/linuxrrze/mcp-feature-test`. Every code change is released automatically as a new version (`latest`, `X.Y.Z`, `X.Y`, `X` and dated rollback tags; see [docs/docker.md](docs/docker.md#versions)):
 
 ```sh
 docker run --rm -p 127.0.0.1:3457:3457 ghcr.io/linuxrrze/mcp-feature-test

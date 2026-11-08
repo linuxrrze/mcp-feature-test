@@ -5,11 +5,16 @@ run-name: ${{ github.event_name == 'schedule' && 'Scheduled check' || github.eve
 
 # Same pattern as the *-rebuild.yml workflows in docker-images (the source
 # lives in this repo; flavor 2 plus the base-digest check):
-#   push to main   -> test, build, banner, Trivy, push to GHCR
+#   push to main   -> test, build, banner, Trivy, push to GHCR as a new
+#                     version (patch bump), tag vX.Y.Z + GitHub release
 #   pull request   -> test, build, banner, Trivy (nothing is pushed)
 #   daily schedule -> rebuild only when the node:<tag> base image was
-#                     re-published (new digest), then commit the new pin
+#                     re-published (new digest), re-publish the current
+#                     version (no bump), then commit the new pin
 #   manual run     -> like a push
+# Versioning (.github/scripts/next-version.sh): patch bump by default;
+# "[minor]" / "[major]" in a commit message since the last tag, or a higher
+# version in package.json, gives a bigger bump.
 # The helper scripts in .github/scripts/ are copies of
 # docker-images/.gitea/scripts/ (add-banner, base-digest, trivy-scan).
 on:
@@ -66,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check.outputs.version }}
-      tag: ${{ steps.check.outputs.tag }}
+      release: ${{ steps.check.outputs.release }}
       base_tag: ${{ steps.base.outputs.base_tag }}
       digest: ${{ steps.base.outputs.digest }}
       changed: ${{ steps.base.outputs.changed }}
@@ -75,22 +80,16 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+          fetch-depth: 0   # all tags and history for next-version.sh
 
-      # The image version is the package version: bump `version` in
-      # package.json for a release; a rebuild re-publishes the same version
-      # tag (plus a dated rollback tag).
+      # The next version from the git tags, see .github/scripts/next-version.sh.
       - name: Determine version
         id: check
         run: |
           set -euo pipefail
-          VERSION=$(node -p 'require("./package.json").version')
-          if [ -z "$VERSION" ] || [ "$VERSION" = undefined ]; then
-            echo "::error::no version in package.json" >&2
-            exit 1
-          fi
-          echo "version: $VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$(printf '%s' "$VERSION" | tr '+' '-')" >> "$GITHUB_OUTPUT"
+          OUT=$(bash .github/scripts/next-version.sh "$GITHUB_EVENT_NAME" "$GITHUB_REF")
+          echo "$OUT"
+          echo "$OUT" >> "$GITHUB_OUTPUT"
 
       # The Dockerfile pins the base as `ARG NODE_IMAGE=node:<tag>@sha256:<digest>`.
       # The pinned digest is the "last built" marker (docker-images keeps it
@@ -153,13 +152,14 @@ jobs:
     if: needs.base.outputs.build == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # commit the new base digest pin
+      contents: write   # tag + release, commit the new base digest pin
       packages: write   # push to ghcr.io
     env:
       # Job outputs come from repository files (package.json, Dockerfile); use
       # them only through env vars, never as ${{ }} inside run: scripts.
       VERSION: ${{ needs.base.outputs.version }}
-      TAG: ${{ needs.base.outputs.tag }}
+      TAG: ${{ needs.base.outputs.version }}
+      RELEASE: ${{ needs.base.outputs.release }}
       BASE_REF: ${{ needs.base.outputs.base_tag }}@${{ needs.base.outputs.digest }}
     steps:
       - uses: actions/checkout@v5
@@ -230,14 +230,34 @@ jobs:
           set -euo pipefail
           printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY" \
             -u "$REGISTRY_USER" --password-stdin
-          docker push "$IMAGE:$TAG"
-          # Dated tag next to the moving version tag: a rebuild (push, base
-          # update) re-publishes the same version tag, this keeps the
-          # previous build pullable for a rollback.
-          DATED="$IMAGE:$TAG-$(date -u +%Y%m%d)"
-          docker tag "$IMAGE:$TAG" "$DATED"
-          docker push "$DATED"
-          docker push "$IMAGE:latest"
+          # X.Y.Z, plus the moving X.Y and X tags (the built version is
+          # always the newest one) and a dated tag: a base-image rebuild
+          # re-publishes the same version, the dated tag keeps the previous
+          # build pullable for a rollback.
+          MINOR="${TAG%.*}"
+          MAJOR="${TAG%%.*}"
+          DATED="$TAG-$(date -u +%Y%m%d)"
+          for t in "$MINOR" "$MAJOR" "$DATED"; do
+            docker tag "$IMAGE:$TAG" "$IMAGE:$t"
+          done
+          for t in "$TAG" "$MINOR" "$MAJOR" "$DATED" latest; do
+            docker push "$IMAGE:$t"
+          done
+
+      # A new version: tag the built commit vX.Y.Z and publish a GitHub
+      # release with generated notes. Tags pushed with GITHUB_TOKEN don't
+      # trigger workflows.
+      - name: Tag and release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.base.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git tag "v$VERSION" "$GITHUB_SHA"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" --verify-tag --generate-notes \
+            --title "v$VERSION" \
+            --notes "Docker image: \`$IMAGE:$VERSION\`"
 
       - name: Record base image digest
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.base.outputs.changed == 'true'
