@@ -69,6 +69,10 @@ interface DialogSubmission {
     data: unknown;
 }
 const dialogSubmissions: DialogSubmission[] = [];
+let lastSubmissionId = 0;
+/** Kept submissions (oldest dropped first) and the largest accepted one (JSON-serialized). */
+export const MAX_DIALOG_SUBMISSIONS = 50;
+export const MAX_DIALOG_SUBMISSION_BYTES = 1024 * 1024;
 
 export const DIALOG_APP_URI = 'ui://feature-test/dialog-lab.html';
 
@@ -87,6 +91,9 @@ function loadDialogAppHtml(): string {
 
 /** 'decline' → 'declined', 'cancel' → 'cancelled', 'accept' → 'accepted'. */
 const pastTense = (action: string) => ({ accept: 'accepted', decline: 'declined', cancel: 'cancelled' })[action] ?? `${action}ed`;
+
+/** Masked form of a URL-flow token for tool results. Short tokens are not revealed at all (4 shown characters would nearly disclose them). */
+export const maskToken = (t: string) => (t.length < 12 ? '****' : `${t.slice(0, 2)}…${t.slice(-2)}`);
 
 const text = (t: string, extra: Partial<CallToolResult> = {}): CallToolResult => ({ content: [{ type: 'text', text: t }], ...extra });
 
@@ -641,8 +648,6 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
         }
     }
 
-    const maskToken = (t: string) => (t.length <= 4 ? '****' : `${t.slice(0, 2)}…${t.slice(-2)}`);
-
     server.registerTool(
         'elicit_url',
         {
@@ -818,9 +823,13 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
             _meta: { ui: { resourceUri: DIALOG_APP_URI, visibility: ['app'] } }
         },
         async ({ data }) => {
-            const entry: DialogSubmission = { id: dialogSubmissions.length + 1, receivedAt: new Date().toISOString(), data };
+            const size = Buffer.byteLength(JSON.stringify(data));
+            if (size > MAX_DIALOG_SUBMISSION_BYTES) {
+                return text(`Submission too large (${size} bytes, at most ${MAX_DIALOG_SUBMISSION_BYTES}); nothing stored.`, { isError: true });
+            }
+            const entry: DialogSubmission = { id: ++lastSubmissionId, receivedAt: new Date().toISOString(), data };
             dialogSubmissions.push(entry);
-            if (dialogSubmissions.length > 50) dialogSubmissions.shift();
+            if (dialogSubmissions.length > MAX_DIALOG_SUBMISSIONS) dialogSubmissions.shift();
             return text(`Stored submission #${entry.id}.`, { structuredContent: { id: entry.id, receivedAt: entry.receivedAt } });
         }
     );
@@ -830,7 +839,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
         {
             title: 'Read Dialog Lab results',
             description: 'Return what users submitted in the Dialog Lab graphical dialog (most recent first).',
-            inputSchema: z.object({ limit: z.number().int().min(1).max(50).default(3) }),
+            inputSchema: z.object({ limit: z.number().int().min(1).max(MAX_DIALOG_SUBMISSIONS).default(3) }),
             annotations: { readOnlyHint: true }
         },
         async ({ limit }) => {

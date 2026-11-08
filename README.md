@@ -195,7 +195,7 @@ curl -s http://127.0.0.1:3457/          # "mcp-feature-test is running."
 | `elicit_all_field_types` | One form containing about 13 fields of every type, with defaults pre-filled. The result lists each value and its JSON type, which shows whether the client sends integers as numbers, arrays for multi-selects, and so on | Same tool error |
 | `elicit_parallel` | Two dialogs ("what should I call you?" and "how are you?"), shown together or one after the other | Same tool error |
 | `elicit_wizard` | Three dialogs in a row. The step 2 limit depends on the size chosen in step 1, and step 3 shows a summary | Same tool error |
-| `elicit_url` | The client offers to open a URL. The page (below) asks for any token. Submit it, go back, accept, and the result reports a masked token | Tool error mentioning `url-mode`. If you accept before submitting the page, the tool returns an error saying so |
+| `elicit_url` | The client offers to open a URL. The page (below) asks for any token. Submit it, go back, accept, and the result reports a masked token | Tool error mentioning `url-mode`. If you accept before submitting the page, the tool waits for the page and returns an error after `FLOW_WAIT_MS` if it is never submitted |
 | `elicit_url_legacy_push` | 2025-era connections only: the same flow, and the client should close its dialog by itself when it receives `notifications/elicitation/complete` | On 2026-07-28: a tool error explaining that push-style elicitation does not exist there |
 | `slow_task` | A progress indicator counting up. Cancelling stops it early | Result text: *"Client did not request progress."* |
 | `open_dialog_lab` | The Dialog Lab UI (screenshots above) | Only the text result, which says that no UI appeared because the client does not render MCP Apps |
@@ -237,6 +237,8 @@ When a client connects, the server writes a summary to stderr. Some clients surf
 | `elicit_url` seems to hang after you accepted | Some clients (e.g. Open WebUI) answer `accept` as soon as the link is opened; the tool then waits for the browser page to be submitted. Submit the page, or the tool returns an error after `FLOW_WAIT_MS` (default 5 min). |
 | No graphical UI for `open_dialog_lab` | Check `MCP Apps UI` in `inspect_client`. The client must declare the `io.modelcontextprotocol/ui` extension with `text/html;profile=mcp-app`. |
 | HTTP answers 403 | Host/Origin validation (DNS-rebinding protection). Add your hostname to `ALLOWED_HOSTS`. |
+| HTTP answers 413 | The request body is larger than 4 MiB (flow pages: 64 KiB). |
+| The URL page answers 409 | The flow was already submitted once. Run the tool again for a new link. |
 | HTTP answers 400 "Missing session" or 404 "Unknown session" | A 2025-era client sent a request without `initialize` first, or after the server restarted. Reconnect. |
 | `elicit_url_legacy_push` fails | Expected on 2026-07-28 connections. Use `elicit_url`. |
 | The client shows garbage or JSON parse errors (stdio) | Something wrote to stdout. This server never does; check wrapper scripts. |

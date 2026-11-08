@@ -58,6 +58,38 @@ describe('http', () => {
         });
     });
 
+    describe('request limits and methods', () => {
+        it('rejects request bodies over 4 MiB with 413 (Content-Length and streamed)', async () => {
+            const big = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: { pad: 'a'.repeat(4 * 1024 * 1024) } });
+            const res = await rawRequest(srv.mcpUrl, { headers: JSON_HEADERS, body: big });
+            assert.equal(res.status, 413);
+            assert.match(JSON.parse(res.body).error.message, /Payload Too Large/);
+            const chunked = await new Promise((resolve, reject) => {
+                const req = request(srv.mcpUrl, { method: 'POST', headers: { ...JSON_HEADERS, 'transfer-encoding': 'chunked' } }, r => {
+                    r.resume();
+                    resolve(r.statusCode);
+                });
+                req.on('error', e => (e.code === 'ECONNRESET' || e.code === 'EPIPE' ? resolve('reset') : reject(e)));
+                const chunk = 'a'.repeat(256 * 1024);
+                let sent = 0;
+                const pump = () => {
+                    while (sent < 5 * 1024 * 1024) {
+                        sent += chunk.length;
+                        if (!req.write(chunk)) return req.once('drain', pump);
+                    }
+                    req.end();
+                };
+                pump();
+            });
+            assert.ok(chunked === 413 || chunked === 'reset', `got ${chunked}`);
+        });
+        it('answers unsupported HTTP methods on /mcp with 405', async () => {
+            const res = await rawRequest(srv.mcpUrl, { method: 'PUT', headers: JSON_HEADERS, body: legacyToolsList });
+            assert.equal(res.status, 405);
+            assert.match(res.headers.allow, /POST/);
+        });
+    });
+
     describe('2025-era session handling', () => {
         it('rejects a request without session (and without initialize) with 400', async () => {
             const res = await fetch(srv.mcpUrl, { method: 'POST', headers: JSON_HEADERS, body: legacyToolsList });

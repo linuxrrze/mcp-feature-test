@@ -82,9 +82,18 @@ async function startStandalone(): Promise<string> {
 
 /** Flows older than this are forgotten (keeps a long-running HTTP server from growing forever). */
 const FLOW_TTL_MS = 60 * 60_000;
+/** Upper bound on pending/completed flows kept in memory (oldest are dropped first). */
+export const MAX_FLOWS = 1000;
+/** Largest accepted POST body of a flow page. */
+export const MAX_FLOW_BODY_BYTES = 64 * 1024;
 
 function pruneFlows(now = Date.now()): void {
     for (const [id, f] of flows) if (now - f.createdAt > FLOW_TTL_MS) flows.delete(id);
+    // Map iteration is insertion order, so the first keys are the oldest flows.
+    for (const id of flows.keys()) {
+        if (flows.size < MAX_FLOWS) break;
+        flows.delete(id);
+    }
 }
 
 export async function createFlow(purpose: string): Promise<{ flow: Flow; url: string }> {
@@ -139,6 +148,19 @@ export function flowWaitMs(): number {
     return Number.isFinite(v) && v >= 0 ? v : 5 * 60_000;
 }
 
+/**
+ * Headers for every flow page: never cached, not frameable (clickjacking on the
+ * token form), no Referer (the flow URL is a bearer capability), no scripts,
+ * and the form may only post back to this server.
+ */
+const PAGE_HEADERS = {
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer',
+    'x-frame-options': 'DENY',
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+} as const;
+
 const esc = (s: string) => s.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
 function page(title: string, body: string): string {
@@ -163,19 +185,41 @@ export function handleFlowRequest(req: IncomingMessage, res: ServerResponse): bo
     if (!m) return false;
     const flow = flows.get(m[1]);
     const send = (status: number, html: string) =>
-        res.writeHead(status, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }).end(html);
+        res.writeHead(status, { ...PAGE_HEADERS, 'content-type': 'text/html; charset=utf-8' }).end(html);
 
     if (!flow) {
         send(404, page('Unknown flow', '<h1>Unknown or expired flow</h1><p>Start the tool again from your MCP client.</p>'));
         return true;
     }
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST') {
+        res.writeHead(405, { ...PAGE_HEADERS, allow: 'GET, HEAD, POST', 'content-type': 'text/plain; charset=utf-8' }).end('method not allowed');
+        return true;
+    }
     if (req.method === 'POST') {
+        if (flow.completedAt) {
+            // A flow completes exactly once: no token overwrite, no second completion notification.
+            send(409, page('Already completed', '<h1>Already completed</h1><p>This flow was already submitted. Start the tool again from your MCP client.</p>'));
+            return true;
+        }
         let body = '';
-        req.on('data', c => {
+        let size = 0;
+        let tooLarge = false;
+        req.on('data', (c: Buffer) => {
+            if (tooLarge) return;
+            size += c.length;
+            if (size > MAX_FLOW_BODY_BYTES) {
+                tooLarge = true;
+                body = '';
+                res.writeHead(413, { ...PAGE_HEADERS, 'content-type': 'text/plain; charset=utf-8', connection: 'close' }).end('request body too large');
+                return;
+            }
             body += c;
-            if (body.length > 64 * 1024) req.destroy();
         });
         req.on('end', () => {
+            if (tooLarge || flow.completedAt) {
+                if (!res.headersSent) send(409, page('Already completed', '<h1>Already completed</h1><p>This flow was already submitted.</p>'));
+                return;
+            }
             const token = new URLSearchParams(body).get('token')?.trim() ?? '';
             if (!token) {
                 send(400, page('Missing token', '<h1>Please enter a token</h1><p><a href="">Back</a></p>'));

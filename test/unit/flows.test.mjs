@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { after, before, describe, it } from 'node:test';
 import '../helpers.mjs';
-import { createFlow, flowWaitMs, getFlow, handleFlowRequest, setFlowBaseUrl, waitForFlow } from '../../dist/flows.js';
+import { createFlow, flowWaitMs, getFlow, handleFlowRequest, MAX_FLOWS, setFlowBaseUrl, waitForFlow } from '../../dist/flows.js';
 
 describe('URL-elicitation flow store and pages', () => {
     let srv;
@@ -120,9 +120,52 @@ describe('URL-elicitation flow store and pages', () => {
         assert.equal((await fetch(`${base}/other`)).status, 418);
     });
 
-    it('drops absurdly large POST bodies', async () => {
+    it('rejects absurdly large POST bodies with 413 and keeps the flow open', async () => {
         const { flow, url } = await createFlow('x');
-        await assert.rejects(post(url, `token=${'a'.repeat(200 * 1024)}`).then(r => r.text()));
+        const res = await post(url, `token=${'a'.repeat(200 * 1024)}`);
+        assert.equal(res.status, 413);
         assert.equal(flow.token, undefined);
+        assert.equal(flow.completedAt, undefined);
+    });
+
+    it('completes a flow only once: a second POST is 409, keeps the token and does not notify again', async () => {
+        const { flow, url } = await createFlow('x');
+        let completed = 0;
+        flow.onComplete = () => {
+            completed++;
+        };
+        assert.equal((await post(url, 'token=first-token')).status, 200);
+        const again = await post(url, 'token=attacker-token');
+        assert.equal(again.status, 409);
+        assert.equal(flow.token, 'first-token');
+        assert.equal(completed, 1);
+    });
+
+    it('sends hardening headers on flow pages', async () => {
+        const { url } = await createFlow('x');
+        const res = await fetch(url);
+        const csp = res.headers.get('content-security-policy');
+        assert.match(csp, /default-src 'none'/);
+        assert.match(csp, /frame-ancestors 'none'/);
+        assert.match(csp, /form-action 'self'/);
+        assert.equal(res.headers.get('x-frame-options'), 'DENY');
+        assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+        assert.equal(res.headers.get('referrer-policy'), 'no-referrer');
+    });
+
+    it('answers other HTTP methods with 405', async () => {
+        const { flow, url } = await createFlow('x');
+        const res = await fetch(url, { method: 'PUT', body: 'token=x' });
+        assert.equal(res.status, 405);
+        assert.match(res.headers.get('allow'), /POST/);
+        assert.equal(flow.token, undefined);
+    });
+
+    it(`keeps at most MAX_FLOWS (${MAX_FLOWS}) flows, dropping the oldest`, async () => {
+        const first = await createFlow('oldest');
+        for (let i = 0; i < MAX_FLOWS; i++) await createFlow('filler');
+        assert.equal(getFlow(first.flow.id), undefined, 'oldest flow was dropped');
+        const last = await createFlow('newest');
+        assert.ok(getFlow(last.flow.id));
     });
 });

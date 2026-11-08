@@ -9,7 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { createMcpHandler, isInitializeRequest, isLegacyRequest } from '@modelcontextprotocol/server';
+import { createMcpHandler, DEFAULT_MAX_REQUEST_BODY_SIZE, isInitializeRequest, isLegacyRequest } from '@modelcontextprotocol/server';
 import {
     NodeStreamableHTTPServerTransport,
     hostHeaderValidation,
@@ -79,10 +79,23 @@ export function chooseValidation(opts: { host: string; publicUrl: string; allowe
     return { mode: 'none', validators: [] };
 }
 
+/** Largest accepted MCP request body (the SDK's own default, which we bypass by pre-parsing the body). */
+export const MAX_BODY_BYTES = DEFAULT_MAX_REQUEST_BODY_SIZE;
+/** Upper bound on concurrent 2025-era sessions; the least recently used one is closed beyond it. */
+export const MAX_LEGACY_SESSIONS = 500;
+
+class BodyTooLargeError extends Error {}
+
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
     if (req.method !== 'POST') return undefined;
+    if (Number(req.headers['content-length']) > MAX_BODY_BYTES) throw new BodyTooLargeError();
     const chunks: Buffer[] = [];
-    for await (const c of req) chunks.push(c as Buffer);
+    let size = 0;
+    for await (const c of req) {
+        size += (c as Buffer).length;
+        if (size > MAX_BODY_BYTES) throw new BodyTooLargeError();
+        chunks.push(c as Buffer);
+    }
     const raw = Buffer.concat(chunks).toString('utf8');
     if (!raw) return undefined;
     try {
@@ -122,8 +135,27 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
                 return;
             }
             for (const validate of validators) if (!validate(req, res)) return;
+            if (req.method !== 'POST' && req.method !== 'GET' && req.method !== 'DELETE') {
+                res.writeHead(405, { allow: 'GET, POST, DELETE', 'content-type': 'application/json' }).end(
+                    JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed' }, id: null })
+                );
+                return;
+            }
 
-            const body = await readJsonBody(req);
+            let body: unknown;
+            try {
+                body = await readJsonBody(req);
+            } catch (e) {
+                if (!(e instanceof BodyTooLargeError)) throw e;
+                res.writeHead(413, { 'content-type': 'application/json', connection: 'close' }).end(
+                    JSON.stringify({
+                        jsonrpc: '2.0',
+                        error: { code: -32000, message: `Payload Too Large: request body must not exceed ${MAX_BODY_BYTES} bytes` },
+                        id: null
+                    })
+                );
+                return;
+            }
             const webReq = await toWebRequest(req, body);
 
             if (!(await isLegacyRequest(webReq, body))) {
@@ -134,6 +166,11 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
             // ---- 2025-era sessionful path ----
             const sid = req.headers['mcp-session-id'];
             let transport = typeof sid === 'string' ? legacySessions.get(sid) : undefined;
+            if (transport && typeof sid === 'string') {
+                // Keep the map in least-recently-used order for the session cap below.
+                legacySessions.delete(sid);
+                legacySessions.set(sid, transport);
+            }
 
             if (!transport) {
                 if (req.method === 'POST' && isInitializeRequest(body)) {
@@ -141,6 +178,14 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
                         sessionIdGenerator: () => randomUUID(),
                         onsessioninitialized: id => {
                             legacySessions.set(id, t);
+                            if (legacySessions.size > MAX_LEGACY_SESSIONS) {
+                                const [oldestId, oldest] = legacySessions.entries().next().value!;
+                                legacySessions.delete(oldestId);
+                                logger.warn('http.session', `more than ${MAX_LEGACY_SESSIONS} legacy sessions; closed the least recently used one`, {
+                                    max: MAX_LEGACY_SESSIONS
+                                });
+                                void oldest.close().catch(() => {});
+                            }
                             logger.debug('http.session', `legacy session ${id} opened`, { sessionId: id });
                         }
                     });

@@ -7,7 +7,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/server';
 import { APP_MIME, FULL_CAPS, UI_EXT, textOf } from '../helpers.mjs';
 import { resetSeenClients } from '../../dist/clients.js';
 import { configureLogger } from '../../dist/log.js';
-import { DIALOG_APP_URI, allFieldsSchema, createFeatureTestServer } from '../../dist/server.js';
+import { DIALOG_APP_URI, MAX_DIALOG_SUBMISSIONS, MAX_DIALOG_SUBMISSION_BYTES, allFieldsSchema, createFeatureTestServer, maskToken } from '../../dist/server.js';
 
 async function connect(capabilities, name = 'unit-client') {
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
@@ -177,5 +177,36 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
         assert.match(contents[0].text, /<script type="module">/);
         assert.ok(!/<script[^>]+src=/i.test(contents[0].text), 'no external scripts');
         assert.ok(UI_EXT);
+    });
+
+    it('gives Dialog Lab submissions unique ids beyond the retention limit', async () => {
+        client = await connect(FULL_CAPS);
+        const ids = [];
+        for (let i = 0; i < MAX_DIALOG_SUBMISSIONS + 3; i++) {
+            const r = await client.callTool({ name: 'dialog_lab_submit', arguments: { data: { n: i } } });
+            ids.push(r.structuredContent.id);
+        }
+        assert.equal(new Set(ids).size, ids.length, 'ids are unique');
+        const res = await client.callTool({ name: 'dialog_lab_results', arguments: { limit: MAX_DIALOG_SUBMISSIONS } });
+        assert.equal(res.structuredContent.submissions.length, MAX_DIALOG_SUBMISSIONS);
+        assert.equal(res.structuredContent.submissions[0].id, ids.at(-1));
+    });
+
+    it('rejects oversized Dialog Lab submissions without storing them', async () => {
+        client = await connect(FULL_CAPS);
+        const r = await client.callTool({ name: 'dialog_lab_submit', arguments: { data: { blob: 'x'.repeat(MAX_DIALOG_SUBMISSION_BYTES) } } });
+        assert.equal(r.isError, true);
+        assert.match(textOf(r), /too large/);
+        const res = await client.callTool({ name: 'dialog_lab_results', arguments: { limit: 1 } });
+        assert.ok(!JSON.stringify(res.structuredContent ?? {}).includes('xxxxxxxx'));
+    });
+});
+
+describe('maskToken', () => {
+    it('shows two characters at each end of long tokens only', () => {
+        assert.equal(maskToken('sk-test-123456'), 'sk…56');
+        assert.equal(maskToken('abcdefghijk'), '****');
+        assert.equal(maskToken('abc'), '****');
+        assert.equal(maskToken(''), '****');
     });
 });
