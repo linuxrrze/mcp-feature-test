@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
 import { APP_MIME, defaultAnswer, makeClient, MODERN, submitFlowPage, textOf } from '../helpers.mjs';
 import { colorPickerTests } from './color-picker.matrix.mjs';
+import { viewer3dTests } from './viewer-3d.matrix.mjs';
 
 const FORM_TOOLS = [
     { name: 'elicit_confirm', declined: /User DECLINED/, cancelled: /User CANCELLED/ },
@@ -358,6 +359,7 @@ export function eraSuite({ transport, era, connect, logs }) {
             await logs().waitFor(e => e.event === 'tool.input_required' && e.client === clientName && e.inputRequests?.[0] === 'probe_color (form)');
         });
         colorPickerTests({ client, call }); // pick_color (test/integration/color-picker.matrix.mjs)
+        viewer3dTests({ client, call }); // view_3d (test/integration/viewer-3d.matrix.mjs)
 
         // ------------------------------------------------ capability handling
         it('a client without elicitation gets a tool error, not a hang', async () => {

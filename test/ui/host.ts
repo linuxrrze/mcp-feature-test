@@ -18,10 +18,16 @@ interface HostConfig {
     unsupported?: string[];
     /** Refuse this many tools/call requests first, like a user cancelling Open WebUI's "Tool call" confirmation. */
     refuseToolCalls?: number;
+    /** availableDisplayModes in the host context (default inline + fullscreen). */
+    displayModes?: string[];
+    /** Content-Security-Policy put into the srcdoc as a <meta> tag (e.g. Open WebUI's). */
+    csp?: string;
 }
 declare global {
     interface Window {
         callTool(p: unknown): Promise<any>;
+        /** Optional: proxies the app's resources/read to the server. */
+        readResource?(p: unknown): Promise<any>;
         appHtml: string;
         hostConfig: HostConfig;
         hostEvents: { type: string; params: unknown }[];
@@ -32,7 +38,7 @@ declare global {
 const cfg = window.hostConfig;
 window.hostEvents = [];
 const record = (type: string, params: unknown) => window.hostEvents.push({ type, params });
-const context = (displayMode: 'inline' | 'fullscreen') => ({ theme: cfg.theme, displayMode, availableDisplayModes: ['inline', 'fullscreen'] }) as any;
+const context = (displayMode: 'inline' | 'fullscreen') => ({ theme: cfg.theme, displayMode, availableDisplayModes: cfg.displayModes ?? ['inline', 'fullscreen'] }) as any;
 
 const iframe = document.getElementById('app') as HTMLIFrameElement;
 // Host context must go in the constructor options: setHostContext() before connect() throws "Not connected".
@@ -66,6 +72,12 @@ bridge.onrequestdisplaymode = async p => {
     bridge.setHostContext(context(p.mode as 'inline' | 'fullscreen'));
     return { mode: p.mode };
 };
+if (window.readResource) {
+    bridge.onreadresource = async p => {
+        record('resources/read', p);
+        return window.readResource!(p);
+    };
+}
 bridge.ondownloadfile = async p => {
     record('ui/download-file', p);
     return {};
@@ -83,4 +95,4 @@ iframe.addEventListener(
     },
     { once: true }
 );
-iframe.srcdoc = window.appHtml;
+iframe.srcdoc = cfg.csp ? `<meta http-equiv="Content-Security-Policy" content="${cfg.csp.replace(/"/g, '&quot;')}">${window.appHtml}` : window.appHtml;

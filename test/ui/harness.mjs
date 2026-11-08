@@ -182,3 +182,82 @@ export async function openColorPicker(
         }
     };
 }
+
+/** The CSP Open WebUI 0.13.2 puts on MCP App iframes that declare no _meta.ui.csp (see docs/openwebui.md). */
+export const OPEN_WEBUI_CSP = [
+    "default-src 'none'",
+    "script-src 'unsafe-inline' blob:",
+    "style-src 'unsafe-inline'",
+    'img-src data: blob:',
+    'media-src data: blob:',
+    "font-src 'none'",
+    "connect-src 'none'",
+    "frame-src 'none'",
+    "base-uri 'none'",
+    "object-src 'none'",
+    "form-action 'none'"
+].join('; ');
+
+/**
+ * Open the view_3d 3D viewer the way a host would: call view_3d, then render
+ * the ui:// resource with that tool input and result. The host proxies the
+ * app's tools/call and resources/read to the server. `displayModes` sets
+ * availableDisplayModes, `csp` adds a CSP meta tag (e.g. OPEN_WEBUI_CSP).
+ * Resolves once the model is loaded (window.__viewer.ready).
+ */
+export async function openViewer3d(
+    browser,
+    { theme = 'light', args = {}, displayModes, csp, unsupported = [], viewport = { width: 720, height: 760 }, deviceScaleFactor = 1 } = {}
+) {
+    const { client } = makeClient('modern', { name: 'ui-test-host' });
+    const conn = await connectStdio(client);
+    const toolResult = await client.callTool({ name: 'view_3d', arguments: args });
+    const res = await client.readResource({ uri: 'ui://feature-test/viewer-3d.html' });
+    const appHtml = res.contents[0].text;
+
+    const context = await browser.newContext({ viewport, colorScheme: theme, deviceScaleFactor });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.exposeFunction('callTool', p => client.callTool(p));
+    await page.exposeFunction('readResource', p => client.readResource(p));
+    const inline = v => JSON.stringify(v).replace(/</g, '\\u003c');
+    const hostCapabilities = { openLinks: {}, serverTools: {}, serverResources: {}, logging: {}, updateModelContext: { text: {} }, message: { text: {} } };
+    await page.setContent(
+        `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:${theme === 'dark' ? '#111214' : '#e9ebef'}}` +
+            `iframe{display:block;width:100%;height:${viewport.height}px;border:0}</style></head><body>` +
+            `<iframe id="app" sandbox="allow-scripts allow-forms"></iframe>` +
+            `<script>window.appHtml=${inline(appHtml)};window.hostConfig=${inline({ theme, toolInput: args, toolResult, unsupported, displayModes, csp, hostCapabilities })}</script>` +
+            `<script type="module">${await hostBundle()}</script></body></html>`
+    );
+    await page.waitForFunction(() => window.hostReady === true, null, { timeout: 10_000 });
+    const app = page.frameLocator('#app');
+    const frame = page.frame({ url: /about:srcdoc/ });
+    await frame.waitForFunction(() => window.__viewer?.ready === true, null, { timeout: 20_000 });
+
+    return {
+        page,
+        app,
+        frame,
+        client,
+        errors,
+        viewId: toolResult.structuredContent.viewId,
+        viewer: (fn, arg) => frame.evaluate(fn, arg),
+        hostEvents: () => page.evaluate(() => window.hostEvents),
+        async waitForHostEvent(type) {
+            await page.waitForFunction(t => window.hostEvents.some(e => e.type === t), type, { timeout: 5000 });
+            return (await page.evaluate(t => window.hostEvents.filter(e => e.type === t), type)).at(-1);
+        },
+        /** Page coordinates of a point on `part` (null if it is not visible). */
+        async pointOn(part) {
+            const p = await frame.evaluate(n => window.__viewer.pointOn(n), part);
+            if (!p) return null;
+            const box = await page.locator('#app').boundingBox();
+            return { x: box.x + p.x, y: box.y + p.y };
+        },
+        async close() {
+            await context.close();
+            await conn.close();
+        }
+    };
+}
