@@ -2,17 +2,9 @@
 
 How mcp-feature-test serves one set of tools to two protocol generations over two transports, and what to know about its security.
 
-```
-             ┌─────────────── src/stdio.ts ────────────────┐
- stdio ────► │ serveStdio(factory)  – era picked by the     │
-             │ first message, one McpServer per connection  │──┐
-             └──────────────────────────────────────────────┘  │   createFeatureTestServer()
-             ┌──────────── src/httpServer.ts ───────────────┐  ├─► src/server.ts  (tools, prompt, ui:// resource)
- HTTP ─────► │ /mcp  2026-07-28 → createMcpHandler (per req) │──┘     ├─ src/clients.ts (capability log, registry)
- :3457       │       2025-era   → session transport map      │        ├─ src/flows.ts   (URL-elicitation pages)
-             │ /flow/<uuid> → flows.ts   /  → banner         │        ├─ src/log.ts     (stderr logger)
-             └──────────────────────────────────────────────┘        └─ src/files.ts   (sample files, upload limits)
-```
+![Architecture overview: stdio and HTTP clients enter through src/stdio.ts and src/http.ts / src/httpServer.ts (routes GET /, /mcp split by protocol era, /flow/<uuid>); both call createFeatureTestServer() in src/server.ts per connection, request or session, which uses clients.ts, files.ts, flows.ts, log.ts and the colour picker app in colorPicker.ts; long-lived state is kept at module level](diagrams/architecture-overview.png)
+
+Source: [architecture-overview.vectorcraft](diagrams/architecture-overview.vectorcraft) (VectorCraft) · [SVG](diagrams/architecture-overview.svg). See [Editing the diagrams](elicitation.md#editing-the-diagrams).
 
 ## Protocol eras
 
@@ -57,7 +49,7 @@ Because the key is random per process, state does not survive a restart, and sev
 
 `src/httpServer.ts` serves one endpoint for both eras:
 
-1. `GET /` returns a plain-text banner. `/flow/<uuid>` serves the URL-elicitation pages (GET shows the form, POST submits it). Every other path returns 404.
+1. `GET /` returns a plain-text status page ("mcp-feature-test is running." plus the endpoint). `/flow/<uuid>` serves the URL-elicitation pages (GET shows the form, POST submits it). Every other path returns 404.
 2. On `/mcp`, Host/Origin validation runs (see below).
 3. `isLegacyRequest(request, body)` from the SDK classifies the request. Requests with a valid 2026-07-28 `_meta` envelope go to `createMcpHandler(factory, { legacy: 'reject' })`: stateless, a new server instance per request.
 4. 2025-era traffic goes to a map of `NodeStreamableHTTPServerTransport`s keyed by `Mcp-Session-Id`. An `initialize` without a session creates one (new server instance and transport). A request with an unknown session ID gets **404** (the client should re-initialize). A non-initialize request without a session ID gets **400**. `DELETE` closes a session.
@@ -78,17 +70,25 @@ The legacy path stays sessionful because the shim's `elicitation/create` request
 
 For the difference between the server and the app it ships, see [MCP server vs. MCP App](server-vs-app.md).
 
-```
-host                                   server                          app (iframe)
- │ tools/list ───────────────────────►  open_dialog_lab: _meta.ui.resourceUri = ui://feature-test/dialog-lab.html
- │ resources/read ui://… ─────────────►  text/html;profile=mcp-app (single file, JS inlined)
- │ tools/call open_dialog_lab ────────►  text + structuredContent {question, items}
- │ render iframe(srcdoc) ─────────────────────────────────────────────►  App.connect()  (ui/initialize)
- │ ui/notifications/tool-input + tool-result ─────────────────────────►  fills question + ranking
- │ ◄── tools/call dialog_lab_submit (app-only) ─────────────────────────  "Submit to server"
- │ tools/call ───────────────────────►  stores submission
- │ ◄── ui/message, ui/update-model-context, ui/request-display-mode, ui/download-file
-```
+![Sequence diagram of the MCP Apps flow between the app in its iframe, the host and the server: the host lists tools, reads the ui:// resource and calls open_dialog_lab, renders the iframe and passes it the tool input and result; the app submits through the host with the app-only dialog_lab_submit and sends ui/message, ui/update-model-context, ui/request-display-mode and ui/download-file to the host](diagrams/mcp-apps-flow.png)
+
+Source: [mcp-apps-flow.vectorcraft](diagrams/mcp-apps-flow.vectorcraft) (VectorCraft) · [SVG](diagrams/mcp-apps-flow.svg). The step numbers match the diagram:
+
+1. The host lists the tools. `open_dialog_lab` carries `_meta.ui.resourceUri = ui://feature-test/dialog-lab.html`.
+2. The host reads that resource (`text/html;profile=mcp-app`, one file with the JS inlined). Hosts may do this ahead of time.
+3. The model calls `open_dialog_lab` with `{ question, items }`.
+4. The server returns text plus `structuredContent { question, items, openedAt }`. This is all the model sees.
+5. The host renders the HTML in a sandboxed iframe (`srcdoc`).
+6. The app calls `App.connect()` (`ui/initialize`) and gets `hostContext` (theme, CSS variables) and `hostCapabilities`.
+7. The host sends `ui/notifications/tool-input` and `tool-result`; the app fills in the question and the ranking.
+8. "Submit to server": the app calls the app-only tool `dialog_lab_submit` through the host.
+9. The host relays the call; the server stores the submission.
+10. The result ("Stored submission #n.") goes back through the host to the app.
+11. The app sends the answer to the chat (`ui/message`) or into the model's context (`ui/update-model-context`).
+12. The app can switch between inline and fullscreen (`ui/request-display-mode`) and offer downloads (`ui/download-file`, only if the host advertises `hostCapabilities.downloadFile`).
+13. Later the model reads the stored submissions with `dialog_lab_results`.
+
+The colour picker (`pick_color`) follows the same steps; see the colour picker bullet below.
 
 - The UI (`ui/dialog-lab.html` + `ui/dialog-lab.ts`) is bundled with esbuild into **one self-contained HTML file** (`dist/ui/dialog-lab.html`), so the host needs no CSP `resourceDomains` configuration.
 - `dialog_lab_submit` has `_meta.ui.visibility: ["app"]`. Hosts should not offer it to the model, only to the app. The server cannot enforce this; it depends on the host. To the server it is an ordinary tool, so any client can call it.

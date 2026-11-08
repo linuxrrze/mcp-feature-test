@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1724" viewBox="0 0 1600 1724">
+  <title>mcp-apps-flow</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <rect id="background" x="0" y="0" width="1600" height="1724" fill="#ffffff"/>
+    <text transform="matrix(1 0 0 1 40 58)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="32" font-weight="bold" fill="#111827"><tspan x="0" y="0">MCP Apps flow: Dialog Lab (and the colour picker)</tspan></text>
+    <text transform="matrix(1 0 0 1 40 92)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="16.5" fill="#4b5563"><tspan x="0" y="0">The host loads the app&apos;s HTML from a ui:// resource, renders it in a sandboxed iframe and relays the app&apos;s requests. The app never talks to the server directly.</tspan></text>
+    <path d="M36 212 L1564 212 C1570.627 212 1576 217.373 1576 224 L1576 900 C1576 906.627 1570.627 912 1564 912 L36 912 C29.373 912 24 906.627 24 900 L24 224 C24 217.373 29.373 212 36 212 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+    <path d="M36 934 L1564 934 C1570.627 934 1576 939.373 1576 946 L1576 1520 C1576 1526.627 1570.627 1532 1564 1532 L36 1532 C29.373 1532 24 1526.627 24 1520 L24 946 C24 939.373 29.373 934 36 934 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+    <line x1="180" y1="182" x2="180" y2="1550" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 6"/>
+    <line x1="640" y1="182" x2="640" y2="1550" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 6"/>
+    <line x1="1130" y1="182" x2="1130" y2="1550" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="6 6"/>
+    <path d="M40 122 L320 122 C325.523 122 330 126.477 330 132 L330 176 C330 181.523 325.523 186 320 186 L40 186 C34.477 186 30 181.523 30 176 L30 132 C30 126.477 34.477 122 40 122 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 180 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP App (iframe)</tspan></text>
+    <text transform="matrix(1 0 0 1 180 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">ui/dialog-lab.ts, bundled to one HTML file</tspan></text>
+    <path d="M490 122 L790 122 C795.523 122 800 126.477 800 132 L800 176 C800 181.523 795.523 186 790 186 L490 186 C484.477 186 480 181.523 480 176 L480 132 C480 126.477 484.477 122 490 122 Z" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 640 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP host / client</tspan></text>
+    <text transform="matrix(1 0 0 1 640 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">chat UI and model; renders the iframe</tspan></text>
+    <path d="M990 122 L1270 122 C1275.523 122 1280 126.477 1280 132 L1280 176 C1280 181.523 1275.523 186 1270 186 L990 186 C984.477 186 980 181.523 980 176 L980 132 C980 126.477 984.477 122 990 122 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 1130 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP server</tspan></text>
+    <text transform="matrix(1 0 0 1 1130 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">mcp-feature-test (src/server.ts)</tspan></text>
+    <text transform="matrix(1 0 0 1 44 242)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="18" font-weight="bold" fill="#111827"><tspan x="0" y="0">A   Launch: the host fetches the UI resource, calls the tool and hands the call to the app</tspan></text>
+    <text transform="matrix(1 0 0 1 44 964)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="18" font-weight="bold" fill="#111827"><tspan x="0" y="0">B   Interaction: the app reaches the server and the model only through the host</tspan></text>
+    <g id="arrow-1">
+      <g>
+        <path d="M640 342.75 L1125 342.75 L1125 345.25 L640 345.25 Z" fill="#1d4ed8"/>
+        <path d="M1130 344 L1120 349 L1120 339 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="676" cy="344" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 676 349.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">1</tspan></text>
+    <text transform="matrix(1 0 0 1 698 294)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/list</tspan></text>
+    <text transform="matrix(1 0 0 1 698 314)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">result: open_dialog_lab carries _meta.ui.resourceUri</tspan></text>
+    <text transform="matrix(1 0 0 1 698 334)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">= ui://feature-test/dialog-lab.html</tspan></text>
+    <g id="arrow-2">
+      <g>
+        <path d="M640 424.75 L1125 424.75 L1125 427.25 L640 427.25 Z" fill="#1d4ed8"/>
+        <path d="M1130 426 L1120 431 L1120 421 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="676" cy="426" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 676 431.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">2</tspan></text>
+    <text transform="matrix(1 0 0 1 698 396)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">resources/read  ui://feature-test/dialog-lab.html</tspan></text>
+    <text transform="matrix(1 0 0 1 698 416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">result: text/html;profile=mcp-app, one file, JS inlined</tspan></text>
+    <g id="arrow-3">
+      <g>
+        <path d="M640 506.75 L1125 506.75 L1125 509.25 L640 509.25 Z" fill="#1d4ed8"/>
+        <path d="M1130 508 L1120 513 L1120 503 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="676" cy="508" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 676 513.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">3</tspan></text>
+    <text transform="matrix(1 0 0 1 698 478)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  open_dialog_lab</tspan></text>
+    <text transform="matrix(1 0 0 1 698 498)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">{ question, items }, called by the model</tspan></text>
+    <g id="arrow-4">
+      <g>
+        <path d="M1130 591.25 L1121 591.25 L1121 588.75 L1130 588.75 Z M1115 591.25 L1106 591.25 L1106 588.75 L1115 588.75 Z M1100 591.25 L1091 591.25 L1091 588.75 L1100 588.75 Z M1085 591.25 L1076 591.25 L1076 588.75 L1085 588.75 Z M1070 591.25 L1061 591.25 L1061 588.75 L1070 588.75 Z M1055 591.25 L1046 591.25 L1046 588.75 L1055 588.75 Z M1040 591.25 L1031 591.25 L1031 588.75 L1040 588.75 Z M1025 591.25 L1016 591.25 L1016 588.75 L1025 588.75 Z M1010 591.25 L1001 591.25 L1001 588.75 L1010 588.75 Z M995 591.25 L986 591.25 L986 588.75 L995 588.75 Z M980 591.25 L971 591.25 L971 588.75 L980 588.75 Z M965 591.25 L956 591.25 L956 588.75 L965 588.75 Z M950 591.25 L941 591.25 L941 588.75 L950 588.75 Z M935 591.25 L926 591.25 L926 588.75 L935 588.75 Z M920 591.25 L911 591.25 L911 588.75 L920 588.75 Z M905 591.25 L896 591.25 L896 588.75 L905 588.75 Z M890 591.25 L881 591.25 L881 588.75 L890 588.75 Z M875 591.25 L866 591.25 L866 588.75 L875 588.75 Z M860 591.25 L851 591.25 L851 588.75 L860 588.75 Z M845 591.25 L836 591.25 L836 588.75 L845 588.75 Z M830 591.25 L821 591.25 L821 588.75 L830 588.75 Z M815 591.25 L806 591.25 L806 588.75 L815 588.75 Z M800 591.25 L791 591.25 L791 588.75 L800 588.75 Z M785 591.25 L776 591.25 L776 588.75 L785 588.75 Z M770 591.25 L761 591.25 L761 588.75 L770 588.75 Z M755 591.25 L746 591.25 L746 588.75 L755 588.75 Z M740 591.25 L731 591.25 L731 588.75 L740 588.75 Z M725 591.25 L716 591.25 L716 588.75 L725 588.75 Z M710 591.25 L701 591.25 L701 588.75 L710 588.75 Z M695 591.25 L686 591.25 L686 588.75 L695 588.75 Z M680 591.25 L671 591.25 L671 588.75 L680 588.75 Z M665 591.25 L656 591.25 L656 588.75 L665 588.75 Z M650 591.25 L645 591.25 L645 588.75 L650 588.75 Z" fill="#1d4ed8"/>
+        <path d="M640 590 L650 585 L650 595 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="676" cy="590" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 676 595.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">4</tspan></text>
+    <text transform="matrix(1 0 0 1 698 560)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call result</tspan></text>
+    <text transform="matrix(1 0 0 1 698 580)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">text + structuredContent { question, items, openedAt }</tspan></text>
+    <g id="arrow-5">
+      <g>
+        <path d="M640 673.25 L185 673.25 L185 670.75 L640 670.75 Z" fill="#6d28d9"/>
+        <path d="M180 672 L190 667 L190 677 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <circle cx="216" cy="672" r="14" fill="#6d28d9" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 677.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">5</tspan></text>
+    <text transform="matrix(1 0 0 1 238 642)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">renders the iframe (srcdoc)</tspan></text>
+    <text transform="matrix(1 0 0 1 238 662)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">sandboxed, with the HTML from step 2</tspan></text>
+    <g id="arrow-6">
+      <g>
+        <path d="M180 772.75 L635 772.75 L635 775.25 L180 775.25 Z" fill="#6d28d9"/>
+        <path d="M640 774 L630 779 L630 769 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <circle cx="216" cy="774" r="14" fill="#6d28d9" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 779.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">6</tspan></text>
+    <text transform="matrix(1 0 0 1 238 724)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">ui/initialize   (App.connect())</tspan></text>
+    <text transform="matrix(1 0 0 1 238 744)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">result: hostContext (theme, CSS variables)</tspan></text>
+    <text transform="matrix(1 0 0 1 238 764)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">and hostCapabilities</tspan></text>
+    <g id="arrow-7">
+      <g>
+        <path d="M640 877.25 L185 877.25 L185 874.75 L640 874.75 Z" fill="#6d28d9"/>
+        <path d="M180 876 L190 871 L190 881 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <circle cx="216" cy="876" r="14" fill="#6d28d9" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 881.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">7</tspan></text>
+    <text transform="matrix(1 0 0 1 238 826)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">ui/notifications/tool-input + tool-result</tspan></text>
+    <text transform="matrix(1 0 0 1 238 846)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">arguments of step 3 and result of step 4;</tspan></text>
+    <text transform="matrix(1 0 0 1 238 866)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">the app fills in the question and the ranking</tspan></text>
+    <g id="arrow-8">
+      <g>
+        <path d="M180 1044.25 L633 1044.25 L633 1047.75 L180 1047.75 Z" fill="#c2410c"/>
+        <path d="M640 1046 L626 1053 L626 1039 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <circle cx="216" cy="1046" r="14" fill="#c2410c" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 1051.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">8</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1016)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  dialog_lab_submit { data }</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1036)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">&quot;Submit to server&quot;; app-only tool</tspan></text>
+    <g id="arrow-9">
+      <g>
+        <path d="M640 1126.25 L1123 1126.25 L1123 1129.75 L640 1129.75 Z" fill="#c2410c"/>
+        <path d="M1130 1128 L1116 1135 L1116 1121 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <circle cx="676" cy="1128" r="14" fill="#c2410c" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 676 1133.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">9</tspan></text>
+    <text transform="matrix(1 0 0 1 698 1098)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  dialog_lab_submit (relayed)</tspan></text>
+    <text transform="matrix(1 0 0 1 698 1118)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">the server stores it (last 50, 1 MiB each)</tspan></text>
+    <g id="arrow-10">
+      <g>
+        <path d="M1130 1211.25 L1121 1211.25 L1121 1208.75 L1130 1208.75 Z M1115 1211.25 L1106 1211.25 L1106 1208.75 L1115 1208.75 Z M1100 1211.25 L1091 1211.25 L1091 1208.75 L1100 1208.75 Z M1085 1211.25 L1076 1211.25 L1076 1208.75 L1085 1208.75 Z M1070 1211.25 L1061 1211.25 L1061 1208.75 L1070 1208.75 Z M1055 1211.25 L1046 1211.25 L1046 1208.75 L1055 1208.75 Z M1040 1211.25 L1031 1211.25 L1031 1208.75 L1040 1208.75 Z M1025 1211.25 L1016 1211.25 L1016 1208.75 L1025 1208.75 Z M1010 1211.25 L1001 1211.25 L1001 1208.75 L1010 1208.75 Z M995 1211.25 L986 1211.25 L986 1208.75 L995 1208.75 Z M980 1211.25 L971 1211.25 L971 1208.75 L980 1208.75 Z M965 1211.25 L956 1211.25 L956 1208.75 L965 1208.75 Z M950 1211.25 L941 1211.25 L941 1208.75 L950 1208.75 Z M935 1211.25 L926 1211.25 L926 1208.75 L935 1208.75 Z M920 1211.25 L911 1211.25 L911 1208.75 L920 1208.75 Z M905 1211.25 L896 1211.25 L896 1208.75 L905 1208.75 Z M890 1211.25 L881 1211.25 L881 1208.75 L890 1208.75 Z M875 1211.25 L866 1211.25 L866 1208.75 L875 1208.75 Z M860 1211.25 L851 1211.25 L851 1208.75 L860 1208.75 Z M845 1211.25 L836 1211.25 L836 1208.75 L845 1208.75 Z M830 1211.25 L821 1211.25 L821 1208.75 L830 1208.75 Z M815 1211.25 L806 1211.25 L806 1208.75 L815 1208.75 Z M800 1211.25 L791 1211.25 L791 1208.75 L800 1208.75 Z M785 1211.25 L776 1211.25 L776 1208.75 L785 1208.75 Z M770 1211.25 L761 1211.25 L761 1208.75 L770 1208.75 Z M755 1211.25 L746 1211.25 L746 1208.75 L755 1208.75 Z M740 1211.25 L731 1211.25 L731 1208.75 L740 1208.75 Z M725 1211.25 L716 1211.25 L716 1208.75 L725 1208.75 Z M710 1211.25 L701 1211.25 L701 1208.75 L710 1208.75 Z M695 1211.25 L686 1211.25 L686 1208.75 L695 1208.75 Z M680 1211.25 L671 1211.25 L671 1208.75 L680 1208.75 Z M665 1211.25 L656 1211.25 L656 1208.75 L665 1208.75 Z M650 1211.25 L641 1211.25 L641 1208.75 L650 1208.75 Z M635 1211.25 L626 1211.25 L626 1208.75 L635 1208.75 Z M620 1211.25 L611 1211.25 L611 1208.75 L620 1208.75 Z M605 1211.25 L596 1211.25 L596 1208.75 L605 1208.75 Z M590 1211.25 L581 1211.25 L581 1208.75 L590 1208.75 Z M575 1211.25 L566 1211.25 L566 1208.75 L575 1208.75 Z M560 1211.25 L551 1211.25 L551 1208.75 L560 1208.75 Z M545 1211.25 L536 1211.25 L536 1208.75 L545 1208.75 Z M530 1211.25 L521 1211.25 L521 1208.75 L530 1208.75 Z M515 1211.25 L506 1211.25 L506 1208.75 L515 1208.75 Z M500 1211.25 L491 1211.25 L491 1208.75 L500 1208.75 Z M485 1211.25 L476 1211.25 L476 1208.75 L485 1208.75 Z M470 1211.25 L461 1211.25 L461 1208.75 L470 1208.75 Z M455 1211.25 L446 1211.25 L446 1208.75 L455 1208.75 Z M440 1211.25 L431 1211.25 L431 1208.75 L440 1208.75 Z M425 1211.25 L416 1211.25 L416 1208.75 L425 1208.75 Z M410 1211.25 L401 1211.25 L401 1208.75 L410 1208.75 Z M395 1211.25 L386 1211.25 L386 1208.75 L395 1208.75 Z M380 1211.25 L371 1211.25 L371 1208.75 L380 1208.75 Z M365 1211.25 L356 1211.25 L356 1208.75 L365 1208.75 Z M350 1211.25 L341 1211.25 L341 1208.75 L350 1208.75 Z M335 1211.25 L326 1211.25 L326 1208.75 L335 1208.75 Z M320 1211.25 L311 1211.25 L311 1208.75 L320 1208.75 Z M305 1211.25 L296 1211.25 L296 1208.75 L305 1208.75 Z M290 1211.25 L281 1211.25 L281 1208.75 L290 1208.75 Z M275 1211.25 L266 1211.25 L266 1208.75 L275 1208.75 Z M260 1211.25 L251 1211.25 L251 1208.75 L260 1208.75 Z M245 1211.25 L236 1211.25 L236 1208.75 L245 1208.75 Z M230 1211.25 L221 1211.25 L221 1208.75 L230 1208.75 Z M215 1211.25 L206 1211.25 L206 1208.75 L215 1208.75 Z M200 1211.25 L191 1211.25 L191 1208.75 L200 1208.75 Z" fill="#1d4ed8"/>
+        <path d="M180 1210 L190 1205 L190 1215 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="216" cy="1210" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 1215.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">10</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1180)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">result  &quot;Stored submission #n.&quot;</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1200)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">relayed by the host to the app</tspan></text>
+    <g id="arrow-11">
+      <g>
+        <path d="M180 1310.25 L633 1310.25 L633 1313.75 L180 1313.75 Z" fill="#c2410c"/>
+        <path d="M640 1312 L626 1319 L626 1305 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <circle cx="216" cy="1312" r="14" fill="#c2410c" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 1317.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">11</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1262)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">ui/message  ·  ui/update-model-context</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1282)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">the answer as a chat message or as</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1302)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">context for the model&apos;s next turn</tspan></text>
+    <g id="arrow-12">
+      <g>
+        <path d="M180 1412.75 L635 1412.75 L635 1415.25 L180 1415.25 Z" fill="#6d28d9"/>
+        <path d="M640 1414 L630 1419 L630 1409 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <circle cx="216" cy="1414" r="14" fill="#6d28d9" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 216 1419.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">12</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1364)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">ui/request-display-mode  ·  ui/download-file</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1384)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">inline ↔ fullscreen; downloads only when the</tspan></text>
+    <text transform="matrix(1 0 0 1 238 1404)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">host advertises hostCapabilities.downloadFile</tspan></text>
+    <g id="arrow-13">
+      <g>
+        <path d="M640 1494.75 L1125 1494.75 L1125 1497.25 L640 1497.25 Z" fill="#1d4ed8"/>
+        <path d="M1130 1496 L1120 1501 L1120 1491 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="676" cy="1496" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 676 1501.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">13</tspan></text>
+    <text transform="matrix(1 0 0 1 698 1466)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  dialog_lab_results</tspan></text>
+    <text transform="matrix(1 0 0 1 698 1486)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">the model reads the stored submissions</tspan></text>
+    <path d="M1262 268 L1554 268 C1557.314 268 1560 270.686 1560 274 L1560 534 C1560 537.314 1557.314 540 1554 540 L1262 540 C1258.686 540 1256 537.314 1256 534 L1256 274 C1256 270.686 1258.686 268 1262 268 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <text transform="matrix(1 0 0 1 1270 294.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">The model sees only the tool result</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 312)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">(step 4); the app gets the same data</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 329.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">in step 7.</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 364.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">Hosts may read the resource (step 2)</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 382)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">ahead of time, as soon as tools/list</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 399.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">shows a resourceUri.</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 434.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">registerAppTool also writes the</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 452)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">deprecated flat key</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 469.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">_meta[&quot;ui/resourceUri&quot;] for older hosts.</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 504.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">The app follows hostContext.theme and</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 522)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">the host&apos;s CSS variables.</tspan></text>
+    <path d="M1262 990 L1554 990 C1557.314 990 1560 992.686 1560 996 L1560 1168.5 C1560 1171.814 1557.314 1174.5 1554 1174.5 L1262 1174.5 C1258.686 1174.5 1256 1171.814 1256 1168.5 L1256 996 C1256 992.686 1258.686 990 1262 990 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <text transform="matrix(1 0 0 1 1270 1016.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">App-only tools have</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1034)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">_meta.ui.visibility: [&quot;app&quot;]. The host</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1051.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">hides them from the model; the server</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1069)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">cannot enforce that, so to the server</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1086.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">they are ordinary tools.</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1121.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">The File upload card sends base64</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1139)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">through the app-only dialog_lab_upload</tspan></text>
+    <text transform="matrix(1 0 0 1 1270 1156.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="0">the same way (steps 8 to 10).</tspan></text>
+    <path d="M34 1554 L1566 1554 C1571.523 1554 1576 1558.477 1576 1564 L1576 1630 C1576 1635.523 1571.523 1640 1566 1640 L34 1640 C28.477 1640 24 1635.523 24 1630 L24 1564 C24 1558.477 28.477 1554 34 1554 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 44 1586)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#6d28d9"><tspan x="0" y="0">Second app:</tspan></text>
+    <text transform="matrix(1 0 0 1 160 1586)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">pick_color (src/colorPicker.ts, ui://feature-test/color-picker.html) runs steps 1 to 7 the same way; its result returns at once with a requestId.</tspan></text>
+    <text transform="matrix(1 0 0 1 160 1612)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">The answer comes back through the app-only pick_color_submit (steps 8 to 10), then ui/update-model-context and ui/message (11); the model can poll pick_color_result (13).</tspan></text>
+    <text transform="matrix(1 0 0 1 40 1690)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">Legend</tspan></text>
+    <g id="arrow-14">
+      <g>
+        <path d="M140 1682.75 L195 1682.75 L195 1685.25 L140 1685.25 Z" fill="#1d4ed8"/>
+        <path d="M200 1684 L190 1689 L190 1679 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 212 1690)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP request</tspan></text>
+    <g id="arrow-15">
+      <g>
+        <path d="M335.6 1682.75 L344.6 1682.75 L344.6 1685.25 L335.6 1685.25 Z M350.6 1682.75 L359.6 1682.75 L359.6 1685.25 L350.6 1685.25 Z M365.6 1682.75 L374.6 1682.75 L374.6 1685.25 L365.6 1685.25 Z M380.6 1682.75 L389.6 1682.75 L389.6 1685.25 L380.6 1685.25 Z" fill="#1d4ed8"/>
+        <path d="M395.6 1684 L385.6 1689 L385.6 1679 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 407.6 1690)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP result</tspan></text>
+    <g id="arrow-16">
+      <g>
+        <path d="M523.6 1682.75 L578.6 1682.75 L578.6 1685.25 L523.6 1685.25 Z" fill="#6d28d9"/>
+        <path d="M583.6 1684 L573.6 1689 L573.6 1679 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 595.6 1690)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP Apps message (postMessage)</tspan></text>
+    <g id="arrow-17">
+      <g>
+        <path d="M863.6 1682.25 L916.6 1682.25 L916.6 1685.75 L863.6 1685.75 Z" fill="#c2410c"/>
+        <path d="M923.6 1684 L909.6 1691 L909.6 1677 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 935.6 1690)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">carries the user&apos;s answer</tspan></text>
+    <circle cx="1179.6" cy="1684" r="14" fill="#374151" stroke="#ffffff" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 1179.6 1689.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">n</tspan></text>
+    <text transform="matrix(1 0 0 1 1203.6 1690)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">step, as in docs/architecture.md</tspan></text>
+  </g>
+</svg>

@@ -101,10 +101,12 @@ The diagrams live in [`docs/diagrams/`](diagrams/):
 | --- | --- | --- | --- |
 | Form mode | [elicitation-form-mode.vectorcraft](diagrams/elicitation-form-mode.vectorcraft) | [png](diagrams/elicitation-form-mode.png) | [svg](diagrams/elicitation-form-mode.svg) |
 | URL mode | [elicitation-url-mode.vectorcraft](diagrams/elicitation-url-mode.vectorcraft) | [png](diagrams/elicitation-url-mode.png) | [svg](diagrams/elicitation-url-mode.svg) |
+| Architecture overview ([architecture.md](architecture.md)) | [architecture-overview.vectorcraft](diagrams/architecture-overview.vectorcraft) | [png](diagrams/architecture-overview.png) | [svg](diagrams/architecture-overview.svg) |
+| MCP Apps flow ([architecture.md](architecture.md#mcp-apps-flow)) | [mcp-apps-flow.vectorcraft](diagrams/mcp-apps-flow.vectorcraft) | [png](diagrams/mcp-apps-flow.png) | [svg](diagrams/mcp-apps-flow.svg) |
 
 The `.vectorcraft` files are the editable sources (uncompressed JSON, VectorCraft 0.22 native format). Open one in VectorCraft, edit it, save it, and export again:
 
 - **PNG:** File › Export, format PNG, 1 pixel per point (1600 px wide), or the `export` tool with `format: "png", scale: 1`.
 - **SVG:** export as SVG with live text (the text uses the Inter font and falls back to `sans-serif`). Exporting with text outlined makes the file about 60 times larger.
 
-Keep the step numbers in the diagrams and in this page in sync.
+Keep the step numbers in the diagrams and in the pages that describe them (this page, and architecture.md for the MCP Apps flow) in sync.

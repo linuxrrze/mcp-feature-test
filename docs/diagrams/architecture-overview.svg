@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="958" viewBox="0 0 1600 958">
+  <title>architecture-overview</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <rect id="background" x="0" y="0" width="1600" height="958" fill="#ffffff"/>
+    <text transform="matrix(1 0 0 1 40 58)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="32" font-weight="bold" fill="#111827"><tspan x="0" y="0">mcp-feature-test: architecture overview</tspan></text>
+    <text transform="matrix(1 0 0 1 40 92)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="16.5" fill="#4b5563"><tspan x="0" y="0">Two transports and two protocol eras feed one server factory. Each connection or request gets its own McpServer; what must outlive it is kept at module level.</tspan></text>
+    <path d="M340 140 L860 140 C865.523 140 870 144.477 870 150 L870 280 C870 285.523 865.523 290 860 290 L340 290 C334.477 290 330 285.523 330 280 L330 150 C330 144.477 334.477 140 340 140 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 350 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/stdio.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 476 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">entry point: node dist/stdio.js</tspan></text>
+    <text transform="matrix(1 0 0 1 350 204)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">serveStdio(factory): era picked by the first message</tspan></text>
+    <text transform="matrix(1 0 0 1 350 228)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">one McpServer per connection</tspan></text>
+    <text transform="matrix(1 0 0 1 350 252)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">stdout is the protocol channel; logs go to stderr</tspan></text>
+    <text transform="matrix(1 0 0 1 350 276)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">printImageBanner() (src/banner.ts) at startup, to stderr</tspan></text>
+    <path d="M340 330 L860 330 C865.523 330 870 334.477 870 340 L870 674 C870 679.523 865.523 684 860 684 L340 684 C334.477 684 330 679.523 330 674 L330 340 C330 334.477 334.477 330 340 330 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 350 362)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/http.ts → src/httpServer.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 350 386)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">Streamable HTTP, default 127.0.0.1:3457 (PORT, HOST, PUBLIC_URL)</tspan></text>
+    <text transform="matrix(1 0 0 1 350 410)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">printImageBanner() (src/banner.ts) at startup; routes by path:</tspan></text>
+    <path d="M350 430 L850 430 C853.314 430 856 432.686 856 436 L856 650 C856 653.314 853.314 656 850 656 L350 656 C346.686 656 344 653.314 344 650 L344 436 C344 432.686 346.686 430 350 430 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <text transform="matrix(1 0 0 1 358 458)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#111827"><tspan x="0" y="0">GET /</tspan></text>
+    <text transform="matrix(1 0 0 1 498 458)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">plain-text status page</tspan></text>
+    <text transform="matrix(1 0 0 1 358 488)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#111827"><tspan x="0" y="0">/mcp</tspan></text>
+    <text transform="matrix(1 0 0 1 498 488)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">Host/Origin check, 413 body limit; by era:</tspan></text>
+    <text transform="matrix(1 0 0 1 372 518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#111827"><tspan x="0" y="0">2026-07-28</tspan></text>
+    <text transform="matrix(1 0 0 1 498 518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">createMcpHandler: server per request</tspan></text>
+    <text transform="matrix(1 0 0 1 372 548)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#111827"><tspan x="0" y="0">2025-era</tspan></text>
+    <text transform="matrix(1 0 0 1 498 548)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">Mcp-Session-Id → session map; initialize</tspan></text>
+    <text transform="matrix(1 0 0 1 498 578)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">creates server + transport (max 500, LRU)</tspan></text>
+    <text transform="matrix(1 0 0 1 358 608)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#111827"><tspan x="0" y="0">/flow/&lt;uuid&gt;</tspan></text>
+    <text transform="matrix(1 0 0 1 498 608)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">URL-elicitation pages (GET form, POST)</tspan></text>
+    <text transform="matrix(1 0 0 1 358 638)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#111827"><tspan x="0" y="0">other paths</tspan></text>
+    <text transform="matrix(1 0 0 1 498 638)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">404</tspan></text>
+    <path d="M1060 140 L1550 140 C1555.523 140 1560 144.477 1560 150 L1560 414 C1560 419.523 1555.523 424 1550 424 L1060 424 C1054.477 424 1050 419.523 1050 414 L1050 150 C1050 144.477 1054.477 140 1060 140 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2.5"/>
+    <text transform="matrix(1 0 0 1 1070 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827"><tspan x="0" y="0">createFeatureTestServer()</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 196)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">src/server.ts: the factory; returns a new McpServer</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 228)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">tools: inspect_client, list_seen_clients, elicit_*,</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 252)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">slow_task, return_files, upload_file_experimental</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 276)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP App Dialog Lab: open_dialog_lab, dialog_lab_*</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 300)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">prompt: try_all_dialogs</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 324)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">resources: ui://feature-test/dialog-lab.html,</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 348)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">test://files/{name} (sample files)</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 372)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">instrumentRequests(): logs every request&apos;s client</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 396)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">requestState verified with an HMAC codec</tspan></text>
+    <text transform="matrix(1 0 0 1 1054 454)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">modules used by server.ts (flows.ts also by httpServer.ts):</tspan></text>
+    <path d="M1058 468 L1289 468 C1293.418 468 1297 471.582 1297 476 L1297 534 C1297 538.418 1293.418 542 1289 542 L1058 542 C1053.582 542 1050 538.418 1050 534 L1050 476 C1050 471.582 1053.582 468 1058 468 Z" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 1064 492)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/clients.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 1064 513)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">capability log, seen-clients</tspan></text>
+    <text transform="matrix(1 0 0 1 1064 531)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">registry (list_seen_clients)</tspan></text>
+    <path d="M1321 468 L1552 468 C1556.418 468 1560 471.582 1560 476 L1560 534 C1560 538.418 1556.418 542 1552 542 L1321 542 C1316.582 542 1313 538.418 1313 534 L1313 476 C1313 471.582 1316.582 468 1321 468 Z" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 1327 492)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/files.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 1327 513)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">sample files, upload and</tspan></text>
+    <text transform="matrix(1 0 0 1 1327 531)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">body size limits</tspan></text>
+    <path d="M1058 558 L1289 558 C1293.418 558 1297 561.582 1297 566 L1297 624 C1297 628.418 1293.418 632 1289 632 L1058 632 C1053.582 632 1050 628.418 1050 624 L1050 566 C1050 561.582 1053.582 558 1058 558 Z" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 1064 582)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/flows.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 1064 603)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">URL-elicitation flows and</tspan></text>
+    <text transform="matrix(1 0 0 1 1064 621)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">the /flow/&lt;uuid&gt; pages</tspan></text>
+    <path d="M1321 558 L1552 558 C1556.418 558 1560 561.582 1560 566 L1560 624 C1560 628.418 1556.418 632 1552 632 L1321 632 C1316.582 632 1313 628.418 1313 624 L1313 566 C1313 561.582 1316.582 558 1321 558 Z" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 1327 582)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/log.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 1327 603)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">logger (stderr, text</tspan></text>
+    <text transform="matrix(1 0 0 1 1327 621)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">or JSON)</tspan></text>
+    <path d="M1060 656 L1550 656 C1555.523 656 1560 660.477 1560 666 L1560 742 C1560 747.523 1555.523 752 1550 752 L1060 752 C1054.477 752 1050 747.523 1050 742 L1050 666 C1050 660.477 1054.477 656 1060 656 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 1070 686)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/colorPicker.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 1240 686)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">second MCP App, registered by server.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 712)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">pick_color, pick_color_submit, pick_color_result</tspan></text>
+    <text transform="matrix(1 0 0 1 1070 736)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">ui://feature-test/color-picker.html; uses colorMath.ts</tspan></text>
+    <path d="M50 173 L250 173 C255.523 173 260 177.477 260 183 L260 247 C260 252.523 255.523 257 250 257 L50 257 C44.477 257 40 252.523 40 247 L40 183 C40 177.477 44.477 173 50 173 Z" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 150 203)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">stdio client</tspan></text>
+    <text transform="matrix(1 0 0 1 150 225)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">launches node dist/stdio.js</tspan></text>
+    <text transform="matrix(1 0 0 1 150 243)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">Claude Desktop, Claude Code …</tspan></text>
+    <path d="M50 391 L250 391 C255.523 391 260 395.477 260 401 L260 465 C260 470.523 255.523 475 250 475 L50 475 C44.477 475 40 470.523 40 465 L40 401 C40 395.477 44.477 391 50 391 Z" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 150 421)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">HTTP client</tspan></text>
+    <text transform="matrix(1 0 0 1 150 443)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">POST / GET / DELETE /mcp</tspan></text>
+    <text transform="matrix(1 0 0 1 150 461)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">Open WebUI, Inspector …</tspan></text>
+    <path d="M50 601 L250 601 C255.523 601 260 605.477 260 611 L260 675 C260 680.523 255.523 685 250 685 L50 685 C44.477 685 40 680.523 40 675 L40 611 C40 605.477 44.477 601 50 601 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
+    <text transform="matrix(1 0 0 1 150 631)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">Browser</tspan></text>
+    <text transform="matrix(1 0 0 1 150 653)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">opens the link from elicit_url</tspan></text>
+    <text transform="matrix(1 0 0 1 150 671)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">(not MCP)</tspan></text>
+    <path d="M34 786 L1566 786 C1571.523 786 1576 790.477 1576 796 L1576 864 C1576 869.523 1571.523 874 1566 874 L34 874 C28.477 874 24 869.523 24 864 L24 796 C24 790.477 28.477 786 34 786 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 44 818)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#b45309"><tspan x="0" y="0">Module-level state</tspan></text>
+    <text transform="matrix(1 0 0 1 212 818)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">outlives a per-request McpServer (2026-07-28 HTTP) and is shared by all connections; lost on restart:</tspan></text>
+    <text transform="matrix(1 0 0 1 212 846)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">Dialog Lab submissions (last 50) · colour requests (200, 1 h) · URL flows (1000, 1 h) · seen clients (200) · requestState HMAC key</tspan></text>
+    <g id="arrow-1">
+      <g>
+        <path d="M260 213.75 L325 213.75 L325 216.25 L260 216.25 Z" fill="#1d4ed8"/>
+        <path d="M330 215 L320 220 L320 210 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 270 205)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#111827"><tspan x="0" y="0">stdio</tspan></text>
+    <g id="arrow-2">
+      <g>
+        <path d="M260 431.75 L306 431.75 L307.25 431.75 L307.25 433 L307.25 483 L306 483 L306 481.75 L339 481.75 L339 484.25 L306 484.25 L304.75 484.25 L304.75 483 L304.75 433 L306 433 L306 434.25 L260 434.25 Z" fill="#1d4ed8"/>
+        <path d="M344 483 L334 488 L334 478 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 270 423)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#111827"><tspan x="0" y="0">:3457</tspan></text>
+    <g id="arrow-3">
+      <g>
+        <path d="M260 641.75 L306 641.75 L306 643 L304.75 643 L304.75 603 L304.75 601.75 L306 601.75 L339 601.75 L339 604.25 L306 604.25 L306 603 L307.25 603 L307.25 643 L307.25 644.25 L306 644.25 L260 644.25 Z" fill="#6d28d9"/>
+        <path d="M344 603 L334 608 L334 598 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <g id="arrow-4">
+      <g>
+        <path d="M870 214 L1046 214 L1046 216 L870 216 Z" fill="#374151"/>
+        <path d="M1050 215 L1042 219 L1042 211 Z" fill="#374151"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 884 205)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">per connection</tspan></text>
+    <g id="arrow-5">
+      <g>
+        <path d="M856 512 L910 512 L910 513 L909 513 L909 336 L909 335 L910 335 L1046 335 L1046 337 L910 337 L910 336 L911 336 L911 513 L911 514 L910 514 L856 514 Z" fill="#374151"/>
+        <path d="M1050 336 L1042 340 L1042 332 Z" fill="#374151"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 918 326)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">per request</tspan></text>
+    <g id="arrow-6">
+      <g>
+        <path d="M856 542 L940 542 L940 543 L939 543 L939 402 L939 401 L940 401 L1046 401 L1046 403 L940 403 L940 402 L941 402 L941 543 L941 544 L940 544 L856 544 Z" fill="#374151"/>
+        <path d="M1050 402 L1042 406 L1042 398 Z" fill="#374151"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 948 392)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">per session</tspan></text>
+    <g id="arrow-7">
+      <g>
+        <path d="M856 602 L970 602 L970 603 L969 603 L969 595 L969 594 L970 594 L1046 594 L1046 596 L970 596 L970 595 L971 595 L971 603 L971 604 L970 604 L856 604 Z" fill="#6d28d9"/>
+        <path d="M1050 595 L1042 599 L1042 591 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 40 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">Legend</tspan></text>
+    <g id="arrow-8">
+      <g>
+        <path d="M140 916.75 L195 916.75 L195 919.25 L140 919.25 Z" fill="#1d4ed8"/>
+        <path d="M200 918 L190 923 L190 913 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 212 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP traffic</tspan></text>
+    <g id="arrow-9">
+      <g>
+        <path d="M335.6 916.75 L390.6 916.75 L390.6 919.25 L335.6 919.25 Z" fill="#6d28d9"/>
+        <path d="M395.6 918 L385.6 923 L385.6 913 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 407.6 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">browser page (not MCP)</tspan></text>
+    <g id="arrow-10">
+      <g>
+        <path d="M614.8 916.75 L669.8 916.75 L669.8 919.25 L614.8 919.25 Z" fill="#374151"/>
+        <path d="M674.8 918 L664.8 923 L664.8 913 Z" fill="#374151"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 686.8 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">calls the server factory / module</tspan></text>
+    <path d="M982.6 907 L1016.6 907 C1019.361 907 1021.6 909.239 1021.6 912 L1021.6 924 C1021.6 926.761 1019.361 929 1016.6 929 L982.6 929 C979.839 929 977.6 926.761 977.6 924 L977.6 912 C977.6 909.239 979.839 907 982.6 907 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 1033.6 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">state kept at module level</tspan></text>
+  </g>
+</svg>
