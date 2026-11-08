@@ -67,6 +67,8 @@ On OK or Cancel the app tries three ways back, one after another, and shows the 
 2. `ui/update-model-context` with the answer: the model sees it on its next turn. The app shows *not supported by host* when the host answers `Method not found` (as Open WebUI does).
 3. `ui/message` "I picked #xxxxxx for: …" (or "I cancelled the colour picker for: …"): this starts the next turn, so the model reacts without the user typing anything. It is sent automatically after OK or Cancel; a checkbox in the picker turns it off. Model context is sent before the message, so the turn the message starts already sees it.
 
+If none of the three gets through (for example when the user refuses the host's confirmation of the tool call and the message is switched off), the picker says so and unlocks, so the user can answer again. In Open WebUI 0.13.2 the tool call and the message work (each behind a confirmation dialog) and model context does not ([verified](openwebui.md#colour-picker-pick_color)).
+
 A host without MCP Apps support shows only the text result; the model then knows that no picker appeared.
 
 ## Which one to use

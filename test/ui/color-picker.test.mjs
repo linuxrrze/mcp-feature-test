@@ -93,6 +93,33 @@ describe('Colour picker MCP App in a browser host', { skip }, () => {
         }
     });
 
+    it('unlocks for another try when nothing was delivered (host refused the tool call, no context, no message)', async () => {
+        const picker = await openColorPicker(browser, { args: { prompt: 'Door colour?' }, unsupported: ['ui/update-model-context'], refuseToolCalls: 1 });
+        try {
+            const { app } = picker;
+            await app.locator('#tell').uncheck();
+            await app.locator('#ok').click();
+            await app.locator('#status.err').waitFor();
+            assert.equal(await state(picker, 'server'), 'err');
+            assert.match(await app.locator('#status').textContent(), /could not be delivered.*Try again/);
+            assert.doesNotMatch(await app.locator('#status').textContent(), /✅/);
+            assert.equal(await app.locator('#ok').isDisabled(), false, 'OK is enabled again');
+            assert.equal(await app.locator('#tell').isDisabled(), false);
+            let r = await picker.client.callTool({ name: 'pick_color_result', arguments: { requestId: picker.requestId } });
+            assert.equal(r.structuredContent.status, 'waiting');
+
+            await app.locator('#ok').click();
+            await app.locator('#status.ok').waitFor();
+            assert.equal(await state(picker, 'server'), 'ok');
+            assert.equal(await app.locator('#ok').isDisabled(), true);
+            r = await picker.client.callTool({ name: 'pick_color_result', arguments: { requestId: picker.requestId } });
+            assert.equal(r.structuredContent.status, 'picked');
+            assert.deepEqual(picker.errors, []);
+        } finally {
+            await picker.close();
+        }
+    });
+
     for (const theme of ['light', 'dark']) {
         it(`follows the host theme (${theme})`, async () => {
             const picker = await openColorPicker(browser, { theme });

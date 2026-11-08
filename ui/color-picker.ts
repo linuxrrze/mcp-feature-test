@@ -153,10 +153,16 @@ async function answer(action: 'accept' | 'cancel') {
     }
 
     const delivered = ['server', 'context', 'message'].some(id => $(`r-${id}`).dataset.state === 'ok');
-    setStatus(
-        (action === 'accept' ? `✅ You picked ${color}.` : 'Cancelled.') + (delivered ? '' : ' The answer could not be delivered (see below).'),
-        delivered ? 'ok' : 'err'
-    );
+    if (delivered) {
+        setStatus(action === 'accept' ? `✅ You picked ${color}.` : 'Cancelled.', 'ok');
+        return;
+    }
+    // Nothing got through (e.g. the user refused the host's tool-call confirmation): unlock so they can try again.
+    answered = false;
+    for (const el of [colorEl, hexEl, tellEl]) el.disabled = false;
+    document.querySelectorAll<HTMLButtonElement>('#presets button').forEach(b => (b.disabled = false));
+    refresh();
+    setStatus(`${action === 'accept' ? `You picked ${color}, but` : 'Cancelled, but'} the answer could not be delivered (see below). Try again.`, 'err');
 }
 
 okBtn.onclick = () => void answer('accept');

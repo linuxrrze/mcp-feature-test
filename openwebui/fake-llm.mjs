@@ -7,16 +7,27 @@
  * Endpoints: GET /v1/models, POST /v1/chat/completions (stream and non-stream).
  *
  * Behaviour (only looks at the LAST message):
- *  - user message containing `call <tool_name> {json args}` (args optional) and the
+ *  - user message containing `call <tool_name> {json args}` (args optional; typographic
+ *    quotes from Open WebUI's input box are turned back into ") and the
  *    request offers a tool whose function name equals or ends with <tool_name>
  *      → assistant message with exactly one tool call to that tool
- *  - last message is a tool result
+ *    A `{"$generateFile": N}` value anywhere in the args is replaced by a generated
+ *    FileInput object (N pseudo-random bytes as inline base64, with size and sha-256
+ *    digest), so large x-mcp-file uploads need not be typed into the chat.
+ *  - user message "I picked #rrggbb for: …" / "I cancelled the colour picker for: …"
+ *    (the colour picker's ui/message) and pick_color_result is offered
+ *      → a tool call to pick_color_result (what a real model should do next)
+ *  - last message is a tool result (or the user message with the result's images that
+ *    Open WebUI appends right after it)
  *      → plain text "Tool result: <first 600 chars>"
  *  - anything else (incl. Open WebUI background tasks: title, tags, follow-ups)
  *      → short fixed text, so the background tasks finish quickly
  *
- * Every request is logged to stderr as one JSON line (model, last role, tool names).
+ * Every request is logged to stderr as one JSON line (model, last role, tool names, and
+ * the shape of every message after the last user message, i.e. what the model was
+ * given from tool results: roles, content part types, lengths, first 300 chars).
  */
+import { createHash, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 
 const PORT = Number(process.env.PORT ?? 3601);
@@ -31,18 +42,59 @@ function textOf(content) {
 
 let counter = 0;
 
+/** Replace {"$generateFile": N} values with a generated inline FileInput (x-mcp-file draft shape). */
+function expandGenerated(v) {
+    if (Array.isArray(v)) return v.map(expandGenerated);
+    if (v && typeof v === 'object') {
+        if (Number.isSafeInteger(v.$generateFile)) {
+            const bytes = randomBytes(v.$generateFile);
+            return {
+                id: `gen-${v.$generateFile}`,
+                name: `generated-${v.$generateFile}.bin`,
+                mimeType: 'application/octet-stream',
+                size: bytes.length,
+                digest: { algorithm: 'sha-256', value: createHash('sha256').update(bytes).digest('base64url') },
+                data: bytes.toString('base64')
+            };
+        }
+        return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, expandGenerated(x)]));
+    }
+    return v;
+}
+
+/** Compact description of what the model was given after the last user turn. */
+function shapeOfTail(messages) {
+    let i = messages.length - 1;
+    while (i > 0 && !messages[i].tool_calls) i--;
+    return messages.slice(i).map(m => ({
+        role: m.role,
+        ...(m.tool_calls && { toolCalls: m.tool_calls.map(c => c.function?.name) }),
+        parts: Array.isArray(m.content)
+            ? m.content.map(p => ({ type: p.type, len: JSON.stringify(p).length, head: (p.text ?? p.image_url?.url ?? '').slice(0, 300) }))
+            : [{ type: typeof m.content, len: String(m.content ?? '').length, head: String(m.content ?? '').slice(0, 300) }]
+    }));
+}
+
 function decide(body) {
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const last = messages[messages.length - 1] ?? {};
     const tools = Array.isArray(body.tools) ? body.tools : [];
     const toolNames = tools.map(t => t?.function?.name).filter(Boolean);
 
-    if (last.role === 'tool') {
-        const t = textOf(last.content);
-        return { text: `Tool result: ${t.length > 600 ? `${t.slice(0, 600)}…` : t}` };
+    // Open WebUI forwards image blocks of a tool result as an extra user message right after it.
+    const prev = messages[messages.length - 2] ?? {};
+    const followUp = last.role === 'user' && prev.role === 'tool';
+    if (last.role === 'tool' || followUp) {
+        const t = textOf((followUp ? prev : last).content);
+        const extra = followUp ? ` [+ follow-up user message with ${Array.isArray(last.content) ? last.content.map(p => p.type).join(', ') : 'text'}]` : '';
+        return { text: `Tool result: ${t.length > 600 ? `${t.slice(0, 600)}…` : t}${extra}` };
     }
     if (last.role === 'user') {
         const t = textOf(last.content);
+        if (/^I (picked #[0-9a-f]{6}|cancelled the colour picker) for: /i.test(t.trim())) {
+            const name = toolNames.find(n => n.endsWith('pick_color_result'));
+            if (name) return { toolCall: { id: `call_${Date.now()}_${++counter}`, name, arguments: '{}' } };
+        }
         const m = /\bcall\s+([A-Za-z0-9_.:-]+)\s*(\{[\s\S]*\})?/.exec(t);
         if (m && toolNames.length) {
             const wanted = m[1];
@@ -51,7 +103,8 @@ function decide(body) {
                 let args = {};
                 if (m[2]) {
                     try {
-                        args = JSON.parse(m[2]);
+                        // Open WebUI's rich-text chat input turns " into “ ” (typographic quotes).
+                        args = expandGenerated(JSON.parse(m[2].replace(/[\u201c\u201d\u201e]/g, '"')));
                     } catch {
                         /* keep {} */
                     }
@@ -98,7 +151,10 @@ const server = createServer(async (req, res) => {
                 lastRole: last.role,
                 last: textOf(last.content).slice(0, 120),
                 tools: (body.tools ?? []).map(t => t?.function?.name),
-                decision: d.toolCall ? `tool:${d.toolCall.name}` : 'text'
+                decision: d.toolCall ? `tool:${d.toolCall.name}` : 'text',
+                xMcpFileTools: (body.tools ?? []).filter(t => JSON.stringify(t).includes('x-mcp-file')).map(t => t?.function?.name),
+                ...((body.messages ?? []).some(m => m.role === 'tool') && { tail: shapeOfTail(body.messages ?? []) }),
+                ...(d.toolCall && { argsLength: d.toolCall.arguments.length })
             })
         );
         const id = `chatcmpl-${Date.now()}`;

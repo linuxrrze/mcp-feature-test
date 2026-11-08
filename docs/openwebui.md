@@ -13,9 +13,10 @@ In short:
 - **MCP Apps** (`io.modelcontextprotocol/ui`, `text/html;profile=mcp-app`) are rendered inline in the chat since **0.13.0** (2026-11-02). Since **0.13.1**, apps can also post `ui/message`.
   - Supported: `tools/call` (always behind a confirmation dialog), `resources/read` and `resources/list`, `ui/open-link`, `ui/message` (behind a confirmation dialog), size changes, and `ui/request-display-mode`, which always answers `inline`.
   - Not supported: `ui/update-model-context` and `ui/download-file` return *Method not found*. Fullscreen and PiP don't exist.
+- **Files:** `image` blocks are shown in the chat and given to the model. Embedded image blobs go to the model only. Embedded text (CSV) reaches the model as text. A PDF blob becomes a placeholder line. `audio` is stored but not shown. `resource_link` is dropped. App uploads through `tools/call` work up to at least 30 MiB (each needs a confirmation that prints the whole base64). Non-spec form fields degrade to text boxes or "Unsupported input format"; Open WebUI never refuses them.
 - **Not supported:** sampling, roots, progress notifications, log messages (`notifications/message`), `notifications/elicitation/complete`, and MCP-UI (`@mcp-ui`) resources.
 - Through **mcpo**, every interactive feature is lost. The client declares no capabilities, and resources (and with them MCP Apps) are not proxied.
-- **Automated tests and screenshots are feasible and built.** `openwebui/` holds a script-based harness: Open WebUI from pip, a deterministic fake LLM, a JSON-RPC trace proxy and a Playwright driver. All 11 scenarios pass, and the screenshots below come from it.
+- **Automated tests and screenshots are feasible and built.** `openwebui/` holds a script-based harness: Open WebUI from pip, a deterministic fake LLM, a JSON-RPC trace proxy and a Playwright driver. All 20 scenarios pass, and the screenshots below come from it.
 
 Contents:
 
@@ -59,20 +60,22 @@ Legend for the evidence column:
 | Progress (`notifications/progress`) | No. Open WebUI sends no `progressToken`. | – | verified (`slow_task` reports "Client did not request progress") |
 | Logging (`notifications/message`, `logging/setLevel`) | Not shown. The server's log notifications are received and dropped, and `setLevel` is never sent. | – | verified (trace shows `notifications/message`, no UI) |
 | Server `instructions` | Yes. Appended to the system prompt as `MCP server "<id>" instructions:`. | (version not checked) | docs; source (`client.instructions`) |
-| `structuredContent` | Passed to the model as JSON text when it differs from the text blocks | 0.12.0 | docs; verified (tool results contain the JSON) |
+| `structuredContent` | Passed to the model as JSON text when it differs from the text blocks. A result with several items reaches the model (and the chat) as one JSON string `{"results": [<text 1>, <text 2>, …, <structuredContent>]}`; text that is itself JSON is parsed first. | 0.12.0 | docs; verified (every tool result in the harness); source `process_tool_result` in `utils/middleware.py` |
 | Tool `_meta.ui.visibility` | Respected. App-only tools (`dialog_lab_submit`) are hidden from the model. Tools without `app` can't be called by apps. | 0.13.0 | verified (the fake LLM's tool list never contains `dialog_lab_submit`) |
-| **MCP Apps** (`_meta.ui.resourceUri` → `ui://`, `text/html;profile=mcp-app`) | **Yes.** Rendered inline under the tool call in a sandboxed `srcdoc` iframe (`allow-scripts allow-downloads allow-popups`, opaque origin, CSP from `_meta.ui.csp` plus `IFRAME_CSP`, 5 MB maximum). Needs a stable `WEBUI_SECRET_KEY`. Declared as the extension `io.modelcontextprotocol/ui` with `mimeTypes: ["text/html;profile=mcp-app"]`. | 0.13.0 (2026-11-02) | verified (`open_dialog_lab` renders the Dialog Lab); source `MCPApp.svelte`, `utils/mcp/apps.py` |
-| App → host `tools/call` | Yes, **every call needs user confirmation** in a "Tool call" dialog | 0.13.0 | verified |
+| **MCP Apps** (`_meta.ui.resourceUri` → `ui://`, `text/html;profile=mcp-app`) | **Yes.** Rendered inline under the tool call in a sandboxed `srcdoc` iframe (`allow-scripts allow-downloads allow-popups`, opaque origin, CSP from `_meta.ui.csp` plus `IFRAME_CSP`, 5 MB maximum). Needs a stable `WEBUI_SECRET_KEY`. Declared as the extension `io.modelcontextprotocol/ui` with `mimeTypes: ["text/html;profile=mcp-app"]`. The app sees `hostInfo` `Open WebUI 0.13.2` and `hostCapabilities` `{openLinks, serverTools, serverResources, sandbox: {csp}, message: {text}}`: no `updateModelContext`, no `downloadFile`. | 0.13.0 (2026-11-02) | verified (`open_dialog_lab`, `pick_color`; the picker's debug panel shows the host info); source `MCPApp.svelte`, `utils/mcp/apps.py` |
+| App → host `tools/call` | Yes, **every call needs user confirmation** in a "Tool call" dialog. The dialog prints the full arguments, base64 file data included. *Cancel* makes the call fail in the app with the error "Tool call cancelled". | 0.13.0 | verified (`open_dialog_lab`, `pick_color_deny`, `dialog_lab_files`) |
 | App → host `ui/message` | Yes, after a "Confirm Prompt from Embed" dialog. Text only. The text is submitted as the user's next chat message. | 0.13.1 (PR #33907) | verified |
 | App → host `ui/update-model-context` | **No** (`Method not found`) | – | verified |
 | App → host `ui/request-display-mode` | Answers `inline` (only `availableDisplayModes: ["inline"]`) | 0.13.0 | verified ("Display mode is now: inline") |
 | App → host `ui/download-file` | **No** (`Method not found`) | – | verified |
 | App → host `ui/open-link`, `resources/read` / `resources/list` | Yes. Links are http(s) only. | 0.13.0 | source |
-| Tool result `image` / `audio` content (`return_files`) | Shown in the chat | – | source (research pass); **not verified live** with `return_files` |
-| Tool result embedded `resource` with `text` | Passed to the model as text, not offered as a file | – | source; not verified live |
-| Tool result embedded `resource` with `blob` | Image blobs are shown; other blobs (the PDF) become placeholder text | – | source; not verified live |
-| Tool result `resource_link` | **Silently dropped** (neither shown nor read) | – | source; not verified live |
-| Files to the server | No MCP mechanism (the spec has none). The Dialog Lab's upload goes through app → host `tools/call`, which works but needs the confirmation dialog; the size limit between iframe and backend is unknown | 0.13.0 | inferred from the `tools/call` row; not verified live |
+| Tool result `image` content | Stored as an Open WebUI file, **shown in the chat** and given to the model (as an extra user message with `image_url` parts) | – | verified (`return_files`) |
+| Tool result `audio` content | Stored as an Open WebUI file, but **not shown** (no player, no link) and not given to the model | – | verified (`return_files`: the file is in the message's `files`, the DOM has no `<audio>`) |
+| Tool result embedded `resource` with `text` | Passed to the model as text, not offered as a file | – | verified (`return_files`: the CSV is the second item of `results`) |
+| Tool result embedded `resource` with `blob` | Image blobs go **to the model only**, not into the chat. Other blobs (the PDF) become the text `[Resource: <uri>] (binary data, mimeType: …)` | – | verified (`return_files`); source comment "Data-URI images: LLM only" |
+| Tool result `resource_link` | **Silently dropped** (neither shown nor read with `resources/read`) | – | verified (`return_files`: no trace in chat, model input or MCP trace) |
+| Files to the server | No MCP mechanism (the spec has none). The Dialog Lab's upload goes through app → host `tools/call`: works up to at least **30 MiB** (Open WebUI forwarded 40 MB of JSON; this server's 413 stopped it), always behind the confirmation dialog. Model-made inline base64 (`upload_file_experimental`) works too (10 MiB tested) | 0.13.0 | verified (`dialog_lab_files`, `upload_file_experimental`) |
+| Elicitation schemas outside the spec | Never refused. `pattern`, unknown formats (`color`, `time`, `data-url`) → plain text box. Nested object, free-text array → "Unsupported input format" (Cancel/Decline only). Values that break `pattern` are cancelled, not sent | 0.12.0 | verified (`elicit_format_probe*`, both eras) |
 | Host → app `ui/notifications/tool-input`, `tool-result`, `host-context-changed`, `resource-teardown` | Yes. Host context: `theme`, `platform: web`, `displayMode: inline`, `locale`, `timeZone`, `toolInfo`, `containerDimensions`. | 0.13.0 | source; verified (the app shows the light theme and tool result) |
 | Apps needing `localStorage` / same origin | No (the `srcdoc` iframe is opaque) | – | source comment in `MCPApp.svelte` |
 | MCP-UI (`@mcp-ui`, `rawHtml` / `externalUrl` / `remoteDom` resources) | **No** | – | source (no matches); inferred: such resources only reach the model as text |
@@ -157,35 +160,91 @@ The Dialog Lab rendered inline:
 | `tools/call dialog_lab_submit` | A "Tool call" confirmation dialog appears ([screenshot](images/openwebui-mcp-app-toolcall-confirm.png)). After *Confirm*, the app shows "✅ Stored submission #1". |
 | `ui/update-model-context` | `Method not found` |
 | `ui/request-display-mode` (fullscreen) | Answer `inline` |
-| `ui/download-file` | `Method not found` |
+| `ui/download-file` | `Method not found` (seen with an earlier Dialog Lab; the current one disables its download buttons because Open WebUI does not advertise `downloadFile`) |
 | `ui/message` | A "Confirm Prompt from Embed" dialog appears ([screenshot](images/openwebui-mcp-app-message-confirm.png)), then the text is sent as the next user message ([screenshot](images/openwebui-mcp-app-after-message.png)). |
 
 The app runs from an opaque `srcdoc` origin. Every app request goes through the Open WebUI backend (`POST /api/v1/tools/id/server:mcp:<id>/mcp/app/rpc`), authenticated with the user's token plus an HMAC binding to the server and tool. That backend opens a fresh MCP connection without the elicitation capability for each request, so **a tool called from an app cannot elicit**.
 
-### Files (expected behaviour, not yet verified live)
+### Colour picker (`pick_color`)
 
-The file tools were added after the hands-on run above. Everything in this subsection comes from **reading the `v0.13.2` source** (and from the rows above for `tools/call` and `ui/download-file`); none of it has been observed in a running Open WebUI yet. The harness has no scenarios for these tools.
+Verified with the scenarios `pick_color`, `pick_color_cancel` and `pick_color_deny`, on both the 2026-07-28 and the 2025-11-25 connection (same results).
 
-| Tool / feature | Expected in Open WebUI 0.13.2 | Evidence |
+![pick_color in Open WebUI](images/openwebui-pick-color.png)
+
+| Step | Result in Open WebUI 0.13.2 | Evidence |
 |---|---|---|
-| `return_files` | The text list, the PNG `image` block and the WAV `audio` block appear in the chat. The embedded PNG blob is shown as an image too. The CSV text reaches the model as text. The PDF blob becomes placeholder text. The `resource_link` (block 5) is dropped without a trace, so `linked-notes.md` is never read. Compare with the list in block 1. | source |
-| Dialog Lab **downloads** | All three buttons are disabled with the note "host did not advertise hostCapabilities.downloadFile": Open WebUI answers `ui/download-file` with *Method not found* and does not advertise it. | source + the verified `ui/download-file` row |
-| Dialog Lab **File upload** | Each upload triggers the "Tool call" confirmation dialog (as every app `tools/call` does). Small files should come back with size and SHA-256. Where large files fail (Socket.IO / HTTP limits between the iframe, the frontend and `/mcp/app/rpc`) is exactly what the 100 KB / 1 MB / 10 MB probe is for. If the server logs neither `upload.received` nor `upload.rejected`, the request died in Open WebUI. | inferred |
-| `elicit_format_probe` | The elicitation dialog renders known field types and shows "Unsupported input format" (Cancel/Decline only) for types it can't render, so the nested object and free-text array should land there. Unknown formats (`color`, `time`, `data-url`) are probably shown as plain text boxes. Answers are validated with `Draft202012Validator` and a format checker before they are sent, so a value that doesn't match `pattern` should be cancelled rather than sent. Because Open WebUI doesn't refuse the requests outright, a full `all` run should be possible, unlike with the TypeScript SDK client. | source (`ElicitationDialog.svelte`, `MCPClient.elicit`); per-probe outcome inferred |
-| `upload_file_experimental` | No file picker (Open WebUI does not implement the draft files extension). The model sees a tool with an object argument and could only fill it with inline base64 itself. | inferred (no `x-mcp-file` in the source) |
-#### Colour picker (`pick_color`): expected behaviour, not yet verified
+| `pick_color` | The picker renders inline under the tool call with the prompt and initial colour from the tool input; OK is enabled once the tool result with the `requestId` arrives. The model gets the text plus `structuredContent` (`requestId`, `prompt`, `initial`). | verified |
+| OK → `tools/call pick_color_submit` | A "Tool call" confirmation dialog showing `{requestId, color, action}` ([screenshot](images/openwebui-pick-color-toolcall-confirm.png)). After *Confirm* the picker reports *Server: stored*. The call goes through `/mcp/app/rpc` on a fresh MCP connection that declares only the UI extension. | verified (trace) |
+| `ui/update-model-context` | `Method not found`; the picker reports *not supported by host*. Open WebUI does not advertise `updateModelContext`. | verified |
+| `ui/message` (checkbox on, the default) | A "Confirm Prompt from Embed" dialog with "I picked #ec4899 for: …" (below), then the text is sent as the next user message and starts the model's next turn. | verified |
+| `pick_color_result` | Returns the stored answer ("The user picked #ec4899 for …" plus `status: picked`). Server state is module-level, so Open WebUI's per-request MCP connections don't lose it. | verified (the harness's fake LLM calls it in reply to the picker's message, as a real model should) |
+| Cancel, checkbox off | Only `pick_color_submit` (`action: cancel`, `color: null`) after the confirmation; no prompt dialog. `pick_color_result` on the next turn: "The user cancelled …". | verified (`pick_color_cancel`) |
+| *Cancel* in Open WebUI's "Tool call" dialog | The app gets the error "Tool call cancelled"; nothing reaches the server. With the message checkbox off nothing was delivered at all, so the picker unlocks for another try (fixed in this round, see below); the retry is stored normally. | verified (`pick_color_deny`) |
 
-`pick_color` has **not** been run against Open WebUI yet, and the harness in `openwebui/` has no scenario for it. Based on the Dialog Lab results above, this is what should happen:
+![picker message confirmation](images/openwebui-pick-color-message-confirm.png)
 
-| Step | Expected in Open WebUI 0.13.2 |
-|---|---|
-| `pick_color` | The picker renders inline under the tool call; the tool result text tells the model to wait. |
-| OK → `tools/call pick_color_submit` | A "Tool call" confirmation dialog; after *Confirm* the picker reports *Server: stored*. |
-| `ui/update-model-context` | `Method not found`; the picker reports *not supported by host*. |
-| `ui/message` (checkbox on, the default) | A "Confirm Prompt from Embed" dialog, then "I picked #xxxxxx for: …" is sent as the next user message, which starts the model's next turn. This is the only channel that tells the model without the user typing. |
-| `pick_color_result` | Returns the stored answer. Server state is module-level, so the per-request MCP connections of Open WebUI don't lose it. |
+So in Open WebUI the user confirms **twice** per answer (tool call and message). Unchecking *Also tell the assistant* leaves only the server-side answer, which the model sees when it calls `pick_color_result` on a later turn. The final state, with the model's `pick_color_result` call after the message: [screenshot](images/openwebui-pick-color-result.png).
 
-So in Open WebUI the user confirms twice per answer. Unchecking *Also tell the assistant* leaves only the server-side answer, which the model sees only when it calls `pick_color_result` on a later turn.
+**Fixed in the picker:** before, a refused tool call with no other channel left the picker locked with "✅ You picked … The answer could not be delivered", so the user could not answer at all. Now, when none of the three channels got through, the status says so without the check mark and the controls are enabled again (UI test *unlocks for another try* in `test/ui/color-picker.test.mjs`).
+
+### Files
+
+Verified with `return_files`, `dialog_lab_files` and `upload_file_experimental` (both connections, same results), the JSON-RPC trace, the server log and the fake LLM's request log (which records what the model was given).
+
+#### `return_files`: what the chat shows and what the model gets
+
+![return_files in Open WebUI](images/openwebui-return-files.png)
+
+| Block | Chat | Model | Evidence |
+|---|---|---|---|
+| 1 text (the list) | In the expandable "View Result" block ([screenshot](images/openwebui-return-files-expanded.png)) | Yes, first item of `{"results": [...]}` | verified |
+| 2 embedded text resource (CSV) | Only as text inside "View Result" | Yes, as text (second item) | verified |
+| 3 embedded blob, PNG | **No** | Yes, as an image | verified; source: "Data-URI images: LLM only" |
+| 4 embedded blob, PDF | Only the placeholder line | Placeholder `[Resource: test://files/sample.pdf] (binary data, mimeType: application/pdf)` | verified |
+| 5 `resource_link` (`linked-notes.md`) | **Dropped** | **Dropped**; no `resources/read` in the trace | verified; source (`process_tool_result` has no branch for it) |
+| 6 `image` | **Yes**, a thumbnail under the tool call (stored as `/api/v1/files/<id>`) | Yes, as an image | verified |
+| 7 `audio` (WAV) | **No**: stored as an Open WebUI file and listed in the message's `files`, but no player or link is rendered | No | verified (chat JSON via `GET /api/v1/chats/<id>`, DOM) |
+| `structuredContent` | Last item of `results` | Yes, as JSON | verified |
+
+The images reach the model in an extra **user** message appended after the tool message: *"Here are the images from the tool results above. Please analyze them."* with two `image_url` parts (blocks 3 and 6). Models that only expect a tool message after a tool call see an extra user turn.
+
+#### Dialog Lab: upload card and download buttons
+
+![Dialog Lab files card in Open WebUI](images/openwebui-dialog-lab-files.png)
+
+| Feature | Result in Open WebUI 0.13.2 | Evidence |
+|---|---|---|
+| Download buttons (JSON, sketch PNG, linked PDF) | All three **disabled**, with the note "the host did not advertise hostCapabilities.downloadFile". | verified |
+| Upload 100 KiB | "Tool call" confirmation, then size and SHA-256 match (about 0.4 s after confirming). | verified; server log `upload.received` |
+| Upload 1 MiB | Same, about 0.9 s. | verified |
+| Upload 10 MiB (the server's `UPLOAD_MAX_BYTES`) | Same, about 4.3 s; 13.98 MB JSON-RPC request in the trace. | verified |
+| Upload 10 MiB + 1 byte | Reaches the server; the app shows the server's rejection ("above the limit … UPLOAD_MAX_BYTES"). | verified; `upload.rejected` |
+| Upload 30 MiB | Open WebUI forwards the whole 41.9 MB request; this server answers **413** (body limit). The app shows "MCP app request failed"; Open WebUI logs `MCP app request failed: MCPError` and answers `/mcp/app/rpc` with 502. Open WebUI's own limit is therefore above 30 MiB. | verified (trace, server and Open WebUI logs) |
+
+The confirmation dialog prints the **entire base64 string**, so it overflows the window for anything but tiny files; the *Confirm* button stays reachable at the bottom ([screenshot](images/openwebui-dialog-lab-upload-confirm.png)). The browser slows down noticeably at 10 MiB.
+
+#### `upload_file_experimental` (draft `x-mcp-file`)
+
+| Case | Result | Evidence |
+|---|---|---|
+| Tool schema | Passed to the model unchanged, `x-mcp-file` keyword included. Open WebUI has no file picker for it and does not declare the files extension. | verified (fake LLM log `xMcpFileTools`) |
+| 5-byte file, inline base64 written by the "model" | Accepted, SHA-256 returned. | verified |
+| 100 KiB, 1 MiB, 10 MiB with digest | Accepted, digest verified; Open WebUI passes 14 MB of tool arguments through without complaint. | verified (trace: 13.98 MB `tools/call`) |
+
+A real model would have to produce the base64 itself, so in practice this only works for tiny files.
+
+#### `elicit_format_probe`: non-spec form fields
+
+Every probe was shown; **Open WebUI refused none**. Same on 2026-07-28 (`input_required`) and 2025-11-25 (`elicitation/create`), and `variant: "all"` runs all six dialogs in one tool call.
+
+| Probe | Rendered as | Answer that reaches the server | Evidence |
+|---|---|---|---|
+| `pattern` (`^[A-Z]{3}-[0-9]{3}$`) | Plain text box, prefilled with the default; no `pattern` attribute | `"ABC-123"` (string). A value that breaks the pattern (`not-a-code`) is **cancelled** by Open WebUI's server-side schema check; the browser does not stop it | verified (`elicit_format_probe_pattern_invalid`) |
+| `color` | Plain text box with `#4f46e5` (no colour picker, [screenshot](images/openwebui-format-probe-color.png)) | `"#4f46e5"` | verified |
+| `time` | Plain text box with `12:30:00` | `"12:30:00"` | verified |
+| `nested_object` | "Unsupported input format", only Cancel and Decline ([screenshot](images/openwebui-format-probe-nested-object.png)) | `decline` / `cancel` | verified |
+| `free_array` | "Unsupported input format", only Cancel and Decline | `decline` / `cancel` | verified |
+| `file` (`format: data-url`, `contentMediaType`) | Plain empty text box, no file picker | Empty → field omitted; a typed `data:` URL is passed through as a string | verified |
 
 ## 4. mcpo: what is lost
 
@@ -250,9 +309,12 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
   - **2025-11-25:** wait for the flow and send `notifications/elicitation/complete`.
 
   This server waits for the page after `accept` (both tools, both eras), sends progress heartbeats while it waits if the client asked for progress, gives up with an error after `FLOW_WAIT_MS` (default 300000 ms), and stops waiting when the call is cancelled.
-- **No `ui/update-model-context`.** Use `ui/message` (which needs user confirmation) or `tools/call` into an app-only tool that stores the data, as `dialog_lab_submit` and `dialog_lab_results` do here. Both work in Open WebUI. `pick_color` tries all three and reports which worked (not yet verified in Open WebUI).
+- **No `ui/update-model-context`.** Use `ui/message` (which needs user confirmation) or `tools/call` into an app-only tool that stores the data, as `dialog_lab_submit` and `dialog_lab_results` do here. Both work in Open WebUI. `pick_color` tries all three and reports which worked: in Open WebUI the tool call and the message get through (each after a confirmation), model context does not.
 - **No fullscreen.** Design apps for inline width. The iframe grows to the reported height, 100–10000 px.
 - **No browser storage in apps.** The iframe has an opaque origin.
+- **Files in tool results:** use an `image` block for pictures the user should see (embedded image blobs reach only the model). Don't rely on `resource_link` (dropped) or `audio` (not shown). Put text files inline as embedded text resources; other binaries arrive only as a placeholder line, so offer a URL in the text instead.
+- **Uploads from an app** work through app-only tools, but every call shows a confirmation dialog with the full arguments. For anything above a few KB, consider uploading out of band (an HTTP endpoint of your server) and passing only an id through `tools/call`.
+- **Non-spec form fields** are tolerated: unknown formats become text boxes, and Open WebUI validates `pattern` server-side. Nested objects and free-text arrays can't be answered (Decline/Cancel only), so keep forms flat.
 - **Elicitation only works in an interactive browser chat.** Tools that elicit should degrade gracefully when the capability is absent (API usage, app-initiated calls, mcpo).
 - **Every chat turn is a fresh MCP session or connection.** Keep state server-side by key, or with the 2026-07-28 `requestState`.
 
@@ -263,8 +325,8 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
 | File | Purpose |
 |---|---|
 | `openwebui/start.sh` / `stop.sh` | Installs `open-webui==$OWUI_VERSION` (default 0.13.2) into `$OWUI_VENV` if it's missing, then starts the MCP server (:3600), the fake LLM (:3601), Open WebUI (:3602, `WEBUI_AUTH=False`, connections via `TOOL_SERVER_CONNECTIONS`, `ENABLE_PERSISTENT_CONFIG=False`) and two trace proxies (:3603 modern, :3604 `FORCE_LEGACY=1`). Finally it runs `setup.mjs`. State and logs go to `$WORK` (default `/tmp/owui-mcp-test`). |
-| `openwebui/fake-llm.mjs` | Dependency-free OpenAI-compatible endpoint (`/v1/models`, `/v1/chat/completions`, streaming and non-streaming). `call <tool> {json}` in the last user message produces exactly one tool call to the offered tool whose name ends with `<tool>`. A tool result produces the text "Tool result: …". |
-| `openwebui/mcp-trace-proxy.mjs` | Logging reverse proxy. Prints one JSON line per JSON-RPC message (method, protocol version, capabilities, `_meta` envelope, `resultType`, `inputRequests`). `FORCE_LEGACY=1` refuses `server/discover` to force the 2025-11-25 handshake. |
+| `openwebui/fake-llm.mjs` | Dependency-free OpenAI-compatible endpoint (`/v1/models`, `/v1/chat/completions`, streaming and non-streaming). `call <tool> {json}` in the last user message produces exactly one tool call to the offered tool whose name ends with `<tool>` (typographic quotes from Open WebUI's input box are turned back into `"`). `{"$generateFile": N}` in the arguments becomes an inline `x-mcp-file` object with N random bytes, size and SHA-256 digest. The colour picker's message ("I picked #… for: …") is answered with a `pick_color_result` call. A tool result, or the image follow-up message Open WebUI appends to one, produces the text "Tool result: …". Each request is logged with the shape of what the model was given after its tool call (roles, part types, sizes) and the tools whose schema contains `x-mcp-file`. |
+| `openwebui/mcp-trace-proxy.mjs` | Logging reverse proxy. Prints one JSON line per JSON-RPC message (request size, method, protocol version, capabilities, `_meta` envelope, `resultType`, `inputRequests`, result content block types). `FORCE_LEGACY=1` refuses `server/discover` to force the 2025-11-25 handshake. |
 | `openwebui/setup.mjs` | Signs in as the implicit admin (`POST /api/v1/auths/signin` with empty credentials works when `WEBUI_AUTH=False`). Checks the connections, and creates the models `mcp-tester` and `mcp-tester-legacy` (fake LLM, `meta.toolIds: ["server:mcp:<id>"]`, native function calling), so every new chat has the MCP server enabled. |
 | `openwebui/drive.mjs` | Playwright (`playwright-core` from the project's `node_modules`, Chromium headless shell 1248). Opens `/?models=mcp-tester`, dismisses the "What's new" modal, types the prompt, waits for dialogs and iframes, interacts with them, and writes `docs/images/openwebui-*.png` and `openwebui/out/report.json`. |
 | `openwebui/compose.yaml` | **Untested** Docker equivalent (host networking, `ghcr.io/open-webui/open-webui:v0.13.2`). |
@@ -278,10 +340,15 @@ node openwebui/drive.mjs                # all scenarios, modern (2026-07-28) con
 OWUI_MODEL=mcp-tester-legacy OWUI_SERVER_ID=featuretest-legacy SHOT_PREFIX=openwebui-legacy- \
   node openwebui/drive.mjs inspect_client elicit_confirm   # 2025-11-25 connection
 node openwebui/drive.mjs open_dialog_lab                   # a single scenario
+PROBES=pattern,color node openwebui/drive.mjs elicit_format_probe          # some probes only
+UPLOAD_SIZES=102400,31457280 node openwebui/drive.mjs dialog_lab_files     # other upload sizes (bytes)
+X_FILE_SIZES=1048576 node openwebui/drive.mjs upload_file_experimental     # other x-mcp-file sizes
 openwebui/stop.sh
 ```
 
-Results on 2026-11-08 with Open WebUI 0.13.2: **11 of 11 scenarios pass on the modern connection**, and all 11 also pass on the legacy connection (run in two batches). `elicit_url_legacy_push` is not available on the modern connection, by design.
+`WORK`, `OWUI_VENV` and the other variables of `start.sh` let you reuse an existing venv; pass the same `WORK` to `stop.sh`.
+
+Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the modern connection** (one full run, about 3 minutes). On the legacy connection the original 11 passed earlier, and `inspect_client` plus the 9 new scenarios pass too (about 1.5 minutes). `elicit_url_legacy_push` is not available on the modern connection, by design.
 
 | Scenario | Time | What it checks |
 |---|---|---|
@@ -292,14 +359,24 @@ Results on 2026-11-08 with Open WebUI 0.13.2: **11 of 11 scenarios pass on the m
 | `elicit_wizard` | 23 s | 3 rounds |
 | `elicit_url`, `elicit_url_accept`, `elicit_url_legacy_push` | 3–4 s each | URL dialog; click the link, finish the page in the popup |
 | `slow_task` | 9 s | No progress |
-| `open_dialog_lab` | 18 s | Render the app; Submit (confirm), context, fullscreen, download, `ui/message` (confirm) |
+| `open_dialog_lab` | 16 s | Render the app; Submit (confirm), context, fullscreen, download buttons disabled, `ui/message` (confirm) |
+| `pick_color` | 7 s | Picker with prompt and initial colour; preset → OK; confirm `pick_color_submit`; model context refused; confirm `ui/message`; the model's `pick_color_result` |
+| `pick_color_cancel` | 5 s | Cancel with the message checkbox off; `pick_color_result` on the next turn |
+| `pick_color_deny` | 5 s | Refuse the "Tool call" dialog; the picker unlocks; retry is stored |
+| `return_files` | 6 s | Which blocks the chat shows; the expanded result |
+| `elicit_format_probe` | 28 s | The six non-spec probes one by one (`PROBES` picks some): rendered fields, buttons, answer |
+| `elicit_format_probe_all` | 10 s | All probes in one tool call |
+| `elicit_format_probe_pattern_invalid` | 5 s | A value that breaks `pattern` |
+| `dialog_lab_files` | 15 s | Download buttons disabled; uploads of 100 KiB, 1 MiB, 10 MiB (`UPLOAD_SIZES`), each confirmed |
+| `upload_file_experimental` | 12 s | 5-byte inline file, then generated 100 KiB and 1 MiB files (`X_FILE_SIZES`) |
 
-The full run takes about 1.5 minutes. Open WebUI starts in about 15–20 s.
+The full run takes about 3 minutes. Open WebUI starts in about 15–20 s.
 
 ### What is flaky or impossible
 
 - **Selectors depend on Open WebUI internals:** `#chat-input`, the elicitation modal's `aria-label` (the connection ID), the dialog titles "Tool call" and "Confirm Prompt from Embed", and the `iframe[title=<tool>]`. They will drift between releases, so pin `OWUI_VERSION` and expect small fixes when upgrading.
 - **The "What's new" modal** appears on the first visit. The driver dismisses it with Escape.
+- **Typographic quotes:** Open WebUI's chat input turns `"` into `“` and `”` as you type, so `call tool {"a":1}` arrived as invalid JSON and the fake LLM silently called the tool with `{}`. The fake LLM now converts them back. Scenario results from before this fix that depended on arguments (`elicit_confirm`'s item name, for example) ran with defaults; none of the documented findings changed.
 - **Background LLM tasks** (title, tags, follow-ups) also hit the fake LLM. `start.sh` switches them off, and the fake LLM answers any `### Task:` prompt harmlessly.
 - **Embedding model download:** without Hugging Face access, Open WebUI logs an error about loading SentenceTransformer at startup. It's harmless for these tests.
 - **Timing:** the driver uses Playwright auto-waits plus a few fixed short sleeps (tool selection is applied asynchronously after page load; the app's status text). The wizard and app scenarios are the slowest. No flaky failures were seen in 3 full runs plus several partial runs.
@@ -316,7 +393,7 @@ The full run takes about 1.5 minutes. Open WebUI starts in about 15–20 s.
   - `backend/open_webui/utils/mcp/apps.py` (CSP, binding)
   - `backend/open_webui/utils/tools.py` (`connect_mcp_server`)
   - `backend/open_webui/routers/tools.py` (`/mcp/app/rpc`)
-  - `backend/open_webui/utils/middleware.py` (embeds)
+  - `backend/open_webui/utils/middleware.py` (embeds; `process_tool_result`: how MCP content blocks become model input and chat files)
   - `src/lib/components/chat/ElicitationDialog.svelte`
   - `src/lib/components/chat/Messages/MCPApp.svelte`
   - `pyproject.toml` (`mcp==2.3.0`)

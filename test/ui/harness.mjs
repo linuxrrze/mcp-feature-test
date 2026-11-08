@@ -116,9 +116,13 @@ export async function fillDemoAnswers(lab) {
 /**
  * Open the pick_color colour picker the way a host would: call pick_color
  * (model side), then render the ui:// resource with that tool input and result.
- * `unsupported` lists host methods left unhandled (→ "Method not found").
+ * `unsupported` lists host methods left unhandled (→ "Method not found");
+ * `refuseToolCalls` makes the host refuse that many tools/call requests first.
  */
-export async function openColorPicker(browser, { theme = 'light', args = { prompt: 'Favourite colour?', initial: '#336699' }, unsupported = [] } = {}) {
+export async function openColorPicker(
+    browser,
+    { theme = 'light', args = { prompt: 'Favourite colour?', initial: '#336699' }, unsupported = [], refuseToolCalls = 0 } = {}
+) {
     const { client } = makeClient('modern', { name: 'ui-test-host' });
     const conn = await connectStdio(client);
     const toolResult = await client.callTool({ name: 'pick_color', arguments: args });
@@ -136,7 +140,7 @@ export async function openColorPicker(browser, { theme = 'light', args = { promp
         `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:${theme === 'dark' ? '#111214' : '#e9ebef'}}` +
             `iframe{display:block;width:100%;height:${viewport.height}px;border:0}</style></head><body>` +
             `<iframe id="app" sandbox="allow-scripts allow-forms"></iframe>` +
-            `<script>window.appHtml=${inline(appHtml)};window.hostConfig=${inline({ theme, toolInput: args, toolResult, unsupported })}</script>` +
+            `<script>window.appHtml=${inline(appHtml)};window.hostConfig=${inline({ theme, toolInput: args, toolResult, unsupported, refuseToolCalls })}</script>` +
             `<script type="module">${await hostBundle()}</script></body></html>`
     );
     await page.waitForFunction(() => window.hostReady === true, null, { timeout: 10_000 });

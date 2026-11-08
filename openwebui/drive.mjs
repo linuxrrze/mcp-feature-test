@@ -12,6 +12,9 @@
  *   SHOT_DIR      screenshot directory           (default docs/images)
  *   SHOT_PREFIX   screenshot file prefix         (default openwebui-)
  *   REPORT        JSON report path               (default openwebui/out/report.json)
+ *   PROBES        elicit_format_probe variants, comma-separated (default: all six)
+ *   UPLOAD_SIZES  dialog_lab_files upload sizes in bytes (default 102400,1048576,10485760)
+ *   X_FILE_SIZES  upload_file_experimental generated file sizes in bytes (default 102400,1048576)
  *   CHROME        browser binary (default: Playwright's chromium headless shell 1248 in ~/.cache/ms-playwright)
  *   HEADED=1      use the full chromium build with a window (needs a display)
  *
@@ -137,6 +140,106 @@ async function urlFlow(r, tool, shotName) {
     await page.waitForTimeout(500);
     r.shots.push(await shot(`${shotName}-result`));
     r.notes.push((await lastAssistantText()).slice(0, 400));
+}
+
+
+/** The inline MCP App iframe Open WebUI renders under a tool call (titled with the tool name). */
+async function appFrame(tool) {
+    const iframe = page.locator(`iframe[title="${tool}"]`).last();
+    await iframe.waitFor({ timeout: 30000 });
+    return { iframe, app: page.frameLocator(`iframe[title="${tool}"]`).last() };
+}
+
+/** Open WebUI asks before every app → server tools/call; answer it (optionally screenshot it first). */
+async function confirmToolCall(r, shotName, button = 'Confirm') {
+    const confirm = page.locator('[role=dialog][aria-label="Tool call"]');
+    await confirm.waitFor({ timeout: 15000 });
+    if (shotName) r.shots.push(await shot(shotName));
+    r.notes.push(`tool-call confirm: ${(await confirm.innerText()).replace(/\s+/g, ' ').slice(0, 300)}`);
+    await confirm.getByRole('button', { name: button }).click();
+}
+
+/** Open WebUI asks before an app's ui/message is sent; answer it. */
+async function confirmPrompt(r, shotName) {
+    const cp = page.locator('[role=dialog][aria-label="Confirm Prompt from Embed"]');
+    await cp.waitFor({ timeout: 15000 });
+    if (shotName) r.shots.push(await shot(shotName));
+    r.notes.push(`prompt confirm: ${(await cp.innerText()).replace(/\s+/g, ' ').slice(0, 300)}`);
+    await cp.getByRole('button', { name: 'Confirm' }).click();
+}
+
+/** What the last assistant message shows besides text: images, audio, file chips, links. */
+async function describeLastMessage() {
+    return page.evaluate(() => {
+        const all = document.querySelectorAll('#messages-container .chat-assistant, #messages-container [class*="assistant"]');
+        const el = all[all.length - 1] ?? document.querySelector('#messages-container');
+        if (!el) return {};
+        return {
+            images: [...el.querySelectorAll('img')].map(i => `${(i.getAttribute('src') ?? '').slice(0, 40)}… ${i.naturalWidth}x${i.naturalHeight}`),
+            audio: [...el.querySelectorAll('audio, video')].map(a => `${a.tagName} ${(a.getAttribute('src') ?? a.querySelector('source')?.getAttribute('src') ?? '').slice(0, 40)}`),
+            links: [...el.querySelectorAll('a')].map(a => `${a.innerText.trim().slice(0, 40)} → ${(a.getAttribute('href') ?? '').slice(0, 60)}`),
+            buttons: [...el.querySelectorAll('button')].map(b => b.innerText.trim()).filter(Boolean).slice(0, 20)
+        };
+    });
+}
+
+/** Expand the collapsed "View Result from …" tool-call block(s) so the raw result is visible. */
+async function expandToolCalls() {
+    for (const t of await page.getByText('View Result from', { exact: false }).all()) await t.click().catch(() => {});
+    await page.waitForTimeout(800);
+}
+
+/** One elicit_format_probe variant in a fresh chat: what is rendered, what comes back. */
+async function formatProbe(r, variant, { fill, shotName } = {}) {
+    await newChat(`call elicit_format_probe {"variant":"${variant}"}`);
+    const outcome = await Promise.race([elicitDialog().waitFor().then(() => 'dialog'), waitForText('Tool result:').then(() => 'result')]);
+    if (outcome === 'result') {
+        r.notes.push(`${variant}: no dialog → ${(await lastAssistantText()).slice(0, 300)}`);
+        return;
+    }
+    await page.waitForTimeout(300);
+    const d = elicitDialog();
+    const fields = await d.locator('input, select, textarea').evaluateAll(els =>
+        els.map(e => `${e.tagName.toLowerCase()}[type=${e.getAttribute('type') ?? ''}${e.getAttribute('pattern') ? ` pattern=${e.getAttribute('pattern')}` : ''}${e.getAttribute('placeholder') ? ` placeholder="${e.getAttribute('placeholder')}"` : ''}] value="${e.value}"`)
+    );
+    const buttons = (await d.getByRole('button').allInnerTexts()).map(b => b.trim()).filter(Boolean);
+    const unsupported = (await d.getByText('Unsupported input format').count()) > 0;
+    r.notes.push(`${variant}: fields ${JSON.stringify(fields)}; buttons ${JSON.stringify(buttons)}${unsupported ? '; "Unsupported input format"' : ''}`);
+    if (shotName) r.shots.push(await shot(shotName));
+    if (fill) await fill(d);
+    const submit = d.getByRole('button', { name: 'Submit' });
+    if (await submit.count()) {
+        await submit.click();
+        await page.waitForTimeout(1200);
+        if (await d.count()) {
+            const invalid = await d.locator(':invalid').evaluateAll(els => els.map(e => e.validationMessage).filter(Boolean));
+            r.notes.push(`${variant}: dialog still open after Submit (browser validation: ${JSON.stringify(invalid)}); cancelling`);
+            await d.getByRole('button', { name: 'Cancel' }).click();
+        }
+    } else {
+        await d.getByRole('button', { name: 'Decline' }).click();
+    }
+    await waitForText('Tool result:', 30000);
+    const t = await lastAssistantText();
+    r.notes.push(`${variant}: ${t.slice(t.indexOf('Tool result:'), t.indexOf('Tool result:') + 600).replace(/\s+/g, ' ')}`);
+}
+
+/** Pick a file of `bytes` random bytes in the Dialog Lab and upload it; returns the upload status line. */
+async function labUpload(r, app, bytes, { shotName, timeout = 120000 } = {}) {
+    const name = `probe-${bytes}.bin`;
+    await app.locator('#file').setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.alloc(bytes, 0x5a) });
+    const t0 = Date.now();
+    await app.locator('#upload').click();
+    const confirm = page.locator('[role=dialog][aria-label="Tool call"]');
+    const first = await Promise.race([
+        confirm.waitFor({ timeout: 20000 }).then(() => 'confirm'),
+        app.locator('#uploadStatus.err, #uploadStatus.ok').waitFor({ timeout: 20000 }).then(() => 'status')
+    ]).catch(() => 'nothing');
+    if (first === 'confirm') await confirmToolCall(r, shotName);
+    await app.locator('#uploadStatus.err, #uploadStatus.ok').waitFor({ timeout }).catch(() => {});
+    const status = (await app.locator('#uploadStatus').innerText()).trim();
+    r.notes.push(`upload ${bytes} B (${first}, ${Date.now() - t0} ms): ${status.slice(0, 400)}`);
+    return status;
 }
 
 const scenarios = {
@@ -304,10 +407,8 @@ const scenarios = {
         await page.waitForTimeout(1500);
         r.notes.push(`fullscreen → ${await status()}`);
 
-        // ui/download-file
-        await app.locator('#download').click();
-        await page.waitForTimeout(1500);
-        r.notes.push(`download → ${await status()}`);
+        // ui/download-file: the buttons are disabled unless the host advertises downloadFile.
+        r.notes.push(`download buttons disabled: ${await app.locator('#download').isDisabled()}`);
         r.shots.push(await shot('mcp-app-after-actions'));
 
         // ui/message → confirmation, then the text is submitted as a new user prompt.
@@ -320,6 +421,153 @@ const scenarios = {
         r.notes.push(`chat → ${await status()}`);
         r.notes.push(`app debug log:\n${(await debug()).slice(-1500)}`);
         r.shots.push(await shot('mcp-app-after-message'));
+    },
+    async pick_color(r) {
+        await newChat('call pick_color {"prompt":"Accent colour for the new logo?","initial":"#22c55e"}');
+        const { iframe, app } = await appFrame('pick_color');
+        await app.locator('#ok:not([disabled])').waitFor({ timeout: 30000 });
+        await page.waitForTimeout(800);
+        await iframe.scrollIntoViewIfNeeded();
+        r.shots.push(await shot('pick-color'));
+        await app.locator('#presets button[data-color="#e11d48"], #presets button[data-color="#ec4899"]').first().click();
+        await app.locator('#ok').click();
+        await confirmToolCall(r, 'pick-color-toolcall-confirm'); // pick_color_submit
+        await confirmPrompt(r, 'pick-color-message-confirm'); // ui/message after ui/update-model-context
+        // The fake LLM answers the "I picked …" message with a pick_color_result call.
+        await waitForText('The user picked #', 30000);
+        await page.waitForTimeout(800);
+        const report = async () => (await app.locator('#report').innerText().catch(() => '')).replace(/\s+/g, ' ');
+        r.notes.push(`picker report: ${await report()}`);
+        r.notes.push(`picker status: ${(await app.locator('#status').innerText().catch(() => '')).trim()}`);
+        r.notes.push(`picker debug:\n${(await app.locator('#debug').textContent().catch(() => '')).slice(0, 1500)}`);
+        r.shots.push(await shot('pick-color-result'));
+        r.notes.push((await lastAssistantText()).slice(0, 400));
+    },
+
+    async pick_color_cancel(r) {
+        // Cancel in the picker with "Also tell the assistant" unchecked: only pick_color_submit
+        // reaches the server; the model learns about it with pick_color_result on the next turn.
+        await newChat('call pick_color {"prompt":"Background colour?"}');
+        const { app } = await appFrame('pick_color');
+        await app.locator('#cancel:not([disabled])').waitFor({ timeout: 30000 });
+        await app.locator('#tell').uncheck();
+        await app.locator('#cancel').click();
+        await confirmToolCall(r);
+        await app.locator('#r-context[data-state="skip"], #r-context[data-state="err"], #r-context[data-state="ok"]').waitFor({ timeout: 15000 });
+        await page.waitForTimeout(500);
+        r.notes.push(`picker report: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
+        r.notes.push(`prompt dialog shown: ${(await page.locator('[role=dialog][aria-label="Confirm Prompt from Embed"]').count()) > 0}`);
+        await page.click('#chat-input');
+        await page.keyboard.type('call pick_color_result');
+        await page.keyboard.press('Enter');
+        await waitForText('The user cancelled', 30000);
+        r.notes.push((await lastAssistantText()).slice(0, 400));
+    },
+
+    async pick_color_deny(r) {
+        // The user refuses Open WebUI's "Tool call" confirmation: what does the app get?
+        await newChat('call pick_color {"prompt":"Deny test"}');
+        const { app } = await appFrame('pick_color');
+        await app.locator('#ok:not([disabled])').waitFor({ timeout: 30000 });
+        await app.locator('#tell').uncheck();
+        await app.locator('#ok').click();
+        await confirmToolCall(r, undefined, 'Cancel');
+        await app.locator('#r-context[data-state="skip"], #r-context[data-state="err"], #r-context[data-state="ok"]').waitFor({ timeout: 15000 });
+        await page.waitForTimeout(500);
+        r.notes.push(`picker report: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
+        r.notes.push(`picker status: ${(await app.locator('#status').innerText()).trim()}`);
+        // Nothing was delivered, so the picker unlocks: try again and confirm this time.
+        await app.locator('#ok:not([disabled])').waitFor({ timeout: 5000 });
+        await app.locator('#ok').click();
+        await confirmToolCall(r);
+        await app.locator('#status.ok').waitFor({ timeout: 15000 });
+        r.notes.push(`retry: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
+    },
+
+    async return_files(r) {
+        await newChat('call return_files');
+        await waitForText('Tool result:');
+        await page.waitForTimeout(1500);
+        r.shots.push(await shot('return-files'));
+        r.notes.push(`message: ${JSON.stringify(await describeLastMessage())}`);
+        await expandToolCalls();
+        r.notes.push(`expanded: ${JSON.stringify(await describeLastMessage())}`);
+        await page.getByText('View Result from', { exact: false }).last().scrollIntoViewIfNeeded();
+        r.shots.push(await shot('return-files-expanded'));
+        r.notes.push((await lastAssistantText()).slice(0, 1500));
+    },
+
+    async elicit_format_probe(r) {
+        const variants = (process.env.PROBES ?? 'pattern,color,time,nested_object,free_array,file').split(',');
+        // The data-url field starts empty; give it a value so the answer shows whether it is passed through.
+        const fill = { file: d => d.locator('input').first().fill('data:text/plain;base64,aGVsbG8=') };
+        for (const v of variants) {
+            await formatProbe(r, v, { fill: fill[v], shotName: ['color', 'nested_object'].includes(v) ? `format-probe-${v.replace('_', '-')}` : undefined });
+        }
+    },
+
+    async elicit_format_probe_all(r) {
+        // All probes in one tool call (one input_required round each): Submit where possible, else Decline.
+        await newChat('call elicit_format_probe {"variant":"all"}');
+        for (let i = 0; i < 8; i++) {
+            const shown = await Promise.race([elicitDialog().waitFor({ timeout: 20000 }).then(() => true), waitForText('Tool result:', 20000).then(() => false)]);
+            if (!shown) break;
+            await page.waitForTimeout(300);
+            const d = elicitDialog();
+            const submit = d.getByRole('button', { name: 'Submit' });
+            await ((await submit.count()) ? submit : d.getByRole('button', { name: 'Decline' })).click();
+            await page.waitForTimeout(800);
+        }
+        await waitForText('Tool result:', 30000);
+        const t = await lastAssistantText();
+        r.notes.push(t.slice(t.indexOf('Tool result:'), t.indexOf('Tool result:') + 1500).replace(/\s+/g, ' '));
+    },
+
+    async elicit_format_probe_pattern_invalid(r) {
+        // A value that violates "pattern": blocked by the browser, by Open WebUI's validator, or sent?
+        await formatProbe(r, 'pattern', {
+            fill: async d => {
+                const input = d.locator('input[type=text], input:not([type])').first();
+                await input.fill('not-a-code');
+            }
+        });
+    },
+
+    async dialog_lab_files(r) {
+        await newChat('call open_dialog_lab');
+        const { iframe, app } = await appFrame('open_dialog_lab');
+        await app.locator('#submit').waitFor({ timeout: 30000 });
+        await page.waitForTimeout(1500);
+        // Downloads: disabled unless the host advertises hostCapabilities.downloadFile.
+        for (const id of ['download', 'downloadBlob', 'downloadLink']) r.notes.push(`#${id} disabled: ${await app.locator(`#${id}`).isDisabled()}`);
+        r.notes.push(`download note: ${(await app.locator('#downloadNote').innerText()).trim()}`);
+        const sizes = (process.env.UPLOAD_SIZES ?? '102400,1048576,10485760').split(',').map(Number);
+        for (const [i, bytes] of sizes.entries()) await labUpload(r, app, bytes, { shotName: i === 0 ? 'dialog-lab-upload-confirm' : undefined });
+        // Upload card (last result) plus the action row with the disabled download buttons.
+        const card = app.locator('section:has(#file)');
+        await card.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(300);
+        const a = await card.boundingBox();
+        const b = await app.locator('#downloadNote').boundingBox();
+        if (a && b) {
+            const clip = { x: a.x - 8, y: a.y - 8, width: a.width + 16, height: b.y + b.height - a.y + 16 };
+            r.shots.push(await shot('dialog-lab-files', { clip }));
+        }
+    },
+
+    async upload_file_experimental(r) {
+        // Small file typed inline by the "model", then generated ones (fake LLM expands $generateFile).
+        const prompts = [
+            'call upload_file_experimental {"file":{"id":"f1","name":"hello.txt","mimeType":"text/plain","size":5,"data":"aGVsbG8="}}',
+            ...(process.env.X_FILE_SIZES ?? '102400,1048576').split(',').map(n => `call upload_file_experimental {"file":{"$generateFile":${Number(n)}}}`)
+        ];
+        for (const prompt of prompts) {
+            await newChat(prompt);
+            await waitForText('Tool result:', 120000);
+            await page.waitForTimeout(500);
+            const t = await lastAssistantText();
+            r.notes.push(`${prompt.slice(0, 80)} → ${t.slice(t.indexOf('Tool result:'), t.indexOf('Tool result:') + 400).replace(/\s+/g, ' ')}`);
+        }
     }
 };
 

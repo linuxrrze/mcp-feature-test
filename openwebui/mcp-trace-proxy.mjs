@@ -6,7 +6,8 @@
  *
  * Point the MCP client (Open WebUI) at http://127.0.0.1:3603/mcp. Every request and
  * response is forwarded unchanged; one JSON line per JSON-RPC message is printed to
- * stdout (direction, HTTP status, method, id, protocol version, capabilities, error),
+ * stdout (direction, HTTP status, request size, method, id, protocol version, capabilities,
+ * result content block types, error),
  * so you can see exactly what the client declares and which requests it answers.
  * SSE responses are parsed line by line and logged as they stream.
  * Env: TARGET, PORT, HOST, TRACE_FULL=1 (log full params/results), FORCE_LEGACY=1 (see below).
@@ -42,6 +43,8 @@ function summarize(dir, msg, extra = {}) {
         if (r.resultType) out.resultType = r.resultType;
         if (r.inputRequests) out.inputRequests = Object.keys(r.inputRequests);
         if (r.isError) out.isError = true;
+        if (Array.isArray(r.content)) out.content = r.content.map(c => (c.type === 'resource' ? `resource:${c.resource?.mimeType ?? '?'}` : c.type));
+        if (Array.isArray(r.contents)) out.contents = r.contents.map(c => c.mimeType ?? '?');
         if (FULL) out.result = r;
     }
     if (msg.error) out.error = msg.error;
@@ -60,7 +63,7 @@ const server = createServer((req, res) => {
         } catch {
             /* not JSON */
         }
-        const reqInfo = { http: `${req.method} ${req.url}`, session: req.headers['mcp-session-id'], hdrProto: req.headers['mcp-protocol-version'] };
+        const reqInfo = { http: `${req.method} ${req.url}`, bytes: body.length, session: req.headers['mcp-session-id'], hdrProto: req.headers['mcp-protocol-version'] };
         if (parsed) summarize('client->server', parsed, reqInfo);
         else if (req.method !== 'POST') console.log(JSON.stringify({ t: new Date().toISOString(), dir: 'client->server', ...reqInfo }));
 

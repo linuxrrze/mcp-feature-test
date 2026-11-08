@@ -16,6 +16,8 @@ interface HostConfig {
     toolResult?: Record<string, unknown>;
     /** App → host methods this host leaves unhandled, so they answer "Method not found". */
     unsupported?: string[];
+    /** Refuse this many tools/call requests first, like a user cancelling Open WebUI's "Tool call" confirmation. */
+    refuseToolCalls?: number;
 }
 declare global {
     interface Window {
@@ -40,8 +42,13 @@ const bridge = new AppBridge(
     (cfg.hostCapabilities ?? { openLinks: {}, serverTools: {}, logging: {}, updateModelContext: { text: {} }, message: { text: {} }, downloadFile: {} }) as any,
     { hostContext: context('inline') }
 );
+let refusals = cfg.refuseToolCalls ?? 0;
 bridge.oncalltool = async p => {
     record('tools/call', p);
+    if (refusals > 0) {
+        refusals--;
+        throw new Error('Tool call cancelled');
+    }
     return window.callTool(p);
 };
 bridge.onmessage = async p => {
