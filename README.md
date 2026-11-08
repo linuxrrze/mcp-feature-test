@@ -59,6 +59,9 @@ These screenshots come from the automated browser test (`npm run screenshots`). 
 | `upload_file_experimental` | **Experimental, not in the spec:** a `file` argument marked with `x-mcp-file` per the draft [files extension](https://github.com/modelcontextprotocol/experimental-ext-file-uploads) (`io.modelcontextprotocol/files`), inline base64 only. Returns size and SHA-256 and checks a supplied digest | Draft extension, not a SEP |
 | `pick_color` | MCP App used like a question: a small colour picker (`ui://feature-test/color-picker.html`; `prompt`, `initial` `#rrggbb`). The call returns at once with a `requestId`; the answer comes back in a later step through `pick_color_submit` (app-only), `ui/update-model-context` and `ui/message`, each reported in the UI. See [server-vs-app.md](docs/server-vs-app.md#second-example-a-colour-picker-as-a-question) | MCP Apps extension |
 | `pick_color_result` | Returns the colour the user picked (or "cancelled" / "still waiting") for a `requestId`, or for the latest `pick_color` | n/a |
+| `view_3d` | MCP App with WebGL: an interactive three.js viewer (`ui://feature-test/viewer-3d.html`; `shape` `knot`/`sphere`/`gear`/`glb-sample`, optional `camera {position, target}` and `highlight`). Orbit, zoom, auto-rotate, wireframe, click to select a part; the selection goes back through `view_3d_select` (app-only), `ui/update-model-context` and a **Tell the assistant** `ui/message`. `glb-sample` is read through the host with `resources/read`. Its *Details* panel probes WebGL/WebGPU/WASM/`eval`/`fetch`/fullscreen in the host's iframe. See [server-vs-app.md](docs/server-vs-app.md#third-example-a-3d-viewer) | MCP Apps extension (app → server `resources/read`, `ui/request-display-mode`) |
+| `view_3d_state` | Returns the part the user selected in a `view_3d` view and the camera at that moment, or "nothing selected yet" | n/a |
+| Resource `test://models/sample.glb` | A small glTF binary (`model/gltf-binary`) generated in code, with the named meshes `base`, `tower`, `roof`, `flag` | Resources: 2024-11-05 |
 | Prompt `try_all_dialogs` | A prompt that walks the assistant through every tool above | Prompts |
 
 Nothing these tools do has side effects: "delete" and "order" are only pretend, the tokens entered on the URL page are kept in memory and shown masked, and uploaded files are hashed and discarded (their contents are never logged).
@@ -217,6 +220,11 @@ curl -s http://127.0.0.1:3457/          # "mcp-feature-test is running."
 | `elicit_format_probe` | One dialog per probe. The result says per probe what came back; every one of these is outside the spec, so a fallback text box, a dropped field or a refusal is all legitimate | A client that refuses a schema ends the whole call with an error (the official TypeScript SDK client refuses everything except `pattern`). Use single variants to find which probe it refuses |
 | `upload_file_experimental` | Only clients implementing the draft files extension render a file picker; others show the raw object | A model can still call it with inline base64 |
 | `pick_color` | A small colour picker with the question, OK and Cancel. After OK the assistant learns the colour from the model context and/or a chat message ("I picked #xxxxxx for: …"); the picker lists which of the three channels worked | Only the text result; `pick_color_result` then keeps answering "still waiting" |
+| `view_3d` | A 3D view (screenshots below) you can drag, zoom and click. Selecting a part reports *Server: stored*, model context and (after **Tell the assistant**) the chat message; `view_3d_state` then names the part. **Fullscreen** appears only if the host offers it | Only the text result ("If no 3D view appeared, this client does not render MCP Apps."). With `glb-sample`, a host without `resources/read` for apps shows an error inside the viewer |
+
+| 3D viewer (`view_3d`), light | 3D viewer (`glb-sample`), dark |
+| --- | --- |
+| ![3D viewer, light theme](docs/images/viewer-3d-light.png) | ![3D viewer with the sample GLB, dark theme](docs/images/viewer-3d-dark.png) |
 
 ![URL-mode elicitation page, light](docs/images/url-flow-light.png)
 
@@ -280,4 +288,4 @@ npm run screenshots        # regenerates docs/images/*.png
 
 CI ([.github/workflows/docker-image.yml](.github/workflows/docker-image.yml)) runs the full suite, builds and smoke-tests the image, scans it with Trivy and publishes it; see [docs/docker.md](docs/docker.md#ci-and-published-images). See [docs/testing.md](docs/testing.md) for what each suite covers, and [docs/architecture.md](docs/architecture.md) for how the server is put together.
 
-Source layout: `src/server.ts` (tools and factory), `src/files.ts` (generated sample files, upload decoding and limits), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `src/colorPicker.ts` (the `pick_color` tools), `ui/` (the MCP Apps).
+Source layout: `src/server.ts` (tools and factory), `src/files.ts` (generated sample files, upload decoding and limits), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `src/colorPicker.ts` (the `pick_color` tools), `src/viewer3d.ts` (the `view_3d` tools and the sample GLB), `ui/` (the MCP Apps).

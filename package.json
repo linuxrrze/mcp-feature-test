@@ -31,6 +31,7 @@
     "@types/node": "^26.6.6",
     "esbuild": "^0.28.2",
     "playwright-core": "^1.65.0",
+    "three": "0.170.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },

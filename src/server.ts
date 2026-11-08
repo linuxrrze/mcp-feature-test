@@ -62,6 +62,7 @@ import {
     uploadMaxBytes
 } from './files.js';
 import { registerColorPicker } from './colorPicker.js';
+import { registerViewer3d } from './viewer3d.js';
 import { createFlow, flowWaitMs, getFlow, waitForFlow } from './flows.js';
 import { errorData, logger } from './log.js';
 
@@ -1174,6 +1175,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
     );
 
     registerColorPicker(server); // pick_color, pick_color_submit, pick_color_result (src/colorPicker.ts)
+    registerViewer3d(server); // view_3d, view_3d_select, view_3d_state, test://models/sample.glb (src/viewer3d.ts)
 
     // --------------------------------------------------------------- prompt
     server.registerPrompt(
@@ -1191,7 +1193,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
                         text:
                             'Please test the MCP user-interaction features of the mcp-feature-test server, one at a time, telling me what to expect before each: ' +
                             '1) inspect_client, 2) elicit_confirm, 3) elicit_all_field_types, 4) elicit_parallel, 5) elicit_wizard, 6) elicit_url, ' +
-                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields). Summarize which features worked in this client.'
+                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields), 12) view_3d and afterwards view_3d_state. Summarize which features worked in this client.'
                     }
                 }
             ]

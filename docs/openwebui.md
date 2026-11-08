@@ -187,6 +187,20 @@ So in Open WebUI the user confirms **twice** per answer (tool call and message).
 
 **Fixed in the picker:** before, a refused tool call with no other channel left the picker locked with "✅ You picked … The answer could not be delivered", so the user could not answer at all. Now, when none of the three channels got through, the status says so without the check mark and the controls are enabled again (UI test *unlocks for another try* in `test/ui/color-picker.test.mjs`).
 
+### 3D viewer (`view_3d`): expected behaviour, not yet verified
+
+Not run in Open WebUI yet. The expectations below come from Open WebUI's source and documented behaviour (sections above) and from a prototype of the viewer run in headless Chromium in a `srcdoc` iframe with Open WebUI's sandbox (`allow-scripts allow-downloads allow-popups`) and the CSP Open WebUI 0.13.2 builds for an app without `_meta.ui.csp` (`default-src 'none'; script-src 'unsafe-inline' blob:; img-src data: blob:; connect-src 'none'; …`). The browser test runs the finished viewer under that CSP too (`test/ui/viewer-3d.test.mjs`).
+
+| Step | Expected in Open WebUI 0.13.2 | Basis |
+|---|---|---|
+| `view_3d` | Renders **inline** under the tool call. The page is about 1.3 MB (three.js inlined), below the 5 MB limit. WebGL 1 and 2 work under the CSP; dragging, the wheel and click-to-select (raycast) work. The model gets the text plus `structuredContent` (`viewId`, `shape`, `camera`, `parts`) as JSON. | prototype under the same CSP; source (size limit) |
+| *Details (for testing)* | WASM compile **blocked** (no `'wasm-unsafe-eval'`, so Draco/meshopt decoders cannot work), `eval`/`new Function` **blocked**, `fetch` **blocked** (`connect-src 'none'`, also for `data:` and `blob:` URLs), WebGPU depending on the browser, fullscreen not offered. | prototype; test under the CSP |
+| `glb-sample` | The app reads `test://models/sample.glb` with `resources/read` through `/mcp/app/rpc`; Open WebUI advertises `serverResources`. Whether that read asks for confirmation like `tools/call` is not known. | source; not verified |
+| **Fullscreen** | No button: `availableDisplayModes` is only `["inline"]`, so the viewer hides it and says *Fullscreen is not offered by this host*. The browser Fullscreen API and pointer lock are blocked by the iframe's permissions policy anyway. | verified for the Dialog Lab (`ui/request-display-mode` answers `inline`); prototype |
+| Click a part → `tools/call view_3d_select` | A "Tool call" confirmation dialog **for every selection**; after *Confirm* the viewer reports *Server: stored …*, and `view_3d_state` returns the selection on a later turn. *Cancel* shows "Tool call cancelled" under the viewer. | same mechanism as `pick_color_submit` (verified) |
+| `ui/update-model-context` | `Method not found`; the viewer reports *not supported by host*. | verified for the Dialog Lab and `pick_color` |
+| **Tell the assistant** → `ui/message` | A "Confirm Prompt from Embed" dialog, then "I selected *part* in the 3D view (*shape*)." is sent as the next user message. | verified for `pick_color` |
+
 ### Files
 
 Verified with `return_files`, `dialog_lab_files` and `upload_file_experimental` (both connections, same results), the JSON-RPC trace, the server log and the fake LLM's request log (which records what the model was given).

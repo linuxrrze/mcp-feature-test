@@ -4,7 +4,7 @@ import { mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { ROOT } from '../test/helpers.mjs';
-import { fillDemoAnswers, launchBrowser, openDialogLab } from '../test/ui/harness.mjs';
+import { fillDemoAnswers, launchBrowser, openDialogLab, openViewer3d } from '../test/ui/harness.mjs';
 import { createFlow, handleFlowRequest, setFlowBaseUrl } from '../dist/flows.js';
 
 const outDir = join(ROOT, 'docs', 'images');
@@ -51,6 +51,25 @@ try {
         }
     } finally {
         srv.close();
+    }
+
+    // ---- 3D viewer (view_3d), both themes, with a selected part
+    for (const [theme, args, part] of [
+        ['light', { shape: 'knot' }, 'knot'],
+        ['dark', { shape: 'glb-sample' }, 'roof']
+    ]) {
+        const v = await openViewer3d(browser, { theme, args, viewport: { width: 720, height: 900 }, deviceScaleFactor: 2 });
+        try {
+            await v.app.locator(`#parts button[data-part="${part}"]`).click();
+            await v.app.locator('#r-server[data-state=ok]').waitFor();
+            await v.page.waitForTimeout(300);
+            const height = await v.frame.evaluate(() => document.querySelector('main').getBoundingClientRect().bottom + 8);
+            const file = join(outDir, `viewer-3d-${theme}.png`);
+            await v.page.screenshot({ path: file, clip: { x: 0, y: 0, width: 720, height: Math.ceil(height) } });
+            console.log(file);
+        } finally {
+            await v.close();
+        }
     }
 } finally {
     await browser.close();

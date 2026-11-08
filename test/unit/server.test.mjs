@@ -104,7 +104,10 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
             'pick_color_submit',
             'return_files',
             'slow_task',
-            'upload_file_experimental'
+            'upload_file_experimental',
+            'view_3d',
+            'view_3d_select',
+            'view_3d_state'
         ]);
         for (const t of tools) {
             assert.ok(t.title, `${t.name} has a title`);

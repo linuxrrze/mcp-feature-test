@@ -71,6 +71,16 @@ If none of the three gets through (for example when the user refuses the host's 
 
 A host without MCP Apps support shows only the text result; the model then knows that no picker appeared.
 
+## Third example: a 3D viewer
+
+`view_3d` shows an interactive 3D view (`ui/viewer-3d.html` + `ui/viewer-3d.ts`, served as `ui://feature-test/viewer-3d.html`), something no elicitation schema could express. three.js is bundled into the page (about 1.3 MB of HTML, 300 KB gzipped), so the app needs no network access.
+
+- **Server side:** `view_3d {shape, camera?, highlight?}` validates the arguments (shape `knot`, `sphere`, `gear` or `glb-sample`; camera coordinates finite and within ±100; `highlight` must name a part of that shape), stores a view and returns text plus `structuredContent {viewId, shape, camera, parts}`. The server also offers `test://models/sample.glb`, a small glTF binary with the named meshes `base`, `tower`, `roof` and `flag`, generated in code (`src/viewer3d.ts`).
+- **App side:** the knot, sphere and gear are generated in the browser; for `glb-sample` the app reads the GLB with `resources/read` (app → host → server, `app.readServerResource`) and parses the bytes with `GLTFLoader.parse`. The user orbits (drag, touch, wheel, arrow keys, `+`/`-`), resets the view, toggles auto-rotate and wireframe, and clicks a part (raycast) to select it.
+- **Back to the model:** a selection is sent as `tools/call view_3d_select {viewId, part, camera}` (app-only; the server keeps the latest selection per view) and as `ui/update-model-context`. **Tell the assistant** sends `ui/message` "I selected *part* in the 3D view (*shape*)." The model reads the stored state with `view_3d_state` ("nothing selected yet" until then).
+- **Display modes:** the **Fullscreen** button appears only when the host lists `fullscreen` in `availableDisplayModes`; it then uses `ui/request-display-mode`. The browser Fullscreen API is not used, because sandboxed iframes usually block it.
+- **Host-capability probe:** *Details (for testing)* lists WebGL 1/2, WebGPU, whether WASM can be compiled, whether `eval`/`new Function` and `fetch` are allowed, the fullscreen situation, the renderer string, frames per second and how the model was loaded, so the viewer doubles as a test of what a host's iframe allows.
+
 ## Which one to use
 
 - **Server plus elicitation only**, when your questions fit a simple form. It works in more clients and needs no UI code. [elicitation.md](elicitation.md) shows how both elicitation modes work.
