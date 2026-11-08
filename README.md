@@ -220,6 +220,14 @@ curl -s http://127.0.0.1:3457/          # "mcp-feature-test is running."
 
 ![URL-mode elicitation page, light](docs/images/url-flow-light.png)
 
+`pick_color` in Open WebUI 0.13.2. Open WebUI asks for two confirmations per answer: one for the app's tool call and one for its chat message. Details are in [docs/openwebui.md](docs/openwebui.md).
+
+| 1. The picker, rendered inline under the tool call | 2. OK: confirm the app's call to `pick_color_submit` |
+| --- | --- |
+| ![pick_color picker in Open WebUI](docs/images/openwebui-pick-color.png) | ![Tool call confirmation for pick_color_submit](docs/images/openwebui-pick-color-toolcall-confirm.png) |
+| **3. Confirm the chat message ("I picked …")** | **4. The model reads the answer with `pick_color_result`** |
+| ![Message confirmation for ui/message](docs/images/openwebui-pick-color-message-confirm.png) | ![pick_color_result answer in the chat](docs/images/openwebui-pick-color-result.png) |
+
 ## Capability logging
 
 When a client connects, the server writes a summary to stderr. Some clients surface server stderr: Claude Desktop writes it to `mcp-server-feature-test.log`, VS Code shows it in the *Output* panel, and `docker logs` shows it for containers.
