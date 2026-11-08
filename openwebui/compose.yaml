@@ -1,0 +1,54 @@
+# UNTESTED sketch (no Docker was available where the harness was built; the tested path is
+# openwebui/start.sh, which runs the same stack from a pip install). Linux only (host network).
+#
+#   npm run build                                  # dist/ must exist, it is mounted read-only
+#   docker compose -f openwebui/compose.yaml up -d
+#   node openwebui/setup.mjs && node openwebui/drive.mjs
+#
+# Ports: 3600 MCP server, 3601 fake LLM, 3602 Open WebUI, 3603 trace proxy, 3604 trace proxy (FORCE_LEGACY).
+x-node: &node
+  image: node:24-alpine
+  network_mode: host
+  working_dir: /repo
+  volumes: ["..:/repo:ro"]
+  restart: unless-stopped
+
+services:
+  mcp:
+    <<: *node
+    environment: { PORT: "3600" }
+    command: ["node", "dist/http.js"]
+  fake-llm:
+    <<: *node
+    environment: { PORT: "3601" }
+    command: ["node", "openwebui/fake-llm.mjs"]
+  trace-proxy:
+    <<: *node
+    environment: { PORT: "3603", TARGET: "http://127.0.0.1:3600" }
+    command: ["node", "openwebui/mcp-trace-proxy.mjs"]
+  trace-proxy-legacy:
+    <<: *node
+    environment: { PORT: "3604", TARGET: "http://127.0.0.1:3600", FORCE_LEGACY: "1" }
+    command: ["node", "openwebui/mcp-trace-proxy.mjs"]
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.13.2
+    network_mode: host
+    environment:
+      PORT: "3602"
+      WEBUI_AUTH: "False"
+      WEBUI_SECRET_KEY: mcp-feature-test-not-a-secret
+      ENABLE_PERSISTENT_CONFIG: "False"
+      ENABLE_OLLAMA_API: "False"
+      OPENAI_API_BASE_URLS: http://127.0.0.1:3601/v1
+      OPENAI_API_KEYS: dummy
+      ENABLE_TITLE_GENERATION: "False"
+      ENABLE_TAGS_GENERATION: "False"
+      ENABLE_FOLLOW_UP_GENERATION: "False"
+      ENABLE_VERSION_UPDATE_CHECK: "False"
+      TOOL_SERVER_CONNECTIONS: >-
+        [{"type":"mcp","url":"http://127.0.0.1:3603/mcp","path":"","auth_type":"none","key":"","info":{"id":"featuretest","name":"MCP Feature Test"},"config":{"enable":true}},
+         {"type":"mcp","url":"http://127.0.0.1:3604/mcp","path":"","auth_type":"none","key":"","info":{"id":"featuretest-legacy","name":"MCP Feature Test (legacy handshake)"},"config":{"enable":true}}]
+    volumes: ["owui-data:/app/backend/data"]
+
+volumes:
+  owui-data: {}

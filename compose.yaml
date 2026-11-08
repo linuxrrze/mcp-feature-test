@@ -1,0 +1,40 @@
+# HTTP-mode deployment of mcp-feature-test.
+#
+#   docker compose up -d --build
+#   → MCP endpoint: ${PUBLIC_URL:-http://localhost:3457}/mcp
+#
+# PUBLIC_URL must be the base URL that the *user's browser* can reach: it is
+# used for URL-mode elicitation pages (/flow/<uuid>). Override it in a .env file
+# or the shell, e.g. PUBLIC_URL=https://mcp-test.example.org when behind a proxy.
+#
+# This is a TEST server without authentication. By default the port is
+# published on 127.0.0.1 only. See docs/docker.md before exposing it.
+name: mcp-feature-test
+
+services:
+  mcp-feature-test:
+    build:
+      context: .
+      args:
+        VERSION: "1.0.0"
+    image: mcp-feature-test:latest
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3457"
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:${HOST_PORT:-3457}}
+      # Optional logging (if supported by your build of the server):
+      # LOG_FORMAT: json
+      # LOG_LEVEL: info
+    ports:
+      # Change to "${HOST_PORT:-3457}:3457" (all interfaces) only on a trusted network.
+      - "127.0.0.1:${HOST_PORT:-3457}:3457"
+    # Hardening: nothing is written to disk, no privileges needed.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # The image's HEALTHCHECK (GET /) is inherited.

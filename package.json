@@ -1,0 +1,49 @@
+{
+  "name": "mcp-feature-test",
+  "version": "1.0.0",
+  "description": "Sample MCP server for testing elicitation dialogs (form + URL mode) and graphical MCP Apps UIs in real MCP clients",
+  "main": "dist/stdio.js",
+  "scripts": {
+    "build": "tsc && node scripts/build-ui.mjs",
+    "build:ui": "node scripts/build-ui.mjs",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/stdio.js",
+    "start:http": "node dist/http.js",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/stdio.js",
+    "pretest": "npm run build",
+    "test": "node --test --test-concurrency=1 \"test/unit/*.test.mjs\" \"test/integration/*.test.mjs\" \"test/ui/*.test.mjs\"",
+    "test:unit": "npm run build && node --test \"test/unit/*.test.mjs\"",
+    "test:integration": "npm run build && node --test \"test/integration/*.test.mjs\"",
+    "test:ui": "npm run build && node --test \"test/ui/*.test.mjs\"",
+    "screenshots": "npm run build && node scripts/screenshots.mjs"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/core": "^2.4.0",
+    "@modelcontextprotocol/ext-apps": "^2.0.4",
+    "@modelcontextprotocol/node": "^2.1.2",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "playwright-core": "^1.65.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "private": true,
+  "bin": {
+    "mcp-feature-test": "dist/stdio.js",
+    "mcp-feature-test-http": "dist/http.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linuxrrze/mcp-feature-test.git"
+  }
+}
