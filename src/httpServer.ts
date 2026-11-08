@@ -19,6 +19,7 @@ import {
     toNodeHandler,
     toWebRequest
 } from '@modelcontextprotocol/node';
+import { maxRequestBodyBytes } from './files.js';
 import { handleFlowRequest, setFlowBaseUrl } from './flows.js';
 import { errorData, logger } from './log.js';
 import { createFeatureTestServer } from './server.js';
@@ -79,10 +80,23 @@ export function chooseValidation(opts: { host: string; publicUrl: string; allowe
     return { mode: 'none', validators: [] };
 }
 
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+class BodyTooLargeError extends Error {
+    constructor(readonly limit: number) {
+        super(`request body larger than ${limit} bytes`);
+    }
+}
+
+/** Read and parse a POST body, refusing anything above `limit` bytes (see maxRequestBodyBytes). */
+async function readJsonBody(req: IncomingMessage, limit: number): Promise<unknown> {
     if (req.method !== 'POST') return undefined;
+    if (Number(req.headers['content-length']) > limit) throw new BodyTooLargeError(limit);
     const chunks: Buffer[] = [];
-    for await (const c of req) chunks.push(c as Buffer);
+    let received = 0;
+    for await (const c of req) {
+        received += (c as Buffer).length;
+        if (received > limit) throw new BodyTooLargeError(limit);
+        chunks.push(c as Buffer);
+    }
     const raw = Buffer.concat(chunks).toString('utf8');
     if (!raw) return undefined;
     try {
@@ -94,6 +108,7 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
 
 export async function startHttpServer(options: HttpServerOptions = {}): Promise<RunningHttpServer> {
     const host = options.host ?? '127.0.0.1';
+    const maxBody = maxRequestBodyBytes();
     const modern = createMcpHandler(() => createFeatureTestServer({ transport: 'http' }), {
         legacy: 'reject',
         onerror: e => logger.warn('http.modern', e.message, errorData(e))
@@ -123,7 +138,21 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
             }
             for (const validate of validators) if (!validate(req, res)) return;
 
-            const body = await readJsonBody(req);
+            let body: unknown;
+            try {
+                body = await readJsonBody(req, maxBody);
+            } catch (e) {
+                if (!(e instanceof BodyTooLargeError)) throw e;
+                logger.warn('http.body', `rejected a request body above ${e.limit} bytes`, { limit: e.limit });
+                res.writeHead(413, { 'content-type': 'application/json', connection: 'close' }).end(
+                    JSON.stringify({
+                        jsonrpc: '2.0',
+                        error: { code: -32600, message: `Request body too large (limit ${e.limit} bytes, derived from UPLOAD_MAX_BYTES)` },
+                        id: null
+                    })
+                );
+                return;
+            }
             const webReq = await toWebRequest(req, body);
 
             if (!(await isLegacyRequest(webReq, body))) {

@@ -180,8 +180,98 @@ async function guarded(label: string, fn: () => Promise<unknown>) {
         note(`${label}: ERROR ${(e as Error).message}`);
     } finally {
         buttons.forEach(b => (b.disabled = false));
+        refreshDownloads();
     }
 }
+
+// ------------------------------------------------------------ downloads
+let connected = false;
+
+/** Download buttons only work when the host advertises hostCapabilities.downloadFile. */
+function refreshDownloads() {
+    const supported = !!app.getHostCapabilities()?.downloadFile;
+    document.querySelectorAll<HTMLButtonElement>('.actions button.dl').forEach(b => (b.disabled = !supported));
+    $('downloadNote').textContent = !connected
+        ? 'Downloads: waiting for the host…'
+        : supported
+          ? 'Downloads: the host advertises downloadFile, so the three download buttons use ui/download-file (text resource, blob resource, resource_link).'
+          : 'Downloads disabled: the host did not advertise hostCapabilities.downloadFile, so ui/download-file would fail (Open WebUI 0.13.2, for example, answers "Method not found").';
+}
+
+async function offerDownload(contents: Parameters<typeof app.downloadFile>[0]['contents'], what: string) {
+    const r = await app.downloadFile({ contents });
+    if (r.isError) throw new Error('host refused the download');
+    setStatus(`✅ Download offered by the host (${what}).`, 'ok');
+    return r;
+}
+
+// --------------------------------------------------------------- upload
+const fileEl = $<HTMLInputElement>('file');
+const uploadBtn = $<HTMLButtonElement>('upload');
+fileEl.onchange = () => (uploadBtn.disabled = !fileEl.files?.length);
+
+function setUploadStatus(msg: string, kind: 'ok' | 'err' | '' = '') {
+    const el = $('uploadStatus');
+    el.textContent = msg;
+    el.className = kind;
+}
+
+const fmtBytes = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KiB` : `${(n / (1024 * 1024)).toFixed(2)} MiB`);
+
+function readAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const url = String(reader.result ?? '');
+            resolve(url.slice(url.indexOf(',') + 1)); // strip "data:<type>;base64,"
+        };
+        reader.onerror = () => reject(reader.error ?? new Error('could not read the file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+/** Local SHA-256 for comparison; crypto.subtle needs a secure context, so this may be unavailable. */
+async function localSha256(file: File): Promise<string | undefined> {
+    try {
+        const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+        return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch {
+        return undefined;
+    }
+}
+
+uploadBtn.onclick = async () => {
+    const file = fileEl.files?.[0];
+    if (!file) return;
+    uploadBtn.disabled = true;
+    const started = performance.now();
+    try {
+        setUploadStatus(`Reading ${file.name} (${fmtBytes(file.size)})…`);
+        const data = await readAsBase64(file);
+        setUploadStatus(`Uploading ${file.name}: ${fmtBytes(file.size)} as ${fmtBytes(data.length)} of base64…`);
+        const res = await app.callServerTool({ name: 'dialog_lab_upload', arguments: { name: file.name, mimeType: file.type, data } });
+        const first = res.content?.[0];
+        const msg = first && first.type === 'text' ? first.text : JSON.stringify(res.content);
+        if (res.isError) throw new Error(msg);
+        const sc = (res.structuredContent ?? {}) as { size?: number; sha256?: string };
+        const local = await localSha256(file);
+        const check =
+            sc.size !== file.size
+                ? ` ⚠ size differs from the local file (${file.size} bytes).`
+                : local === undefined
+                  ? ' Size matches (local SHA-256 unavailable in this frame).'
+                  : local === sc.sha256
+                    ? ' Size and SHA-256 match the local file.'
+                    : ` ⚠ SHA-256 differs from the local file (${local}).`;
+        setUploadStatus(`✅ ${msg}${check} (${Math.round(performance.now() - started)} ms)`, sc.size === file.size && (!local || local === sc.sha256) ? 'ok' : 'err');
+        note(`tools/call dialog_lab_upload: ok ${sc.size} bytes`);
+    } catch (e) {
+        setUploadStatus(`Upload of ${file.name} (${fmtBytes(file.size)}) failed: ${(e as Error).message}`, 'err');
+        note(`tools/call dialog_lab_upload: ERROR ${(e as Error).message.slice(0, 200)}`);
+    } finally {
+        uploadBtn.disabled = !fileEl.files?.length;
+    }
+};
 
 // ------------------------------------------------------------- actions
 $('submit').onclick = () =>
@@ -223,18 +313,22 @@ $('fullscreen').onclick = () =>
 $('download').onclick = () =>
     guarded('ui/download-file', async () => {
         const json = JSON.stringify(collect(), null, 2);
-        const r = await app.downloadFile({
-            contents: [
-                {
-                    type: 'resource',
-                    resource: { uri: 'file:///dialog-lab-answers.json', mimeType: 'application/json', text: json }
-                }
-            ]
-        });
-        if (r.isError) throw new Error('host refused the download');
-        setStatus('✅ Download offered by the host.', 'ok');
-        return r;
+        return offerDownload([{ type: 'resource', resource: { uri: 'file:///dialog-lab-answers.json', mimeType: 'application/json', text: json } }], 'JSON text');
     });
+
+$('downloadBlob').onclick = () =>
+    guarded('ui/download-file (blob)', async () => {
+        const blob = canvas.toDataURL('image/png').slice('data:image/png;base64,'.length);
+        return offerDownload([{ type: 'resource', resource: { uri: 'file:///dialog-lab-sketch.png', mimeType: 'image/png', blob } }], 'PNG blob');
+    });
+
+$('downloadLink').onclick = () =>
+    guarded('ui/download-file (resource_link)', async () =>
+        offerDownload(
+            [{ type: 'resource_link', uri: 'test://files/sample.pdf', name: 'sample.pdf', title: 'Sample PDF', mimeType: 'application/pdf' }],
+            'resource_link to test://files/sample.pdf, which the host must read from the server'
+        )
+    );
 
 // ------------------------------------------------- host → app events
 // Register handlers BEFORE connect() so one-shot notifications aren't missed.
@@ -269,11 +363,14 @@ app.onteardown = async () => {
 renderStars();
 renderRank();
 clearCanvas();
+refreshDownloads();
 $('swatch').style.background = colorEl.value;
 
 app
     .connect()
     .then(() => {
+        connected = true;
+        refreshDownloads();
         applyContext(app.getHostContext());
         note('connected (ui/initialize done)');
     })

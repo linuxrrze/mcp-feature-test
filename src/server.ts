@@ -6,6 +6,8 @@
  *  3. Multi-round elicitation  – wizard over several dialogs (input_required + requestState)
  *  4. MCP Apps (ext-apps)      – a full interactive HTML UI rendered by the host in an iframe
  *  5. Progress / logging / cancellation, and a client-capability inspector
+ *  6. Files: returning files (embedded resources, resource_link, image, audio),
+ *     uploads from the MCP App, and non-spec form-schema probes
  *
  * Elicitation is written with the 2026-07-28 "input_required" (multi-round-trip)
  * pattern. The SDK's legacy shim turns the same code into classic
@@ -20,6 +22,9 @@ import {
     CLIENT_INFO_META_KEY,
     McpServer,
     PROTOCOL_VERSION_META_KEY,
+    ProtocolError,
+    ProtocolErrorCode,
+    ResourceTemplate,
     acceptedContent,
     createRequestStateCodec,
     inputRequired,
@@ -42,6 +47,20 @@ import {
     type Era,
     type TransportKind
 } from './clients.js';
+import {
+    FILES_EXTENSION,
+    FILES_URI_TEMPLATE,
+    SAMPLE_FILES,
+    decodeBase64Strict,
+    formatBytes,
+    getSampleFile,
+    sampleFileContents,
+    sampleFileSize,
+    sampleFileUri,
+    sha256Base64Url,
+    sha256Hex,
+    uploadMaxBytes
+} from './files.js';
 import { createFlow, flowWaitMs, getFlow, waitForFlow } from './flows.js';
 import { errorData, logger } from './log.js';
 
@@ -55,7 +74,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 type WizardState =
     | { tool: 'wizard'; step: 'toppings'; size: string; crust: string; name: string }
     | { tool: 'wizard'; step: 'confirm'; size: string; crust: string; name: string; toppings: string[]; notes?: string }
-    | { tool: 'url'; flowId: string };
+    | { tool: 'url'; flowId: string }
+    | { tool: 'probe'; queue: FormatProbeName[]; results: FormatProbeResult[] };
 
 /** Signed (HMAC) requestState so the client cannot tamper with wizard progress. */
 const stateCodec = createRequestStateCodec<WizardState>({
@@ -280,6 +300,61 @@ export function allFieldsSchema(variant: 'all' | 'basic' | 'formats' | 'enums') 
     return { type: 'object', properties, required } as never;
 }
 
+/**
+ * Schema features that are NOT part of the elicitation spec (which allows only
+ * a flat object of string / number / integer / boolean / enum / multi-select
+ * properties, and the string formats email, uri, date and date-time). Each
+ * probe is shown as its own one-field dialog. Ordered from "extra keyword on
+ * an allowed type" (most likely to be tolerated) to "type the spec lacks".
+ */
+export const FORMAT_PROBES = {
+    pattern: {
+        what: 'string with a "pattern" regex constraint (not an allowed keyword)',
+        field: { type: 'string', pattern: '^[A-Z]{3}-[0-9]{3}$', title: 'Ticket code', description: 'pattern: ^[A-Z]{3}-[0-9]{3}$, e.g. ABC-123', default: 'ABC-123' }
+    },
+    color: {
+        what: 'string with format "color" (not an allowed format)',
+        field: { type: 'string', format: 'color', title: 'Pick a colour', description: 'format: "color" – a colour picker, if the client has one', default: '#4f46e5' }
+    },
+    time: {
+        what: 'string with format "time" (not an allowed format)',
+        field: { type: 'string', format: 'time', title: 'Pick a time', description: 'format: "time" (HH:MM:SS)', default: '12:30:00' }
+    },
+    nested_object: {
+        what: 'property of type "object" with its own properties (forms must be flat)',
+        field: {
+            type: 'object',
+            title: 'Address',
+            description: 'Nested object with street and city',
+            properties: { street: { type: 'string', title: 'Street' }, city: { type: 'string', title: 'City' } },
+            required: ['city']
+        }
+    },
+    free_array: {
+        what: 'array of free-text strings (arrays are only allowed as multi-selects with enum/anyOf items)',
+        field: { type: 'array', title: 'Tags', description: 'Array of free-text strings (items without enum)', items: { type: 'string' }, minItems: 1 }
+    },
+    file: {
+        what: 'string with format "data-url" and contentMediaType (how generic JSON Schema form libraries ask for a file; the spec has no file field)',
+        field: { type: 'string', format: 'data-url', contentMediaType: 'image/*', title: 'Pick a file', description: 'format: "data-url" – a file picker, if the client has one' }
+    }
+} as const;
+
+export type FormatProbeName = keyof typeof FORMAT_PROBES;
+export const FORMAT_PROBE_NAMES = Object.keys(FORMAT_PROBES) as FormatProbeName[];
+
+export interface FormatProbeResult {
+    probe: FormatProbeName;
+    action: 'accept' | 'decline' | 'cancel';
+    content?: Record<string, unknown>;
+}
+
+/** The (intentionally non-spec) requestedSchema for one probe: a single field named after the probe. */
+export function formatProbeSchema(name: FormatProbeName) {
+    // Cast: these shapes are outside the SDK's (spec-conforming) static type on purpose.
+    return { type: 'object', properties: { [name]: FORMAT_PROBES[name].field } } as never;
+}
+
 const PIZZA_TOPPINGS = [
     { const: 'mozzarella', title: '🧀 Mozzarella' },
     { const: 'basil', title: '🌿 Basil' },
@@ -289,6 +364,39 @@ const PIZZA_TOPPINGS = [
     { const: 'olives', title: '🫒 Olives' },
     { const: 'chili', title: '🌶️ Chili' }
 ];
+
+/**
+ * `test://files/{name}`: a resource template over the fixed sample files. The
+ * name is only ever looked up in SAMPLE_FILES (never used as a path), so
+ * unknown names, `..` and the like simply don't exist.
+ */
+function registerSampleFiles(server: McpServer): void {
+    const listed = SAMPLE_FILES.map(f => ({
+        uri: sampleFileUri(f.name),
+        name: f.name,
+        title: f.title,
+        description: f.description,
+        mimeType: f.mimeType,
+        size: sampleFileSize(f)
+    }));
+    server.registerResource(
+        'Sample files',
+        new ResourceTemplate(FILES_URI_TEMPLATE, {
+            list: async () => ({ resources: listed }),
+            complete: { name: value => SAMPLE_FILES.map(f => f.name).filter(n => n.startsWith(value)) }
+        }),
+        {
+            title: 'Sample files',
+            description: `Small generated test files returned by return_files: ${SAMPLE_FILES.map(f => f.name).join(', ')}`
+        },
+        async (uri, variables) => {
+            const name = typeof variables.name === 'string' ? variables.name : '';
+            const file = getSampleFile(name);
+            if (!file) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Unknown sample file: ${uri.href}`);
+            return { contents: [sampleFileContents(file)] };
+        }
+    );
+}
 
 // ---------------------------------------------------------------------------
 // Server factory
@@ -302,11 +410,12 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
             version: '1.0.0'
         },
         {
-            capabilities: { logging: {} },
+            // The files extension draft has servers advertise how much inline file data they accept per request.
+            capabilities: { logging: {}, extensions: { [FILES_EXTENSION]: { maxInlineBytes: uploadMaxBytes() } } },
             requestState: { verify: stateCodec.verify },
             instructions:
                 'Test server for MCP user-interaction features. Call the tools when the user wants to try dialogs: ' +
-                'elicit_* tools show native client dialogs (elicitation), open_dialog_lab shows an interactive HTML UI (MCP Apps). ' +
+                'elicit_* tools show native client dialogs (elicitation), open_dialog_lab shows an interactive HTML UI (MCP Apps), return_files returns files in every content form. ' +
                 'Call inspect_client first to see what the current client supports.'
         }
     );
@@ -763,6 +872,180 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
         }
     );
 
+    // ------------------------------------------ non-spec form schema probes
+    const describeProbe = (r: FormatProbeResult) => {
+        const head = `${r.probe} – ${FORMAT_PROBES[r.probe].what}:`;
+        if (r.action !== 'accept') return `${head} user ${pastTense(r.action)} the dialog (the client did show something).`;
+        const value = r.content?.[r.probe];
+        if (value === undefined) {
+            const keys = Object.keys(r.content ?? {});
+            return `${head} accepted, but the field was not returned${keys.length ? ` (content keys: ${keys.join(', ')})` : ' (empty content)'}.`;
+        }
+        return `${head} accepted, returned ${JSON.stringify(value)} (${Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value}).`;
+    };
+
+    server.registerTool(
+        'elicit_format_probe',
+        {
+            title: 'Probe non-spec form fields (elicitation)',
+            description:
+                'Show form-elicitation dialogs that use schema features OUTSIDE the MCP spec (format "color", format "time", a regex pattern, a nested object, a free-text array, a file-like data-url field), one dialog per probe, and report what the client did with each. variant picks one probe; "all" runs them one after another.',
+            inputSchema: z.object({
+                variant: z
+                    .enum(['all', ...FORMAT_PROBE_NAMES] as [string, ...string[]])
+                    .default('all')
+                    .describe(`all = every probe in sequence; or one of: ${FORMAT_PROBE_NAMES.join(', ')}`)
+            }),
+            annotations: { readOnlyHint: true }
+        },
+        async ({ variant }, ctx): Promise<CallToolResult | InputRequiredResult> => {
+            const unsupported = missingElicitation(clientOf(ctx), 'form');
+            if (unsupported) return unsupported;
+            const state = ctx.mcpReq.requestState<WizardState>();
+
+            let queue: FormatProbeName[];
+            let results: FormatProbeResult[];
+            if (state?.tool === 'probe' && state.queue.length) {
+                const current = state.queue[0];
+                const v = inputResponse(ctx.mcpReq.inputResponses, `probe_${current}`);
+                if (v.kind !== 'elicit') return askProbe(state.queue, state.results);
+                results = [...state.results, { probe: current, action: v.action, ...(v.content && { content: v.content }) }];
+                queue = state.queue.slice(1);
+            } else {
+                queue = variant === 'all' ? [...FORMAT_PROBE_NAMES] : [variant as FormatProbeName];
+                results = [];
+            }
+            if (queue.length) return askProbe(queue, results);
+
+            return text(
+                'These dialogs used schema features that are OUTSIDE the MCP elicitation spec (2025-11-25 and 2026-07-28 allow only flat ' +
+                    'string/number/integer/boolean/enum/multi-select fields and the formats email, uri, date, date-time). ' +
+                    'A client may reject them, render a fallback text box, or drop the field; none of that is a bug.\n\n' +
+                    results.map(describeProbe).join('\n') +
+                    '\n\nA probe the client REJECTED (an error instead of a dialog) never reaches this report: the client ends the whole tool call with an error. ' +
+                    'Run single variants to find which probe it refuses (the server log shows the last tool.input_required probe).',
+                { structuredContent: { variant, outsideSpec: true, results } }
+            );
+
+            async function askProbe(q: FormatProbeName[], r: FormatProbeResult[]) {
+                const name = q[0];
+                const index = (variant === 'all' ? FORMAT_PROBE_NAMES.indexOf(name) : 0) + 1;
+                const total = variant === 'all' ? FORMAT_PROBE_NAMES.length : 1;
+                return inputRequired({
+                    inputRequests: {
+                        [`probe_${name}`]: inputRequired.elicit({
+                            message: `Non-spec probe ${index}/${total}: ${FORMAT_PROBES[name].what}. Fill it in if the client lets you; nothing is stored.`,
+                            requestedSchema: formatProbeSchema(name)
+                        })
+                    },
+                    requestState: await stateCodec.mint({ tool: 'probe', queue: q, results: r })
+                });
+            }
+        }
+    );
+
+    // ------------------------------------------------------ returning files
+    registerSampleFiles(server);
+
+    server.registerTool(
+        'return_files',
+        {
+            title: 'Return files in a tool result',
+            description:
+                'Return one tool result containing every way MCP can hand a file to a client: an embedded text resource (CSV), embedded blob resources (PNG and PDF), a resource_link (fetched via resources/read), an image block and an audio block (WAV). The first text block lists them, so you can see which ones the client dropped.',
+            inputSchema: z.object({}),
+            annotations: { readOnlyHint: true }
+        },
+        async () => {
+            const csv = getSampleFile('sample.csv')!;
+            const png = getSampleFile('gradient.png')!;
+            const pdf = getSampleFile('sample.pdf')!;
+            const wav = getSampleFile('beep.wav')!;
+            const notes = getSampleFile('linked-notes.md')!;
+            const manifest = [
+                { block: 2, type: 'resource', kind: 'embedded text', uri: sampleFileUri(csv.name), mimeType: csv.mimeType, size: sampleFileSize(csv) },
+                { block: 3, type: 'resource', kind: 'embedded blob (image)', uri: sampleFileUri(png.name), mimeType: png.mimeType, size: sampleFileSize(png) },
+                { block: 4, type: 'resource', kind: 'embedded blob (non-image)', uri: sampleFileUri(pdf.name), mimeType: pdf.mimeType, size: sampleFileSize(pdf) },
+                { block: 5, type: 'resource_link', kind: 'link, client reads it with resources/read', uri: sampleFileUri(notes.name), mimeType: notes.mimeType, size: sampleFileSize(notes) },
+                { block: 6, type: 'image', kind: 'image content', mimeType: png.mimeType, size: sampleFileSize(png) },
+                { block: 7, type: 'audio', kind: 'audio content', mimeType: wav.mimeType, size: sampleFileSize(wav) }
+            ];
+            const lines = manifest.map(
+                m => `${m.block}. ${m.type} – ${m.kind}: ${'uri' in m ? `${m.uri}, ` : ''}${m.mimeType}, ${formatBytes(m.size)}`
+            );
+            const content: CallToolResult['content'] = [
+                {
+                    type: 'text',
+                    text:
+                        'This result contains 7 content blocks. Block 1 is this text; the client should show or offer the others:\n' +
+                        `${lines.join('\n')}\n` +
+                        'Any item you cannot see, open or download was dropped (or only passed to the model) by the client.'
+                },
+                { type: 'resource', resource: sampleFileContents(csv) },
+                { type: 'resource', resource: sampleFileContents(png) },
+                { type: 'resource', resource: sampleFileContents(pdf) },
+                {
+                    type: 'resource_link',
+                    uri: sampleFileUri(notes.name),
+                    name: notes.name,
+                    title: notes.title,
+                    description: notes.description,
+                    mimeType: notes.mimeType,
+                    size: sampleFileSize(notes),
+                    annotations: { audience: ['user'] }
+                },
+                { type: 'image', mimeType: png.mimeType, data: png.bytes!.toString('base64') },
+                { type: 'audio', mimeType: wav.mimeType, data: wav.bytes!.toString('base64') }
+            ];
+            return { content, structuredContent: { items: manifest } };
+        }
+    );
+
+    // ------------------------------- experimental files extension (draft)
+    const maxUpload = uploadMaxBytes();
+    server.registerTool(
+        'upload_file_experimental',
+        {
+            title: 'Upload a file (EXPERIMENTAL x-mcp-file)',
+            description:
+                'EXPERIMENTAL, not part of the MCP spec: a tool whose "file" argument is marked with x-mcp-file, following the draft of the io.modelcontextprotocol/files extension (inline base64 only, no out-of-band upload). Returns the size and SHA-256 of the received file; nothing is stored.',
+            inputSchema: z.object({
+                file: z
+                    .object({
+                        id: z.string().min(1).max(128).describe('Client-chosen id, unique within the call'),
+                        name: z.string().max(1024).optional().describe('File name'),
+                        mimeType: z.string().min(1).max(255).describe('Media type, application/octet-stream if unknown'),
+                        size: z.number().int().min(0).describe('Decoded size in bytes'),
+                        digest: z
+                            .object({ algorithm: z.literal('sha-256'), value: z.string().describe('base64url SHA-256, no padding') })
+                            .optional(),
+                        data: z.string().optional().describe('RFC 4648 base64 bytes (inline transfer)')
+                    })
+                    .meta({ 'x-mcp-file': { maxSize: maxUpload } })
+                    .describe('The file (FileInput shape of the experimental io.modelcontextprotocol/files extension)')
+            }),
+            annotations: { readOnlyHint: true }
+        },
+        async ({ file }) => {
+            const fail = (msg: string) => text(`File "${file.name ?? file.id}" not accepted: ${msg}`, { isError: true });
+            if (file.size > maxUpload) return fail(`size ${file.size} is above maxSize ${maxUpload} (UPLOAD_MAX_BYTES)`);
+            if (file.data === undefined) {
+                if (file.size > 0) return fail('no inline data; this server only supports inline transfer (no out-of-band upload)');
+            }
+            const decoded = decodeBase64Strict(file.data ?? '', maxUpload);
+            if (!decoded.ok) return fail(decoded.error);
+            if (decoded.bytes.length !== file.size) return fail(`declared size ${file.size} but ${decoded.bytes.length} bytes decoded`);
+            if (file.digest && file.digest.value !== sha256Base64Url(decoded.bytes)) return fail('sha-256 digest does not match the data');
+            const sha256 = sha256Hex(decoded.bytes);
+            logger.info('upload.received', `upload_file_experimental: ${decoded.bytes.length} bytes`, { tool: 'upload_file_experimental', size: decoded.bytes.length, sha256 });
+            return text(
+                `EXPERIMENTAL x-mcp-file upload received: "${file.name ?? file.id}" (${file.mimeType}), ${formatBytes(decoded.bytes.length)} (${decoded.bytes.length} bytes), ` +
+                    `SHA-256 ${sha256}${file.digest ? ' (digest verified)' : ''}. Nothing was stored.`,
+                { structuredContent: { id: file.id, name: file.name ?? null, mimeType: file.mimeType, size: decoded.bytes.length, sha256, digestVerified: !!file.digest } }
+            );
+        }
+    );
+
     // ------------------------------------------------------- MCP App (UI)
     registerAppResource(
         server,
@@ -825,6 +1108,37 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
         }
     );
 
+    registerAppTool(
+        server,
+        'dialog_lab_upload',
+        {
+            title: 'Upload a file from the Dialog Lab (app-only)',
+            description: `Called by the Dialog Lab UI with a base64-encoded file. Returns its size and SHA-256; the content is not stored or logged. Limit: ${formatBytes(maxUpload)} (UPLOAD_MAX_BYTES). Hidden from the model.`,
+            inputSchema: {
+                name: z.string().max(1024),
+                mimeType: z.string().max(255),
+                data: z.string().describe('Standard base64, no data: prefix')
+            },
+            _meta: { ui: { resourceUri: DIALOG_APP_URI, visibility: ['app'] } }
+        },
+        async ({ name, mimeType, data }) => {
+            const decoded = decodeBase64Strict(data, maxUpload);
+            if (!decoded.ok) {
+                logger.info('upload.rejected', `dialog_lab_upload rejected: ${decoded.error}`, { tool: 'dialog_lab_upload', base64Length: data.length });
+                return text(`Upload of ${JSON.stringify(name)} rejected: ${decoded.error}.`, {
+                    isError: true,
+                    structuredContent: { error: decoded.error, maxBytes: maxUpload }
+                });
+            }
+            const size = decoded.bytes.length;
+            const sha256 = sha256Hex(decoded.bytes);
+            logger.info('upload.received', `dialog_lab_upload: ${size} bytes`, { tool: 'dialog_lab_upload', size, sha256 });
+            return text(`Received ${JSON.stringify(name)} (${mimeType || 'unknown type'}): ${formatBytes(size)} (${size} bytes), SHA-256 ${sha256}. Nothing was stored.`, {
+                structuredContent: { name, mimeType, size, sha256, maxBytes: maxUpload }
+            });
+        }
+    );
+
     server.registerTool(
         'dialog_lab_results',
         {
@@ -865,7 +1179,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
                         text:
                             'Please test the MCP user-interaction features of the mcp-feature-test server, one at a time, telling me what to expect before each: ' +
                             '1) inspect_client, 2) elicit_confirm, 3) elicit_all_field_types, 4) elicit_parallel, 5) elicit_wizard, 6) elicit_url, ' +
-                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) slow_task. Summarize which features worked in this client.'
+                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) slow_task, 9) return_files, 10) elicit_format_probe (non-spec fields). Summarize which features worked in this client.'
                     }
                 }
             ]

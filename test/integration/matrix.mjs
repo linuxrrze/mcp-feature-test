@@ -2,6 +2,7 @@
 // tool, accepted / declined / cancelled by a scripted user, on one transport
 // and one protocol era.
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
 import { APP_MIME, defaultAnswer, makeClient, MODERN, submitFlowPage, textOf } from '../helpers.mjs';
 
@@ -270,6 +271,90 @@ export function eraSuite({ transport, era, connect, logs }) {
             assert.match(r.structuredContent.submissions[0].data.sketch, /PNG data URL/);
             const img = r.content.find(c => c.type === 'image');
             assert.equal(img?.mimeType, 'image/png');
+        });
+
+        // -------------------------------------------------------------- files
+        it('return_files: one result with every file content form, all readable', async () => {
+            const r = await call('return_files');
+            assert.ok(!r.isError);
+            assert.deepEqual(r.content.map(c => c.type), ['text', 'resource', 'resource', 'resource', 'resource_link', 'image', 'audio']);
+            assert.match(r.content[0].text, /7 content blocks/);
+            const [, csv, png, pdf, link, image, audio] = r.content;
+            assert.equal(csv.resource.mimeType, 'text/csv');
+            assert.match(csv.resource.text, /^id,name/);
+            assert.equal(Buffer.from(png.resource.blob, 'base64').toString('latin1', 1, 4), 'PNG');
+            assert.equal(Buffer.from(pdf.resource.blob, 'base64').toString('latin1', 0, 5), '%PDF-');
+            assert.equal(image.mimeType, 'image/png');
+            assert.equal(Buffer.from(audio.data, 'base64').toString('latin1', 8, 12), 'WAVE');
+            // The link is resolvable through resources/read, and its declared size is right.
+            assert.equal(link.uri, 'test://files/linked-notes.md');
+            const read = await client.readResource({ uri: link.uri });
+            assert.equal(read.contents[0].mimeType, link.mimeType);
+            assert.equal(Buffer.byteLength(read.contents[0].text), link.size);
+            assert.equal(r.structuredContent.items.length, 6);
+            const { resourceTemplates } = await client.listResourceTemplates();
+            assert.ok(resourceTemplates.some(t => t.uriTemplate === 'test://files/{name}'));
+        });
+
+        it('dialog_lab_upload accepts a 5 MiB file (above the SDK default HTTP body limit) and reports its SHA-256', async () => {
+            const bytes = Buffer.alloc(5 * 1024 * 1024, 0x5a);
+            const r = await call('dialog_lab_upload', { name: 'five.bin', mimeType: 'application/octet-stream', data: bytes.toString('base64') });
+            assert.ok(!r.isError, textOf(r));
+            assert.equal(r.structuredContent.size, bytes.length);
+            assert.equal(r.structuredContent.sha256, createHash('sha256').update(bytes).digest('hex'));
+        });
+
+        it('upload_file_experimental takes an inline x-mcp-file argument', async () => {
+            const bytes = Buffer.from('hello files extension');
+            const r = await call('upload_file_experimental', {
+                file: { id: 'f1', name: 'hello.txt', mimeType: 'text/plain', size: bytes.length, data: bytes.toString('base64') }
+            });
+            assert.ok(!r.isError, textOf(r));
+            assert.equal(r.structuredContent.sha256, createHash('sha256').update(bytes).digest('hex'));
+        });
+
+        it('elicit_format_probe: a tolerated probe (pattern) is reported with what the client returned', async () => {
+            const before = dialogs.length;
+            const r = await call('elicit_format_probe', { variant: 'pattern' });
+            assert.ok(!r.isError, textOf(r));
+            assert.equal(dialogs.length - before, 1);
+            // The SDK client parses the request with the spec schema, which drops unknown keywords like
+            // `pattern` before the dialog handler sees it (the wire carries it: see http.test.mjs).
+            assert.equal(dialogs[before].requestedSchema.properties.pattern.type, 'string');
+            assert.match(textOf(r), /OUTSIDE the MCP elicitation spec/);
+            assert.match(textOf(r), /pattern – .*accepted, returned "ABC-123" \(string\)/);
+            assert.deepEqual(r.structuredContent.results, [{ probe: 'pattern', action: 'accept', content: { pattern: 'ABC-123' } }]);
+        });
+
+        it('elicit_format_probe: decline is reported per probe', async () => {
+            const r = await withPolicy(async () => ({ action: 'decline' }), () => call('elicit_format_probe', { variant: 'pattern' }));
+            assert.match(textOf(r), /user declined the dialog/);
+        });
+
+        // The official TypeScript client validates elicitation requests against the spec schema
+        // and refuses non-spec types and formats. The server sends them unchanged; how the
+        // refusal surfaces depends on the era.
+        const expectRejected = async pending => {
+            if (era === 'modern') {
+                await assert.rejects(pending, e => e.code === -32602 && /Invalid elicitation request/.test(e.message));
+            } else {
+                const r = await pending;
+                assert.equal(r.isError, true);
+                assert.match(textOf(r), /Fulfilling input required by 'tools\/call' failed: Invalid elicitation request/);
+            }
+        };
+
+        it('elicit_format_probe: a client that rejects the schema ends the call with an error (SDK client refuses format "color")', async () => {
+            const before = dialogs.length;
+            await expectRejected(call('elicit_format_probe', { variant: 'color' }));
+            assert.equal(dialogs.length, before, 'the scripted user never saw a dialog');
+        });
+
+        it('elicit_format_probe "all": probes run one per round with signed state until the client refuses one', async () => {
+            const before = dialogs.length;
+            await expectRejected(call('elicit_format_probe', { variant: 'all' }));
+            assert.deepEqual(dialogs.slice(before).map(d => Object.keys(d.requestedSchema.properties)[0]), ['pattern']);
+            await logs().waitFor(e => e.event === 'tool.input_required' && e.client === clientName && e.inputRequests?.[0] === 'probe_color (form)');
         });
 
         // ------------------------------------------------ capability handling

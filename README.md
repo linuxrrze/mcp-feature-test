@@ -9,6 +9,7 @@ An MCP server for checking which **user-interaction features** an MCP client (Cl
 - **Multi-step elicitation**: a three-dialog wizard that carries signed `requestState` between rounds.
 - **MCP Apps**: an interactive HTML UI (`ui://` resource) that the host renders in a sandboxed iframe.
 - **Progress, logging and cancellation** for long-running tools.
+- **Files**: returning files in tool results (embedded resources, `resource_link`, image, audio), uploading from an MCP App, app downloads, form fields the spec doesn't have, and the experimental `x-mcp-file` draft.
 - **Capability inspection**: the server logs what each client declares and can report it back (`inspect_client`, `list_seen_clients`).
 
 The server speaks both protocol generations, **2026-07-28** (stateless, `input_required`) and **2025-era** (`initialize` handshake, server→client `elicitation/create`), over **stdio** and **Streamable HTTP**. It is built on the MCP TypeScript SDK v2 (`@modelcontextprotocol/server` 2.4) and `@modelcontextprotocol/ext-apps` 2.0.
@@ -48,10 +49,15 @@ These screenshots come from the automated browser test (`npm run screenshots`). 
 | `slow_task` | Progress notifications, log messages, and cancellation (`steps`, `delayMs`) | Progress and cancellation: 2024-11-05. Logging notifications are deprecated in 2026-07-28 |
 | `open_dialog_lab` | MCP App: tool `_meta.ui.resourceUri`, then a `ui://` resource rendered in an iframe (colour picker, slider, star rating, date, drag-to-rank list, sketch canvas). Buttons exercise `tools/call`, `ui/message`, `ui/update-model-context`, `ui/request-display-mode` and `ui/download-file` | MCP Apps extension `io.modelcontextprotocol/ui` (ext-apps spec 2026-01-26) |
 | `dialog_lab_submit` | App-only tool (`_meta.ui.visibility: ["app"]`). The UI calls it and hosts should hide it from the model | MCP Apps |
+| `dialog_lab_upload` | App-only tool behind the Dialog Lab's **File upload** card: takes a base64 file, returns its size and SHA-256, stores nothing. Size cap `UPLOAD_MAX_BYTES` (10 MiB) | MCP Apps (app → server `tools/call`) |
 | `dialog_lab_results` | Returns what was submitted in the Dialog Lab, with the sketch as an image | n/a |
+| `return_files` | One tool result with every way to hand over a file: embedded text resource (CSV), embedded blob resources (PNG, PDF), a `resource_link` to `test://files/linked-notes.md`, an `image` block and an `audio` block (WAV). The first text block lists them, so you can see what the client dropped | `resource_link` and `audio`: 2025-06-18. Embedded resources and images: 2024-11-05 |
+| Resource template `test://files/{name}` | The sample files behind `return_files` (`sample.csv`, `gradient.png`, `sample.pdf`, `beep.wav`, `linked-notes.md`), listed in `resources/list` and `resources/templates/list`, readable with `resources/read`, names completable | Resource templates: 2024-11-05 |
+| `elicit_format_probe` | Form elicitation with schema features **outside the spec**, one dialog per probe: a `pattern`, format `color`, format `time`, a nested object, a free-text array, a file-like `data-url` field. Reports per probe whether the user accepted (and what came back), declined or cancelled. `variant`: `all` or one probe | Not in any spec version (deliberately) |
+| `upload_file_experimental` | **Experimental, not in the spec:** a `file` argument marked with `x-mcp-file` per the draft [files extension](https://github.com/modelcontextprotocol/experimental-ext-file-uploads) (`io.modelcontextprotocol/files`), inline base64 only. Returns size and SHA-256 and checks a supplied digest | Draft extension, not a SEP |
 | Prompt `try_all_dialogs` | A prompt that walks the assistant through every tool above | Prompts |
 
-Nothing these tools do has side effects: "delete" and "order" are only pretend, and the tokens entered on the URL page are kept in memory and shown masked.
+Nothing these tools do has side effects: "delete" and "order" are only pretend, the tokens entered on the URL page are kept in memory and shown masked, and uploaded files are hashed and discarded (their contents are never logged).
 
 ## Quick start
 
@@ -87,6 +93,7 @@ HTTP mode serves both protocol generations on one endpoint. 2026-07-28 requests 
 | `FLOW_HOST` | `127.0.0.1` | stdio | Bind address of that listener. Use `0.0.0.0` in Docker. |
 | `FLOW_PUBLIC_URL` | `http://<FLOW_HOST>:<port>` | stdio | Base URL that the URL-elicitation links point to, when the browser has to use a different address or port. |
 | `FLOW_WAIT_MS` | `300000` | both | How long `elicit_url` / `elicit_url_legacy_push` wait for the browser page after the client already answered `accept` (clients may accept when the link is opened). |
+| `UPLOAD_MAX_BYTES` | `10485760` (10 MiB) | both | Largest decoded file `dialog_lab_upload` and `upload_file_experimental` accept. Also sizes the HTTP request-body limit (this value as base64 plus 1 MiB; larger bodies get **413**) and the stdio message buffer. |
 | `LOG_LEVEL` | `info` | both | `debug`, `info`, `warn`, `error` or `silent`. |
 | `LOG_FORMAT` | `text` | both | `text` (readable, multi-line capability tables) or `json` (one JSON object per line). |
 
@@ -200,6 +207,11 @@ curl -s http://127.0.0.1:3457/          # "mcp-feature-test is running."
 | `slow_task` | A progress indicator counting up. Cancelling stops it early | Result text: *"Client did not request progress."* |
 | `open_dialog_lab` | The Dialog Lab UI (screenshots above) | Only the text result, which says that no UI appeared because the client does not render MCP Apps |
 | `dialog_lab_results` | The last submissions as JSON, plus the sketch as an image | |
+| Dialog Lab **File upload** | Pick a file, press *Upload to server*: the app shows size and SHA-256 (and whether they match the local file). Try 100 KB, 1 MB and 10 MB files to find the host's message-size limit | An error under the upload card: the host's or the server's limit, or no `serverTools` support |
+| Dialog Lab **downloads** | Three buttons: JSON (embedded text), sketch PNG (embedded blob) and linked PDF (`resource_link`, which the host has to read from the server) | All three are disabled, with a note, when the host doesn't advertise `hostCapabilities.downloadFile` |
+| `return_files` | Seven blocks: the list, a CSV, a PNG, a PDF, a link to a Markdown file, an image and a short beep | Whatever is missing from the list was dropped (or handed only to the model) |
+| `elicit_format_probe` | One dialog per probe. The result says per probe what came back; every one of these is outside the spec, so a fallback text box, a dropped field or a refusal is all legitimate | A client that refuses a schema ends the whole call with an error (the official TypeScript SDK client refuses everything except `pattern`). Use single variants to find which probe it refuses |
+| `upload_file_experimental` | Only clients implementing the draft files extension render a file picker; others show the raw object | A model can still call it with inline base64 |
 
 ![URL-mode elicitation page, light](docs/images/url-flow-light.png)
 
@@ -237,6 +249,7 @@ When a client connects, the server writes a summary to stderr. Some clients surf
 | `elicit_url` seems to hang after you accepted | Some clients (e.g. Open WebUI) answer `accept` as soon as the link is opened; the tool then waits for the browser page to be submitted. Submit the page, or the tool returns an error after `FLOW_WAIT_MS` (default 5 min). |
 | No graphical UI for `open_dialog_lab` | Check `MCP Apps UI` in `inspect_client`. The client must declare the `io.modelcontextprotocol/ui` extension with `text/html;profile=mcp-app`. |
 | HTTP answers 403 | Host/Origin validation (DNS-rebinding protection). Add your hostname to `ALLOWED_HOSTS`. |
+| HTTP answers 413, or a Dialog Lab upload fails | The request body was above `UPLOAD_MAX_BYTES` as base64 plus 1 MiB, or the file was above `UPLOAD_MAX_BYTES`. Raise the variable. If the server never logs `upload.received`/`upload.rejected`, the host refused the message before it reached the server. |
 | HTTP answers 400 "Missing session" or 404 "Unknown session" | A 2025-era client sent a request without `initialize` first, or after the server restarted. Reconnect. |
 | `elicit_url_legacy_push` fails | Expected on 2026-07-28 connections. Use `elicit_url`. |
 | The client shows garbage or JSON parse errors (stdio) | Something wrote to stdout. This server never does; check wrapper scripts. |
@@ -261,4 +274,4 @@ npm run screenshots        # regenerates docs/images/*.png
 
 CI ([.github/workflows/docker-image.yml](.github/workflows/docker-image.yml)) runs the full suite, builds and smoke-tests the image, scans it with Trivy and publishes it; see [docs/docker.md](docs/docker.md#ci-and-published-images). See [docs/testing.md](docs/testing.md) for what each suite covers, and [docs/architecture.md](docs/architecture.md) for how the server is put together.
 
-Source layout: `src/server.ts` (tools and factory), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `ui/` (the MCP App).
+Source layout: `src/server.ts` (tools and factory), `src/files.ts` (generated sample files, upload decoding and limits), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `ui/` (the MCP App).

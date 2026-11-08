@@ -68,6 +68,11 @@ Legend for the evidence column:
 | App → host `ui/request-display-mode` | Answers `inline` (only `availableDisplayModes: ["inline"]`) | 0.13.0 | verified ("Display mode is now: inline") |
 | App → host `ui/download-file` | **No** (`Method not found`) | – | verified |
 | App → host `ui/open-link`, `resources/read` / `resources/list` | Yes. Links are http(s) only. | 0.13.0 | source |
+| Tool result `image` / `audio` content (`return_files`) | Shown in the chat | – | source (research pass); **not verified live** with `return_files` |
+| Tool result embedded `resource` with `text` | Passed to the model as text, not offered as a file | – | source; not verified live |
+| Tool result embedded `resource` with `blob` | Image blobs are shown; other blobs (the PDF) become placeholder text | – | source; not verified live |
+| Tool result `resource_link` | **Silently dropped** (neither shown nor read) | – | source; not verified live |
+| Files to the server | No MCP mechanism (the spec has none). The Dialog Lab's upload goes through app → host `tools/call`, which works but needs the confirmation dialog; the size limit between iframe and backend is unknown | 0.13.0 | inferred from the `tools/call` row; not verified live |
 | Host → app `ui/notifications/tool-input`, `tool-result`, `host-context-changed`, `resource-teardown` | Yes. Host context: `theme`, `platform: web`, `displayMode: inline`, `locale`, `timeZone`, `toolInfo`, `containerDimensions`. | 0.13.0 | source; verified (the app shows the light theme and tool result) |
 | Apps needing `localStorage` / same origin | No (the `srcdoc` iframe is opaque) | – | source comment in `MCPApp.svelte` |
 | MCP-UI (`@mcp-ui`, `rawHtml` / `externalUrl` / `remoteDom` resources) | **No** | – | source (no matches); inferred: such resources only reach the model as text |
@@ -156,6 +161,18 @@ The Dialog Lab rendered inline:
 | `ui/message` | A "Confirm Prompt from Embed" dialog appears ([screenshot](images/openwebui-mcp-app-message-confirm.png)), then the text is sent as the next user message ([screenshot](images/openwebui-mcp-app-after-message.png)). |
 
 The app runs from an opaque `srcdoc` origin. Every app request goes through the Open WebUI backend (`POST /api/v1/tools/id/server:mcp:<id>/mcp/app/rpc`), authenticated with the user's token plus an HMAC binding to the server and tool. That backend opens a fresh MCP connection without the elicitation capability for each request, so **a tool called from an app cannot elicit**.
+
+### Files (expected behaviour, not yet verified live)
+
+The file tools were added after the hands-on run above. Everything in this subsection comes from **reading the `v0.13.2` source** (and from the rows above for `tools/call` and `ui/download-file`); none of it has been observed in a running Open WebUI yet. The harness has no scenarios for these tools.
+
+| Tool / feature | Expected in Open WebUI 0.13.2 | Evidence |
+|---|---|---|
+| `return_files` | The text list, the PNG `image` block and the WAV `audio` block appear in the chat. The embedded PNG blob is shown as an image too. The CSV text reaches the model as text. The PDF blob becomes placeholder text. The `resource_link` (block 5) is dropped without a trace, so `linked-notes.md` is never read. Compare with the list in block 1. | source |
+| Dialog Lab **downloads** | All three buttons are disabled with the note "host did not advertise hostCapabilities.downloadFile": Open WebUI answers `ui/download-file` with *Method not found* and does not advertise it. | source + the verified `ui/download-file` row |
+| Dialog Lab **File upload** | Each upload triggers the "Tool call" confirmation dialog (as every app `tools/call` does). Small files should come back with size and SHA-256. Where large files fail (Socket.IO / HTTP limits between the iframe, the frontend and `/mcp/app/rpc`) is exactly what the 100 KB / 1 MB / 10 MB probe is for. If the server logs neither `upload.received` nor `upload.rejected`, the request died in Open WebUI. | inferred |
+| `elicit_format_probe` | The elicitation dialog renders known field types and shows "Unsupported input format" (Cancel/Decline only) for types it can't render, so the nested object and free-text array should land there. Unknown formats (`color`, `time`, `data-url`) are probably shown as plain text boxes. Answers are validated with `Draft202012Validator` and a format checker before they are sent, so a value that doesn't match `pattern` should be cancelled rather than sent. Because Open WebUI doesn't refuse the requests outright, a full `all` run should be possible, unlike with the TypeScript SDK client. | source (`ElicitationDialog.svelte`, `MCPClient.elicit`); per-probe outcome inferred |
+| `upload_file_experimental` | No file picker (Open WebUI does not implement the draft files extension). The model sees a tool with an object argument and could only fill it with inline base64 itself. | inferred (no `x-mcp-file` in the source) |
 
 ## 4. mcpo: what is lost
 

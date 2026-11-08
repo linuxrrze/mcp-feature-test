@@ -142,6 +142,37 @@ describe('http', () => {
         });
     });
 
+    describe('non-spec probe schemas on the wire (2026-07-28)', () => {
+        it('the server SDK sends elicit_format_probe schemas unchanged; the SDK client is what refuses them', async () => {
+            const sent = [];
+            const recordingFetch = async (url, init) => {
+                if (init?.body) sent.push({ url: String(url), headers: Object.fromEntries(new Headers(init.headers)), body: JSON.parse(init.body) });
+                return fetch(url, init);
+            };
+            const { client } = makeClient('modern', { name: 'probe-wire' });
+            const conn = await connectHttp(client, srv.mcpUrl, { fetch: recordingFetch });
+            try {
+                await assert.rejects(client.callTool({ name: 'elicit_format_probe', arguments: { variant: 'nested_object' } }), /Invalid elicitation request/);
+            } finally {
+                await conn.close();
+            }
+            const first = sent.find(s => s.body.method === 'tools/call');
+            const raw = async variant => {
+                const body = { ...first.body, id: 998, params: { ...first.body.params, arguments: { variant } } };
+                const res = await fetch(first.url, { method: 'POST', headers: first.headers, body: JSON.stringify(body) });
+                const text = await res.text();
+                return text.startsWith('{') ? JSON.parse(text) : JSON.parse(text.split('\n').find(l => l.startsWith('data:')).slice(5));
+            };
+            const nested = await raw('nested_object');
+            assert.equal(nested.result.resultType, 'input_required');
+            const req = nested.result.inputRequests.probe_nested_object;
+            assert.equal(req.method, 'elicitation/create');
+            assert.deepEqual(req.params.requestedSchema.properties.nested_object.properties.city, { type: 'string', title: 'City' });
+            const pattern = await raw('pattern');
+            assert.equal(pattern.result.inputRequests.probe_pattern.params.requestedSchema.properties.pattern.pattern, '^[A-Z]{3}-[0-9]{3}$');
+        });
+    });
+
     describe('capability logging across many frontends', () => {
         it('logs each distinct 2026-07-28 client once and lists all of them', async () => {
             const names = ['Frontend A', 'Frontend B'];
@@ -168,6 +199,31 @@ describe('http', () => {
 });
 
 describe('http configuration', () => {
+    it('request bodies are capped (UPLOAD_MAX_BYTES in base64 + 1 MiB) with 413, and uploads above the limit are tool errors', async () => {
+        const srv = await startHttp({ UPLOAD_MAX_BYTES: '1000' });
+        try {
+            const huge = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: { pad: 'x'.repeat(2 * 1024 * 1024) } });
+            const res = await rawRequest(srv.mcpUrl, { headers: JSON_HEADERS, body: huge });
+            assert.equal(res.status, 413);
+            assert.match(JSON.parse(res.body).error.message, /Request body too large \(limit 1049912 bytes/);
+            await srv.logs.waitFor(e => e.event === 'http.body');
+
+            const { client } = makeClient('modern', { name: 'upload-limit' });
+            const conn = await connectHttp(client, srv.mcpUrl);
+            try {
+                const r = await client.callTool({ name: 'dialog_lab_upload', arguments: { name: 'b', mimeType: '', data: Buffer.alloc(1001).toString('base64') } });
+                assert.equal(r.isError, true);
+                assert.match(textOf(r), /above the limit of 1000 B/);
+                const ok = await client.callTool({ name: 'dialog_lab_upload', arguments: { name: 'b', mimeType: '', data: Buffer.alloc(1000).toString('base64') } });
+                assert.ok(!ok.isError, textOf(ok));
+            } finally {
+                await conn.close();
+            }
+        } finally {
+            await srv.stop();
+        }
+    });
+
     it('ALLOWED_HOSTS replaces the localhost list', async () => {
         const srv = await startHttp({ ALLOWED_HOSTS: 'mcp.example.test' });
         try {

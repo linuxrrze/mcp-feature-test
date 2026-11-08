@@ -62,8 +62,13 @@
   .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
   .btn:disabled { opacity: .5; cursor: default; }
   .small { font-size: 12px; padding: 4px 8px; }
-  #status { margin-top: 10px; min-height: 20px; font-size: 13px; }
-  #status.ok { color: var(--ok); } #status.err { color: var(--err); }
+  #status, #uploadStatus { margin-top: 10px; min-height: 20px; font-size: 13px; overflow-wrap: anywhere; }
+  #status.ok, #uploadStatus.ok { color: var(--ok); } #status.err, #uploadStatus.err { color: var(--err); }
+  .hint { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+  #downloadNote { margin: 8px 0 0; }
+  .row.wrap { flex-wrap: wrap; }
+  input[type=file] { flex: 1; min-width: 0; font: inherit; color: var(--fg); }
+  code { font: 12px var(--mono); }
   details { margin-top: 14px; }
   summary { cursor: pointer; color: var(--muted); font-size: 13px; }
   pre { font: 11px/1.4 var(--mono); background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; overflow: auto; max-height: 260px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -103,6 +108,15 @@
       <h2>Comment</h2>
       <input id="comment" type="text" placeholder="Anything else?" aria-label="Comment">
     </section>
+    <section class="card wide">
+      <h2>File upload</h2>
+      <p class="hint">Sends the file as base64 through <code>tools/call dialog_lab_upload</code> (app-only). The server answers with size and SHA-256 and stores nothing. Try files of 100&nbsp;KB, 1&nbsp;MB and 10&nbsp;MB to find the host's message-size limit.</p>
+      <div class="row wrap">
+        <input id="file" type="file" aria-label="File to upload">
+        <button class="btn" id="upload" type="button" title="app → server: tools/call dialog_lab_upload" disabled>Upload to server</button>
+      </div>
+      <div id="uploadStatus" role="status"></div>
+    </section>
   </div>
 
   <div class="actions">
@@ -110,8 +124,11 @@
     <button class="btn" id="chat" type="button" title="ui/message">Send as chat message</button>
     <button class="btn" id="context" type="button" title="ui/update-model-context">Add to model context</button>
     <button class="btn" id="fullscreen" type="button" title="ui/request-display-mode">Fullscreen</button>
-    <button class="btn" id="download" type="button" title="ui/download-file">Download JSON</button>
+    <button class="btn dl" id="download" type="button" title="ui/download-file: embedded text resource">Download JSON</button>
+    <button class="btn dl" id="downloadBlob" type="button" title="ui/download-file: embedded blob resource">Download sketch PNG</button>
+    <button class="btn dl" id="downloadLink" type="button" title="ui/download-file: resource_link (the host reads it from the server)">Download linked PDF</button>
   </div>
+  <p class="hint" id="downloadNote">Downloads: waiting for the host…</p>
   <div id="status" role="status"></div>
 
   <details>
