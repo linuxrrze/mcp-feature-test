@@ -242,6 +242,218 @@ async function labUpload(r, app, bytes, { shotName, timeout = 120000 } = {}) {
     return status;
 }
 
+/** Open a view_3d chat and wait until the viewer has built its model; returns frame helpers. */
+async function openViewer(r, args, { readyTimeout = 30000 } = {}) {
+    await newChat(`call view_3d ${JSON.stringify(args)}`);
+    const { iframe, app } = await appFrame('view_3d');
+    const viewer = fn => app.locator('body').evaluate(fn);
+    await app.locator('body').waitFor();
+    const t0 = Date.now();
+    while (!(await viewer(() => !!window.__viewer?.ready).catch(() => false))) {
+        if (Date.now() - t0 > readyTimeout) throw new Error(`viewer not ready after ${readyTimeout} ms: ${await app.locator('#stage').innerText().catch(() => '')}`);
+        await page.waitForTimeout(250);
+    }
+    await page.waitForTimeout(500);
+    /** Page coordinates of a point on `part` (pointOn gives iframe CSS px). */
+    const pointOn = async part => {
+        await app.locator('#stage').scrollIntoViewIfNeeded();
+        await page.waitForTimeout(200);
+        const p = await app.locator('body').evaluate((_, n) => window.__viewer.pointOn(n), part);
+        if (!p) throw new Error(`no visible point on ${part}`);
+        const b = await iframe.boundingBox();
+        return { x: b.x + p.x, y: b.y + p.y };
+    };
+    return { iframe, app, viewer, pointOn };
+}
+
+/** Iframe size and whether anything inside it scrolls. */
+async function frameMetrics(iframe, viewer) {
+    const box = await iframe.boundingBox();
+    const inner = await viewer(() => ({
+        scrollW: document.documentElement.scrollWidth,
+        clientW: document.documentElement.clientWidth,
+        scrollH: document.documentElement.scrollHeight,
+        clientH: document.documentElement.clientHeight,
+        canvas: (() => {
+            const c = document.querySelector('#stage canvas');
+            return c ? `${c.clientWidth}×${c.clientHeight} css, ${c.width}×${c.height} buffer` : 'no canvas';
+        })()
+    }));
+    return { iframe: `${Math.round(box.width)}×${Math.round(box.height)}`, ...inner, innerScrollbars: inner.scrollW > inner.clientW || inner.scrollH > inner.clientH };
+}
+
+const view3dScenarios = {
+    async view_3d(r) {
+        // Every generated shape renders; camera + highlight arguments; drag / wheel / keys; fullscreen; probes.
+        for (const shape of ['knot', 'sphere']) {
+            const { iframe, viewer } = await openViewer(r, { shape });
+            r.notes.push(`${shape}: parts ${JSON.stringify(await viewer(() => window.__viewer.parts()))}, pixels ${JSON.stringify(await viewer(() => window.__viewer.pixelStats()))}, frame ${JSON.stringify(await frameMetrics(iframe, viewer))}`);
+            if (shape === 'knot') {
+                await iframe.scrollIntoViewIfNeeded();
+                r.shots.push(await shot('view-3d'));
+            }
+        }
+        const camera = { position: [0, 6, 7], target: [0, 1.5, 0] };
+        const { iframe, app, viewer, pointOn } = await openViewer(r, { shape: 'gear', highlight: 'hub', camera });
+        const cam0 = await viewer(() => window.__viewer.camera());
+        r.notes.push(`gear with camera ${JSON.stringify(camera)} + highlight hub: camera ${JSON.stringify(cam0)}, selected ${await viewer(() => window.__viewer.selected)}, overlay "${await app.locator('#overlay').innerText()}", pressed chip ${await app.locator('#parts button[aria-pressed=true]').innerText()}`);
+        r.notes.push(`gear pixels ${JSON.stringify(await viewer(() => window.__viewer.pixelStats()))}`);
+        const before = await frameMetrics(iframe, viewer);
+        r.notes.push(`frame (gear): ${JSON.stringify(before)}`);
+        // Drag on the canvas (left → right) orbits the camera.
+        const p = await pointOn('gear');
+        await page.mouse.move(p.x, p.y);
+        await page.mouse.down();
+        await page.mouse.move(p.x + 60, p.y + 10, { steps: 6 });
+        await page.mouse.move(p.x + 140, p.y + 20, { steps: 6 });
+        await page.mouse.up();
+        const cam1 = await viewer(() => window.__viewer.camera());
+        r.notes.push(`after drag: ${JSON.stringify(cam1)} (moved: ${JSON.stringify(cam1) !== JSON.stringify(cam0)}); selected still ${await viewer(() => window.__viewer.selected)}`);
+        // Wheel zooms.
+        const dist = c => Math.hypot(...c.position.map((v, i) => v - c.target[i]));
+        await page.mouse.move(p.x, p.y);
+        await page.mouse.wheel(0, 400);
+        await page.waitForTimeout(300);
+        const cam2 = await viewer(() => window.__viewer.camera());
+        r.notes.push(`after wheel +400: distance ${dist(cam1).toFixed(2)} → ${dist(cam2).toFixed(2)}`);
+        // Keys (the stage has focus after a pointerdown).
+        await app.locator('#stage').focus();
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        const cam3 = await viewer(() => window.__viewer.camera());
+        await page.keyboard.press('+');
+        await page.keyboard.press('+');
+        const cam4 = await viewer(() => window.__viewer.camera());
+        r.notes.push(`keys: ArrowLeft×2 position ${JSON.stringify(cam2.position)} → ${JSON.stringify(cam3.position)}; "+"×2 distance ${dist(cam3).toFixed(2)} → ${dist(cam4).toFixed(2)}`);
+        await app.locator('#reset').click();
+        r.notes.push(`reset → ${JSON.stringify(await viewer(() => window.__viewer.camera()))}`);
+        // Auto-rotate and wireframe.
+        await app.locator('#rotate').click();
+        await page.waitForTimeout(800);
+        const cam5 = await viewer(() => window.__viewer.camera());
+        r.notes.push(`auto-rotate on: camera moves by itself: ${JSON.stringify(cam5.position) !== JSON.stringify(camera.position)} (${JSON.stringify(cam5.position)})`);
+        await app.locator('#rotate').click();
+        await app.locator('#wireframe').click();
+        r.notes.push(`wireframe pressed: ${await app.locator('#wireframe').getAttribute('aria-pressed')}`);
+        await app.locator('#wireframe').click();
+        await app.locator('#reset').click();
+        // Fullscreen: Open WebUI offers only inline.
+        r.notes.push(`fullscreen button hidden: ${await app.locator('#fullscreen').isHidden()}; note "${await app.locator('#fsNote').innerText()}"`);
+        // The probe panel.
+        await app.locator('#details summary').click();
+        await app.locator('#probe tr[data-key="fps"]').waitFor({ state: 'attached', timeout: 15000 });
+        await page.waitForTimeout(800);
+        const probes = await viewer(() => window.__viewer.probes);
+        for (const [k, v] of Object.entries(probes)) r.notes.push(`probe ${k}: ${v}`);
+        const dbg = JSON.parse(await app.locator('#debug').textContent());
+        r.notes.push(`hostInfo ${JSON.stringify(dbg.hostInfo)}; hostCapabilities ${JSON.stringify(dbg.hostCapabilities)}; displayMode ${dbg.displayMode}; availableDisplayModes ${JSON.stringify(dbg.availableDisplayModes)}`);
+        r.notes.push(`frame with details open: ${JSON.stringify(await frameMetrics(iframe, viewer))}`);
+        await app.locator('#probe').scrollIntoViewIfNeeded();
+        r.shots.push(await shot('view-3d-details'));
+    },
+
+    async view_3d_glb(r) {
+        // glb-sample: the app reads test://models/sample.glb with resources/read through /mcp/app/rpc.
+        await newChat('call view_3d {"shape":"glb-sample","highlight":"roof"}');
+        const { iframe, app } = await appFrame('view_3d');
+        const t0 = Date.now();
+        const confirm = page.locator('[role=dialog][aria-label="Tool call"]');
+        const first = await Promise.race([
+            confirm.waitFor({ timeout: 30000 }).then(() => 'confirmation dialog'),
+            app.locator('#probe tr[data-key="model source"]').waitFor({ state: 'attached', timeout: 30000 }).then(() => 'loaded without a dialog')
+        ]);
+        r.notes.push(`resources/read: ${first} (${Date.now() - t0} ms after the iframe appeared)`);
+        if (first === 'confirmation dialog') await confirmToolCall(r, 'view-3d-glb-confirm');
+        const viewer = fn => app.locator('body').evaluate(fn);
+        await app.locator('#probe tr[data-key="model source"]').waitFor({ state: 'attached', timeout: 30000 });
+        r.notes.push(`model source: ${await viewer(() => window.__viewer.probes['model source'])}`);
+        r.notes.push(`parts ${JSON.stringify(await viewer(() => window.__viewer.parts()))}, selected ${await viewer(() => window.__viewer.selected)}, pixels ${JSON.stringify(await viewer(() => window.__viewer.pixelStats()))}`);
+        r.notes.push(`error overlay: ${JSON.stringify(await app.locator('#error').innerText().catch(() => null))}`);
+        r.notes.push(`frame: ${JSON.stringify(await frameMetrics(iframe, viewer))}`);
+        await page.waitForTimeout(500);
+        await iframe.scrollIntoViewIfNeeded();
+        r.shots.push(await shot('view-3d-glb'));
+    },
+
+    async view_3d_select(r) {
+        // Click a part → view_3d_select (confirmed) + update-model-context; Tell the assistant → ui/message;
+        // the fake LLM answers the message with view_3d_state.
+        const { iframe, app, viewer, pointOn } = await openViewer(r, { shape: 'knot' });
+        const p = await pointOn('base');
+        await page.mouse.click(p.x, p.y);
+        r.notes.push(`selected after click: ${await viewer(() => window.__viewer.selected)}`);
+        await confirmToolCall(r, 'view-3d-toolcall-confirm');
+        await app.locator('#r-context[data-state="skip"], #r-context[data-state="err"], #r-context[data-state="ok"]').waitFor({ timeout: 15000 });
+        await page.waitForTimeout(300);
+        r.notes.push(`report: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
+        const dbg = JSON.parse(await app.locator('#debug').textContent());
+        r.notes.push(`app events: ${JSON.stringify(dbg.events.slice(0, 4))}`);
+        await app.locator('#tell').click();
+        await confirmPrompt(r, 'view-3d-message-confirm');
+        await waitForText('The user selected', 30000);
+        await page.waitForTimeout(800);
+        r.notes.push(`report after message: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
+        r.notes.push((await lastAssistantText()).slice(0, 600));
+        // The chat scrolled to the new turn. Chromium throttles rendering (and requestAnimationFrame) of
+        // off-screen cross-origin iframes, so scroll the app back into view before measuring it.
+        await iframe.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(1000);
+        // Is it still the same app instance (state kept) after the chat re-rendered?
+        r.notes.push(`after message: iframes ${await page.locator('iframe[title="view_3d"]').count()}, selected ${await viewer(() => window.__viewer.selected).catch(e => e.message)}, ready ${await viewer(() => window.__viewer.ready).catch(e => e.message)}, pixels ${JSON.stringify(await viewer(() => window.__viewer.pixelStats()).catch(e => e.message))}, frame ${JSON.stringify(await frameMetrics(iframe, viewer).catch(e => e.message))}`);
+        // Show the bottom of the app (report lines) and the start of the next turn.
+        const box = await iframe.boundingBox();
+        await page.mouse.move(640, 400);
+        await page.mouse.wheel(0, box.y + box.height - 480);
+        await page.waitForTimeout(1000);
+        r.shots.push(await shot('view-3d-after-message'));
+    },
+
+    async view_3d_deny(r) {
+        // Refuse the "Tool call" confirmation for a selection, then select again and confirm.
+        const { app, viewer, pointOn } = await openViewer(r, { shape: 'sphere' });
+        let p = await pointOn('sphere');
+        await page.mouse.click(p.x, p.y);
+        await confirmToolCall(r, undefined, 'Cancel');
+        await app.locator('#r-server[data-state="err"], #r-server[data-state="ok"]').waitFor({ timeout: 15000 });
+        await app.locator('#r-context[data-state="skip"], #r-context[data-state="err"], #r-context[data-state="ok"]').waitFor({ timeout: 15000 });
+        r.notes.push(`after Cancel: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}; status "${await app.locator('#status').innerText()}"; selected ${await viewer(() => window.__viewer.selected)}; Tell enabled ${await app.locator('#tell').isEnabled()}`);
+        // Retry: clicking the same part again sends it again; confirm this time.
+        p = await pointOn('sphere');
+        await page.mouse.click(p.x, p.y);
+        await confirmToolCall(r);
+        await app.locator('#r-server[data-state="ok"] b', { hasText: 'sphere' }).waitFor({ timeout: 15000 });
+        r.notes.push(`retry: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
+        await page.click('#chat-input');
+        await page.keyboard.type('call view_3d_state');
+        await page.keyboard.press('Enter');
+        await waitForText('The user selected', 30000);
+        const t = await lastAssistantText();
+        r.notes.push(t.slice(t.lastIndexOf('Tool result:'), t.lastIndexOf('Tool result:') + 400).replace(/\s+/g, ' '));
+    },
+
+    async view_3d_invalid(r) {
+        // Invalid arguments: the tool returns an error; does Open WebUI still mount the app?
+        const cases = [
+            '{"shape":"knot","highlight":"roof"}',
+            '{"shape":"knot","camera":{"position":[1000,0,0],"target":[0,0,0]}}',
+            '{"shape":"cube"}'
+        ];
+        for (const args of cases) {
+            await newChat(`call view_3d ${args}`);
+            await waitForText('Tool result:', 30000);
+            await page.waitForTimeout(2500);
+            const t = await lastAssistantText();
+            const frames = await page.locator('iframe[title="view_3d"]').count();
+            let inApp = '';
+            if (frames) {
+                const app = page.frameLocator('iframe[title="view_3d"]').last();
+                inApp = `; app status "${await app.locator('#status').innerText().catch(() => '?')}", shape label "${await app.locator('#shapeLabel').innerText().catch(() => '?')}"`;
+            }
+            r.notes.push(`${args} → ${t.slice(t.indexOf('Tool result:'), t.indexOf('Tool result:') + 300).replace(/\s+/g, ' ')}; iframes: ${frames}${inApp}`);
+        }
+    }
+};
+
 const scenarios = {
     async inspect_client(r) {
         await newChat('call inspect_client');
@@ -653,6 +865,7 @@ const scenarios = {
         }
     }
 };
+Object.assign(scenarios, view3dScenarios);
 
 const wanted = process.argv.slice(2);
 for (const [name, fn] of Object.entries(scenarios)) {

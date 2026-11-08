@@ -20,6 +20,14 @@ export function viewer3dTests({ client, call }) {
         const res = await client.readResource({ uri: URI });
         assert.equal(res.contents[0].mimeType, APP_MIME);
         assert.ok(res.contents[0].text.length > 100_000, 'three.js is inlined');
+        // A 2025-11-25 server answers over SSE, and the Python MCP SDK (Open WebUI) rejects any single
+        // SSE event above 1 MiB ("Server-sent event exceeded the 1048576 byte limit"): keep every app's
+        // resources/read response (JSON-RPC envelope included) below that, with some headroom.
+        for (const uri of [URI, 'ui://feature-test/color-picker.html', 'ui://feature-test/dialog-lab.html']) {
+            const r = await client.readResource({ uri });
+            const bytes = Buffer.byteLength(JSON.stringify({ jsonrpc: '2.0', id: 1, result: r }));
+            assert.ok(bytes < 1024 * 1024 - 32 * 1024, `${uri}: resources/read response is ${bytes} bytes`);
+        }
         const glb = await client.readResource({ uri: GLB });
         assert.equal(glb.contents[0].mimeType, 'model/gltf-binary');
         const bytes = Buffer.from(glb.contents[0].blob, 'base64');

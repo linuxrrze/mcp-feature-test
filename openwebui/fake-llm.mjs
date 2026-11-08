@@ -17,6 +17,8 @@
  *  - user message "I picked #rrggbb[aa] for: …" / "I cancelled the colour picker for: …"
  *    (the colour picker's ui/message) and pick_color_result is offered
  *      → a tool call to pick_color_result (what a real model should do next)
+ *  - user message "I selected <part> in the 3D view (<shape>)." (the 3D viewer's
+ *    ui/message) and view_3d_state is offered → a tool call to view_3d_state
  *  - last message is a tool result (or the user message with the result's images that
  *    Open WebUI appends right after it)
  *      → plain text "Tool result: <first 600 chars>"
@@ -93,6 +95,10 @@ function decide(body) {
         const t = textOf(last.content);
         if (/^I (picked #[0-9a-f]{6}(?:[0-9a-f]{2})?|cancelled the colour picker) for: /i.test(t.trim())) {
             const name = toolNames.find(n => n.endsWith('pick_color_result'));
+            if (name) return { toolCall: { id: `call_${Date.now()}_${++counter}`, name, arguments: '{}' } };
+        }
+        if (/^I selected .+ in the 3D view \(/i.test(t.trim())) {
+            const name = toolNames.find(n => n.endsWith('view_3d_state'));
             if (name) return { toolCall: { id: `call_${Date.now()}_${++counter}`, name, arguments: '{}' } };
         }
         const m = /\bcall\s+([A-Za-z0-9_.:-]+)\s*(\{[\s\S]*\})?/.exec(t);

@@ -11,12 +11,13 @@ In short:
 
   It shipped without a changelog entry in **0.12.0** (2026-10-10). The 2026-07-28 support came in **0.12.4** (2026-10-25).
 - **MCP Apps** (`io.modelcontextprotocol/ui`, `text/html;profile=mcp-app`) are rendered inline in the chat since **0.13.0** (2026-11-02). Since **0.13.1**, apps can also post `ui/message`.
-  - Supported: `tools/call` (always behind a confirmation dialog), `resources/read` and `resources/list`, `ui/open-link`, `ui/message` (behind a confirmation dialog), size changes, and `ui/request-display-mode`, which always answers `inline`.
+  - Supported: `tools/call` (always behind a confirmation dialog), `resources/read` (no confirmation) and `resources/list`, `ui/open-link`, `ui/message` (behind a confirmation dialog), size changes, and `ui/request-display-mode`, which always answers `inline`. WebGL 1 and 2 work in the app iframe (the three.js viewer `view_3d` renders and is fully interactive); WASM, `eval` and `fetch` are blocked by the CSP.
+  - On a 2025-11-25 connection any single server message above **1 MiB** fails (the Python SDK's SSE event limit); app HTML has to stay below that.
   - Not supported: `ui/update-model-context` and `ui/download-file` return *Method not found*. Fullscreen and PiP don't exist.
 - **Files:** `image` blocks are shown in the chat and given to the model. Embedded image blobs go to the model only. Embedded text (CSV) reaches the model as text. A PDF blob becomes a placeholder line. `audio` is stored but not shown. `resource_link` is dropped. App uploads through `tools/call` work up to at least 30 MiB (each needs a confirmation that prints the whole base64). Non-spec form fields degrade to text boxes or "Unsupported input format"; Open WebUI never refuses them.
 - **Not supported:** sampling, roots, progress notifications, log messages (`notifications/message`), `notifications/elicitation/complete`, and MCP-UI (`@mcp-ui`) resources.
 - Through **mcpo**, every interactive feature is lost. The client declares no capabilities, and resources (and with them MCP Apps) are not proxied.
-- **Automated tests and screenshots are feasible and built.** `openwebui/` holds a script-based harness: Open WebUI from pip, a deterministic fake LLM, a JSON-RPC trace proxy and a Playwright driver. All 20 scenarios pass, and the screenshots below come from it.
+- **Automated tests and screenshots are feasible and built.** `openwebui/` holds a script-based harness: Open WebUI from pip, a deterministic fake LLM, a JSON-RPC trace proxy and a Playwright driver. All 25 scenarios pass, and the screenshots below come from it.
 
 Contents:
 
@@ -62,13 +63,16 @@ Legend for the evidence column:
 | Server `instructions` | Yes. Appended to the system prompt as `MCP server "<id>" instructions:`. | (version not checked) | docs; source (`client.instructions`) |
 | `structuredContent` | Passed to the model as JSON text when it differs from the text blocks. A result with several items reaches the model (and the chat) as one JSON string `{"results": [<text 1>, <text 2>, …, <structuredContent>]}`; text that is itself JSON is parsed first. | 0.12.0 | docs; verified (every tool result in the harness); source `process_tool_result` in `utils/middleware.py` |
 | Tool `_meta.ui.visibility` | Respected. App-only tools (`dialog_lab_submit`) are hidden from the model. Tools without `app` can't be called by apps. | 0.13.0 | verified (the fake LLM's tool list never contains `dialog_lab_submit`) |
-| **MCP Apps** (`_meta.ui.resourceUri` → `ui://`, `text/html;profile=mcp-app`) | **Yes.** Rendered inline under the tool call in a sandboxed `srcdoc` iframe (`allow-scripts allow-downloads allow-popups`, opaque origin, CSP from `_meta.ui.csp` plus `IFRAME_CSP`, 5 MB maximum). Needs a stable `WEBUI_SECRET_KEY`. Declared as the extension `io.modelcontextprotocol/ui` with `mimeTypes: ["text/html;profile=mcp-app"]`. The app sees `hostInfo` `Open WebUI 0.13.2` and `hostCapabilities` `{openLinks, serverTools, serverResources, sandbox: {csp}, message: {text}}`: no `updateModelContext`, no `downloadFile`. | 0.13.0 (2026-11-02) | verified (`open_dialog_lab`, `pick_color`; the picker's debug panel shows the host info); source `MCPApp.svelte`, `utils/mcp/apps.py` |
-| App → host `tools/call` | Yes, **every call needs user confirmation** in a "Tool call" dialog. The dialog prints the full arguments, base64 file data included. *Cancel* makes the call fail in the app with the error "Tool call cancelled". | 0.13.0 | verified (`open_dialog_lab`, `pick_color_deny`, `dialog_lab_files`) |
+| **MCP Apps** (`_meta.ui.resourceUri` → `ui://`, `text/html;profile=mcp-app`) | **Yes.** Rendered inline under the tool call in a sandboxed `srcdoc` iframe (`allow-scripts allow-downloads allow-popups`, opaque origin, CSP from `_meta.ui.csp` plus `IFRAME_CSP`, 5 MB maximum). Needs a stable `WEBUI_SECRET_KEY`. Declared as the extension `io.modelcontextprotocol/ui` with `mimeTypes: ["text/html;profile=mcp-app"]`. The app sees `hostInfo` `Open WebUI 0.13.2` and `hostCapabilities` `{openLinks, serverTools, serverResources, sandbox: {csp}, message: {text}}`: no `updateModelContext`, no `downloadFile`. | 0.13.0 (2026-11-02) | verified (`open_dialog_lab`, `pick_color`, `view_3d`; the picker's and the viewer's debug panels show the host info); source `MCPApp.svelte`, `utils/mcp/apps.py` |
+| App → host `tools/call` | Yes, **every call needs user confirmation** in a "Tool call" dialog. The dialog prints the full arguments, base64 file data included. *Cancel* makes the call fail in the app with the error "Tool call cancelled". | 0.13.0 | verified (`open_dialog_lab`, `pick_color_deny`, `dialog_lab_files`, `view_3d_select`, `view_3d_deny`) |
 | App → host `ui/message` | Yes, after a "Confirm Prompt from Embed" dialog. Text only. The text is submitted as the user's next chat message. | 0.13.1 (PR #33907) | verified |
-| App → host `ui/update-model-context` | **No** (`Method not found`) | – | verified |
+| App → host `ui/update-model-context` | **No** (`Method not found`) | – | verified (Dialog Lab, `pick_color`, `view_3d`) |
 | App → host `ui/request-display-mode` | Answers `inline` (only `availableDisplayModes: ["inline"]`) | 0.13.0 | verified ("Display mode is now: inline") |
 | App → host `ui/download-file` | **No** (`Method not found`) | – | verified |
-| App → host `ui/open-link`, `resources/read` / `resources/list` | Yes. Links are http(s) only. | 0.13.0 | source |
+| App → host `resources/read` | Yes, **without** a confirmation dialog, through `/mcp/app/rpc` on a fresh MCP connection (the viewer's `glb-sample`: 5 KB `model/gltf-binary` blob, loaded about 0.7 s after the iframe appeared). | 0.13.0 | verified (`view_3d_glb`, trace: `resources/read test://models/sample.glb`, both connections) |
+| App → host `ui/open-link`, `resources/list` | Yes. Links are http(s) only. | 0.13.0 | source |
+| Largest single server → client message, 2025-11-25 connection | **1 MiB.** A legacy server answers over SSE, and the Python SDK rejects any SSE event above 1048576 bytes (`MCPError: SSE stream failed: Server-sent event exceeded the 1048576 byte limit`); Open WebUI logs `MCP app request failed: MCPError` and the app iframe never appears. On 2026-07-28 the response is plain JSON and the limit does not apply. | – | verified (the 1.3 MB viewer HTML failed on the legacy connection only; reproduced with the SDK alone; fixed here by shrinking the app to 970 KB) |
+| WebGL in app iframes | WebGL 1 and 2 available (Chromium, SwiftShader in the harness); WebGPU API present without an adapter; WASM compile, `eval`/`new Function` and `fetch` (even `data:`) blocked by the CSP | 0.13.0 | verified (`view_3d` probe panel) |
 | Tool result `image` content | Stored as an Open WebUI file, **shown in the chat** and given to the model (as an extra user message with `image_url` parts) | – | verified (`return_files`) |
 | Tool result `audio` content | Stored as an Open WebUI file, but **not shown** (no player, no link) and not given to the model | – | verified (`return_files`: the file is in the message's `files`, the DOM has no `<audio>`) |
 | Tool result embedded `resource` with `text` | Passed to the model as text, not offered as a file | – | verified (`return_files`: the CSV is the second item of `results`) |
@@ -76,7 +80,7 @@ Legend for the evidence column:
 | Tool result `resource_link` | **Silently dropped** (neither shown nor read with `resources/read`) | – | verified (`return_files`: no trace in chat, model input or MCP trace) |
 | Files to the server | No MCP mechanism (the spec has none). The Dialog Lab's upload goes through app → host `tools/call`: works up to at least **30 MiB** (Open WebUI forwarded 40 MB of JSON; this server's 413 stopped it), always behind the confirmation dialog. Model-made inline base64 (`upload_file_experimental`) works too (10 MiB tested) | 0.13.0 | verified (`dialog_lab_files`, `upload_file_experimental`) |
 | Elicitation schemas outside the spec | Never refused. `pattern`, unknown formats (`color`, `time`, `data-url`) → plain text box. Nested object, free-text array → "Unsupported input format" (Cancel/Decline only). Values that break `pattern` are cancelled, not sent | 0.12.0 | verified (`elicit_format_probe*`, both eras) |
-| Host → app `ui/notifications/tool-input`, `tool-result`, `host-context-changed`, `resource-teardown` | Yes. Host context: `theme`, `platform: web`, `displayMode: inline`, `locale`, `timeZone`, `toolInfo`, `containerDimensions`. | 0.13.0 | source; verified (the app shows the light theme and tool result) |
+| Host → app `ui/notifications/tool-input`, `tool-result`, `host-context-changed`, `resource-teardown` | Yes. Host context: `theme`, `platform: web`, `displayMode: inline`, `locale`, `timeZone`, `toolInfo`, `containerDimensions`. | 0.13.0 | source; verified (the app shows the light theme and tool result; `view_3d` applies `camera` and `highlight` from the tool input) |
 | Apps needing `localStorage` / same origin | No (the `srcdoc` iframe is opaque) | – | source comment in `MCPApp.svelte` |
 | MCP-UI (`@mcp-ui`, `rawHtml` / `externalUrl` / `remoteDom` resources) | **No** | – | source (no matches); inferred: such resources only reach the model as text |
 | OpenAPI tool servers returning HTML (`Content-Disposition: inline`) | Rendered as an "embed" iframe (Open WebUI's own Rich UI mechanism). Doesn't apply to MCP. | 0.7/0.8 | source `middleware.py` |
@@ -201,19 +205,41 @@ So in Open WebUI the user confirms **twice** per answer (tool call and message).
 
 **Fixed in the picker:** before, a refused tool call with no other channel left the picker locked with "✅ You picked … The answer could not be delivered", so the user could not answer at all. Now, when none of the three channels got through, the status says so without the check mark and the controls are enabled again (UI test *unlocks for another try* in `test/ui/color-picker.test.mjs`).
 
-### 3D viewer (`view_3d`): expected behaviour, not yet verified
+### 3D viewer (`view_3d`)
 
-Not run in Open WebUI yet. The expectations below come from Open WebUI's source and documented behaviour (sections above) and from a prototype of the viewer run in headless Chromium in a `srcdoc` iframe with Open WebUI's sandbox (`allow-scripts allow-downloads allow-popups`) and the CSP Open WebUI 0.13.2 builds for an app without `_meta.ui.csp` (`default-src 'none'; script-src 'unsafe-inline' blob:; img-src data: blob:; connect-src 'none'; …`). The browser test runs the finished viewer under that CSP too (`test/ui/viewer-3d.test.mjs`).
+Verified with the scenarios `view_3d`, `view_3d_glb`, `view_3d_select`, `view_3d_deny` and `view_3d_invalid`, on both the 2026-07-28 and the 2025-11-25 connection (same results after the fix below), Chromium 1248 headless shell with software WebGL (SwiftShader).
 
-| Step | Expected in Open WebUI 0.13.2 | Basis |
+![view_3d in Open WebUI](images/openwebui-view-3d.png)
+
+| Step | Result in Open WebUI 0.13.2 | Evidence |
 |---|---|---|
-| `view_3d` | Renders **inline** under the tool call. The page is about 1.3 MB (three.js inlined), below the 5 MB limit. WebGL 1 and 2 work under the CSP; dragging, the wheel and click-to-select (raycast) work. The model gets the text plus `structuredContent` (`viewId`, `shape`, `camera`, `parts`) as JSON. | prototype under the same CSP; source (size limit) |
-| *Details (for testing)* | WASM compile **blocked** (no `'wasm-unsafe-eval'`, so Draco/meshopt decoders cannot work), `eval`/`new Function` **blocked**, `fetch` **blocked** (`connect-src 'none'`, also for `data:` and `blob:` URLs), WebGPU depending on the browser, fullscreen not offered. | prototype; test under the CSP |
-| `glb-sample` | The app reads `test://models/sample.glb` with `resources/read` through `/mcp/app/rpc`; Open WebUI advertises `serverResources`. Whether that read asks for confirmation like `tools/call` is not known. | source; not verified |
-| **Fullscreen** | No button: `availableDisplayModes` is only `["inline"]`, so the viewer hides it and says *Fullscreen is not offered by this host*. The browser Fullscreen API and pointer lock are blocked by the iframe's permissions policy anyway. | verified for the Dialog Lab (`ui/request-display-mode` answers `inline`); prototype |
-| Click a part → `tools/call view_3d_select` | A "Tool call" confirmation dialog **for every selection**; after *Confirm* the viewer reports *Server: stored …*, and `view_3d_state` returns the selection on a later turn. *Cancel* shows "Tool call cancelled" under the viewer. | same mechanism as `pick_color_submit` (verified) |
-| `ui/update-model-context` | `Method not found`; the viewer reports *not supported by host*. | verified for the Dialog Lab and `pick_color` |
-| **Tell the assistant** → `ui/message` | A "Confirm Prompt from Embed" dialog, then "I selected *part* in the 3D view (*shape*)." is sent as the next user message. | verified for `pick_color` |
+| `view_3d` (knot, sphere, gear) | Renders **inline** under the tool call and draws (13–16 % of the canvas pixels differ from the background). The iframe is 860×677 px in a 1280 px window (canvas 830×458), grows with the content (733 px with the three report lines, 1274 px with *Details* open) and never has inner scrollbars. The model gets the text plus `structuredContent` (`viewId`, `shape`, `camera`, `parts`, `highlight`). | verified (`frameMetrics`: `scrollWidth` = `clientWidth`, `scrollHeight` = `clientHeight`; `__viewer.pixelStats()`) |
+| `glb-sample` | The app reads `test://models/sample.glb` with `resources/read` through `/mcp/app/rpc` **without any confirmation dialog** (about 0.7 s after the iframe appears), parses it and shows the four parts ([screenshot](images/openwebui-view-3d-glb.png)). | verified (trace: `resources/read` of the HTML, then of the GLB; Open WebUI log: two `/mcp/app/rpc` 200s) |
+| `camera` and `highlight` arguments | Applied: `{"position":[0,6,7],"target":[0,1.5,0]}` is the camera the viewer reports; `highlight: "hub"` preselects the hub (outline, pressed chip, "Selected: hub") without calling the server. | verified |
+| Drag, wheel, keys | A drag over the canvas orbits the camera (and does not count as a click); the wheel zooms out (distance 8.3 → 10.2); `ArrowLeft` orbits, `+` zooms in (10.2 → 7.4); *Reset view* restores the tool's camera; *Auto-rotate* moves the camera by itself; *Wireframe* toggles. Pointer and keyboard events reach the sandboxed iframe normally. | verified |
+| Click a part → `tools/call view_3d_select` | A "Tool call" confirmation for **every** selection, showing `{viewId, part, camera}` ([screenshot](images/openwebui-view-3d-toolcall-confirm.png)). After *Confirm* the viewer reports *Server: stored base*. `view_3d_select` is hidden from the model (not in the fake LLM's tool list). | verified (trace, server log `view_3d_select → ok`) |
+| `ui/update-model-context` | `Method not found`; the viewer reports *not supported by host*. | verified |
+| **Tell the assistant** → `ui/message` | A "Confirm Prompt from Embed" dialog with "I selected base in the 3D view (knot)." ([screenshot](images/openwebui-view-3d-message-confirm.png)); after *Confirm* it is sent as the next user message, and the (fake) model answers with `view_3d_state`, which returns "The user selected "base" in the 3D view of "knot". Camera: …" plus the stored state. The app instance survives the new turn (same selection, still drawing). | verified ([screenshot](images/openwebui-view-3d-after-message.png); fake LLM log) |
+| Fullscreen | No button: `availableDisplayModes` is `["inline"]`, so the viewer hides it and says *Fullscreen is not offered by this host (display modes: inline).* `document.fullscreenEnabled` is `false` in the iframe. | verified |
+| *Cancel* in the "Tool call" dialog | The viewer shows *Server: Tool call cancelled* in red and stays usable: the selection stays highlighted, *Tell the assistant* stays enabled, and clicking the part again sends a new `view_3d_select` (confirmed: *stored sphere*; `view_3d_state` then returns it). | verified (`view_3d_deny`) |
+| Invalid arguments | Unknown `highlight` (`roof` for the knot) → tool error "Unknown part …"; a camera coordinate of 1000 → "Input validation error: … each coordinate must be a finite number in [-100, 100]"; `shape: "cube"` → "Input validation error: … expected one of knot, sphere, gear, glb-sample". In all three cases Open WebUI shows the error as the tool result and **does not mount the app** (no iframe). | verified (`view_3d_invalid`) |
+
+The *Details (for testing)* panel inside Open WebUI:
+
+![view_3d probe panel in Open WebUI](images/openwebui-view-3d-details.png)
+
+| Probe | Result in Open WebUI 0.13.2 |
+|---|---|
+| WebGL 1 / WebGL 2 | available / available (three.js uses WebGL 2) |
+| Renderer | `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)`: the harness's software GL; a desktop browser reports its GPU |
+| WebGPU | API present, no adapter (headless; not a sandbox restriction) |
+| WASM compile | **blocked** by the CSP (`'unsafe-eval'` / `'wasm-unsafe-eval'` missing), so Draco or meshopt decoders cannot work |
+| `eval` / `new Function` | **blocked** by the CSP |
+| `fetch` (`data:` URL) | **blocked** (`connect-src 'none'`); models must come through `resources/read` |
+| Host | `hostInfo` Open WebUI 0.13.2; `hostCapabilities` `{openLinks, serverTools, serverResources, sandbox: {csp}, message: {text}}`; `displayMode` `inline` |
+| fps | 42–47 for 60 forced frames with software rendering |
+
+**Fixed: the viewer did not appear on the 2025-11-25 connection.** The first run passed on the modern connection but showed no iframe on the legacy one: the 1.3 MB viewer HTML is one SSE event in a 2025-11-25 `resources/read` response, and the Python MCP SDK rejects events above 1 MiB (`SSE stream failed: Server-sent event exceeded the 1048576 byte limit`; Open WebUI only logs `MCP app request failed: MCPError`). The colour picker (690 KB) and the Dialog Lab were below the limit. The build now keeps only zod's English locale (−258 KB in every app; zod re-exports all locales through its `z` namespace) and the viewer reads the GLB with its own small reader instead of three's `GLTFLoader` (−43 KB): the viewer is 970 KB (dialog lab 420 KB, picker 443 KB). The HTTP matrix test now checks that every app's `resources/read` response stays below 1 MiB − 32 KiB.
 
 ### Files
 
@@ -338,6 +364,7 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
 
   This server waits for the page after `accept` (both tools, both eras), sends progress heartbeats while it waits if the client asked for progress, gives up with an error after `FLOW_WAIT_MS` (default 300000 ms), and stops waiting when the call is cancelled.
 - **No `ui/update-model-context`.** Use `ui/message` (which needs user confirmation) or `tools/call` into an app-only tool that stores the data, as `dialog_lab_submit` and `dialog_lab_results` do here. Both work in Open WebUI. `pick_color` tries all three and reports which worked: in Open WebUI the tool call and the message get through (each after a confirmation), model context does not.
+- **Keep every server message below 1 MiB** (app HTML in particular): on a 2025-11-25 connection Open WebUI's Python SDK rejects larger SSE events, and the app silently does not appear. Bundled libraries add up quickly (three.js plus the ext-apps SDK and zod was 1.3 MB here).
 - **No fullscreen.** Design apps for inline width. The iframe grows to the reported height, 100–10000 px.
 - **No browser storage in apps.** The iframe has an opaque origin; `localStorage` throws `SecurityError`. Keep anything that should survive on the server (the colour picker's Recent row comes from `pick_color`'s `structuredContent.recent`).
 - **Local files and images work in apps.** `<input type=file>` opens the file chooser from the sandboxed iframe, and `createImageBitmap(file)` gives an untainted canvas; the EyeDropper API is available in Chromium when Open WebUI is served from a secure context.
@@ -354,7 +381,7 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
 | File | Purpose |
 |---|---|
 | `openwebui/start.sh` / `stop.sh` | Installs `open-webui==$OWUI_VERSION` (default 0.13.2) into `$OWUI_VENV` if it's missing, then starts the MCP server (:3600), the fake LLM (:3601), Open WebUI (:3602, `WEBUI_AUTH=False`, connections via `TOOL_SERVER_CONNECTIONS`, `ENABLE_PERSISTENT_CONFIG=False`) and two trace proxies (:3603 modern, :3604 `FORCE_LEGACY=1`). Finally it runs `setup.mjs`. State and logs go to `$WORK` (default `/tmp/owui-mcp-test`). |
-| `openwebui/fake-llm.mjs` | Dependency-free OpenAI-compatible endpoint (`/v1/models`, `/v1/chat/completions`, streaming and non-streaming). `call <tool> {json}` in the last user message produces exactly one tool call to the offered tool whose name ends with `<tool>` (typographic quotes from Open WebUI's input box are turned back into `"`). `{"$generateFile": N}` in the arguments becomes an inline `x-mcp-file` object with N random bytes, size and SHA-256 digest. The colour picker's message ("I picked #rrggbb[aa] for: …") is answered with a `pick_color_result` call. A tool result, or the image follow-up message Open WebUI appends to one, produces the text "Tool result: …". Each request is logged with the shape of what the model was given after its tool call (roles, part types, sizes) and the tools whose schema contains `x-mcp-file`. |
+| `openwebui/fake-llm.mjs` | Dependency-free OpenAI-compatible endpoint (`/v1/models`, `/v1/chat/completions`, streaming and non-streaming). `call <tool> {json}` in the last user message produces exactly one tool call to the offered tool whose name ends with `<tool>` (typographic quotes from Open WebUI's input box are turned back into `"`). `{"$generateFile": N}` in the arguments becomes an inline `x-mcp-file` object with N random bytes, size and SHA-256 digest. The colour picker's message ("I picked #rrggbb[aa] for: …") is answered with a `pick_color_result` call, the 3D viewer's ("I selected <part> in the 3D view (<shape>).") with a `view_3d_state` call. A tool result, or the image follow-up message Open WebUI appends to one, produces the text "Tool result: …". Each request is logged with the shape of what the model was given after its tool call (roles, part types, sizes) and the tools whose schema contains `x-mcp-file`. |
 | `openwebui/mcp-trace-proxy.mjs` | Logging reverse proxy. Prints one JSON line per JSON-RPC message (request size, method, protocol version, capabilities, `_meta` envelope, `resultType`, `inputRequests`, result content block types). `FORCE_LEGACY=1` refuses `server/discover` to force the 2025-11-25 handshake. |
 | `openwebui/setup.mjs` | Signs in as the implicit admin (`POST /api/v1/auths/signin` with empty credentials works when `WEBUI_AUTH=False`). Checks the connections, and creates the models `mcp-tester` and `mcp-tester-legacy` (fake LLM, `meta.toolIds: ["server:mcp:<id>"]`, native function calling), so every new chat has the MCP server enabled. |
 | `openwebui/drive.mjs` | Playwright (`playwright-core` from the project's `node_modules`, Chromium headless shell 1248). Opens `/?models=mcp-tester`, dismisses the "What's new" modal, types the prompt, waits for dialogs and iframes, interacts with them, and writes `docs/images/openwebui-*.png` and `openwebui/out/report.json`. |
@@ -369,6 +396,7 @@ node openwebui/drive.mjs                # all scenarios, modern (2026-07-28) con
 OWUI_MODEL=mcp-tester-legacy OWUI_SERVER_ID=featuretest-legacy SHOT_PREFIX=openwebui-legacy- \
   node openwebui/drive.mjs inspect_client elicit_confirm   # 2025-11-25 connection
 node openwebui/drive.mjs open_dialog_lab                   # a single scenario
+node openwebui/drive.mjs view_3d view_3d_glb view_3d_select view_3d_deny view_3d_invalid   # the 3D viewer
 PROBES=pattern,color node openwebui/drive.mjs elicit_format_probe          # some probes only
 UPLOAD_SIZES=102400,31457280 node openwebui/drive.mjs dialog_lab_files     # other upload sizes (bytes)
 X_FILE_SIZES=1048576 node openwebui/drive.mjs upload_file_experimental     # other x-mcp-file sizes
@@ -377,7 +405,7 @@ openwebui/stop.sh
 
 `WORK`, `OWUI_VENV` and the other variables of `start.sh` let you reuse an existing venv; pass the same `WORK` to `stop.sh`.
 
-Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the modern connection** (one full run, about 3 minutes). On the legacy connection the original 11 passed earlier, and `inspect_client` plus the 9 new scenarios pass too (about 1.5 minutes). `elicit_url_legacy_push` is not available on the modern connection, by design. After the colour picker was extended, the four `pick_color*` scenarios (with the new `pick_color_features`) were re-run on both connections: all pass, about 30 s per connection.
+Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the modern connection** (one full run, about 3 minutes). On the legacy connection the original 11 passed earlier, and `inspect_client` plus the 9 new scenarios pass too (about 1.5 minutes). `elicit_url_legacy_push` is not available on the modern connection, by design. After the colour picker was extended, the four `pick_color*` scenarios (with the new `pick_color_features`) were re-run on both connections: all pass, about 30 s per connection. The five `view_3d*` scenarios pass on both connections (about 95 s per connection); on the legacy connection only after the app was shrunk below 1 MiB (see [3D viewer](#3d-viewer-view_3d)).
 
 | Scenario | Time | What it checks |
 |---|---|---|
@@ -399,12 +427,18 @@ Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the m
 | `elicit_format_probe_pattern_invalid` | 5 s | A value that breaks `pattern` |
 | `dialog_lab_files` | 15 s | Download buttons disabled; uploads of 100 KiB, 1 MiB, 10 MiB (`UPLOAD_SIZES`), each confirmed |
 | `upload_file_experimental` | 12 s | 5-byte inline file, then generated 100 KiB and 1 MiB files (`X_FILE_SIZES`) |
+| `view_3d` | 24 s | knot and sphere render (pixel check, iframe size, no inner scrollbars); gear with `camera` + `highlight`; drag, wheel, arrow keys, `+`, reset, auto-rotate, wireframe; fullscreen hidden; the probe panel |
+| `view_3d_glb` | 36 s | `glb-sample` through `resources/read` (dialog or not), parts, highlight, pixels |
+| `view_3d_select` | 11 s | Click a part on the canvas → confirm `view_3d_select`; model context refused; *Tell the assistant* → confirm the prompt; the model's `view_3d_state`; the app after the new turn |
+| `view_3d_deny` | 7 s | Refuse the "Tool call" dialog; the viewer stays usable; the same part again → stored; `view_3d_state` |
+| `view_3d_invalid` | 18 s | Unknown `highlight`, camera out of range, unknown shape → tool errors, no iframe |
 
-The full run takes about 3 minutes. Open WebUI starts in about 15–20 s.
+The full run takes about 5 minutes. Open WebUI starts in about 15–20 s.
 
 ### What is flaky or impossible
 
 - **Selectors depend on Open WebUI internals:** `#chat-input`, the elicitation modal's `aria-label` (the connection ID), the dialog titles "Tool call" and "Confirm Prompt from Embed", and the `iframe[title=<tool>]`. They will drift between releases, so pin `OWUI_VERSION` and expect small fixes when upgrading.
+- **Off-screen app iframes are throttled.** Chromium stops rendering and `requestAnimationFrame` in cross-origin iframes that are scrolled out of view, so the app's size notifications and Playwright's stability checks inside the frame wait until it is visible again. The `view_3d*` scenarios scroll the iframe into view before clicking or measuring (after a new chat turn Open WebUI scrolls to the bottom).
 - **The "What's new" modal** appears on the first visit. The driver dismisses it with Escape.
 - **Typographic quotes:** Open WebUI's chat input turns `"` into `“` and `”` as you type, so `call tool {"a":1}` arrived as invalid JSON and the fake LLM silently called the tool with `{}`. The fake LLM now converts them back. Scenario results from before this fix that depended on arguments (`elicit_confirm`'s item name, for example) ran with defaults; none of the documented findings changed.
 - **Background LLM tasks** (title, tags, follow-ups) also hit the fake LLM. `start.sh` switches them off, and the fake LLM answers any `### Task:` prompt harmlessly.

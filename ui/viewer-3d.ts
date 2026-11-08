@@ -5,7 +5,7 @@
  * CSPs such as Open WebUI's (connect-src 'none', no 'wasm-unsafe-eval').
  *
  *  - shapes knot / sphere / gear are generated here; glb-sample is read from the
- *    server with resources/read (app → host → server) and parsed with GLTFLoader.parse
+ *    server with resources/read (app → host → server) and parsed by parseGlb below
  *  - orbit (drag / touch / wheel / arrow keys / + -), reset, auto-rotate, wireframe
  *  - click a part (raycast) → highlight, then view_3d_select (app-only tool) and
  *    ui/update-model-context; "Tell the assistant" sends ui/message
@@ -13,6 +13,8 @@
  */
 import {
     BoxHelper,
+    BufferAttribute,
+    BufferGeometry,
     Color,
     CylinderGeometry,
     DirectionalLight,
@@ -34,12 +36,10 @@ import {
     Vector2,
     Vector3,
     WebGLRenderer,
-    type BufferGeometry,
     type MeshStandardMaterialParameters,
     type Object3D
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { App, applyDocumentTheme, applyHostFonts, applyHostStyleVariables, type McpUiHostContext } from '@modelcontextprotocol/ext-apps';
 
 type Vec3 = [number, number, number];
@@ -283,23 +283,92 @@ function buildShape(name: Exclude<ShapeName, 'glb-sample'>): Mesh[] {
     }
 }
 
+/**
+ * A small glTF 2.0 binary (GLB) reader: nodes (with children, TRS), meshes with
+ * POSITION / NORMAL / indices and PBR colour factors; no textures, skins or extensions.
+ * three's GLTFLoader would add ~43 KB, which pushed the page over the 1 MiB that the
+ * Python MCP SDK accepts for one SSE event (Open WebUI on a 2025-11-25 connection).
+ */
+function parseGlb(buf: ArrayBuffer): Group {
+    const dv = new DataView(buf);
+    if (buf.byteLength < 20 || dv.getUint32(0, true) !== 0x46546c67) throw new Error('not a GLB file');
+    let json: Record<string, any> | null = null;
+    let bin: ArrayBuffer | null = null;
+    for (let off = 12; off + 8 <= buf.byteLength; ) {
+        const len = dv.getUint32(off, true);
+        const type = dv.getUint32(off + 4, true);
+        if (type === 0x4e4f534a) json = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, off + 8, len)));
+        else if (type === 0x004e4942) bin = buf.slice(off + 8, off + 8 + len);
+        off += 8 + len;
+    }
+    if (!json || !bin) throw new Error('GLB without JSON or BIN chunk');
+    const ARRAYS: Record<number, Float32ArrayConstructor | Uint16ArrayConstructor | Uint32ArrayConstructor | Uint8ArrayConstructor> = {
+        5126: Float32Array,
+        5123: Uint16Array,
+        5125: Uint32Array,
+        5121: Uint8Array
+    };
+    const SIZES: Record<string, number> = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+    const accessor = (i: number) => {
+        const a = json!.accessors[i];
+        const view = json!.bufferViews[a.bufferView];
+        const Arr = ARRAYS[a.componentType];
+        if (!Arr || view.byteStride) throw new Error(`unsupported accessor ${i}`);
+        const n = SIZES[a.type] ?? 1;
+        return new BufferAttribute(new Arr(bin!, (view.byteOffset ?? 0) + (a.byteOffset ?? 0), a.count * n), n);
+    };
+    const material = (i: number | undefined) => {
+        const pbr = (i === undefined ? {} : json!.materials?.[i]?.pbrMetallicRoughness) ?? {};
+        const [r, g, b, alpha] = pbr.baseColorFactor ?? [1, 1, 1, 1];
+        return new MeshStandardMaterial({
+            color: new Color(r, g, b),
+            opacity: alpha,
+            transparent: alpha < 1,
+            metalness: pbr.metallicFactor ?? 1,
+            roughness: pbr.roughnessFactor ?? 1
+        });
+    };
+    const node = (i: number): Object3D => {
+        const n = json!.nodes[i];
+        const meshes = (n.mesh === undefined ? [] : json!.meshes[n.mesh].primitives).map((p: Record<string, any>) => {
+            const g = new BufferGeometry();
+            g.setAttribute('position', accessor(p.attributes.POSITION));
+            if (p.attributes.NORMAL !== undefined) g.setAttribute('normal', accessor(p.attributes.NORMAL));
+            else g.computeVertexNormals();
+            if (p.indices !== undefined) g.setIndex(accessor(p.indices));
+            const m = new Mesh(g, material(p.material));
+            m.name = n.name ?? json!.meshes[n.mesh].name ?? `node${i}`;
+            return m;
+        });
+        const o: Object3D = meshes.length === 1 && !n.children ? meshes[0] : new Group().add(...meshes);
+        if (o !== meshes[0]) o.name = n.name ?? `node${i}`;
+        if (n.translation) o.position.fromArray(n.translation);
+        if (n.rotation) o.quaternion.fromArray(n.rotation);
+        if (n.scale) o.scale.fromArray(n.scale);
+        for (const c of n.children ?? []) o.add(node(c));
+        return o;
+    };
+    const root = new Group();
+    for (const i of json.scenes?.[json.scene ?? 0]?.nodes ?? []) root.add(node(i));
+    return root;
+}
+
 async function loadGlb(): Promise<Mesh[]> {
     const res = await app.readServerResource({ uri: SAMPLE_GLB_URI });
     const c = res.contents?.[0] as { blob?: string; mimeType?: string } | undefined;
     if (!c?.blob) throw new Error('the resource came back without a blob');
     const bytes = Uint8Array.from(atob(c.blob), ch => ch.charCodeAt(0));
-    const gltf = await new GLTFLoader().parseAsync(bytes.buffer, '');
+    const root = parseGlb(bytes.buffer);
     const meshes: Mesh[] = [];
-    gltf.scene.updateMatrixWorld(true);
-    gltf.scene.traverse((o: Object3D) => {
+    root.updateMatrixWorld(true);
+    root.traverse((o: Object3D) => {
         if ((o as Mesh).isMesh) meshes.push(o as Mesh);
     });
     for (const m of meshes) {
-        // Flatten into the model group (keep world transforms) and give each part its own material.
+        // Flatten into the model group (keep world transforms).
         m.applyMatrix4(m.parent!.matrixWorld);
-        m.material = (m.material as MeshStandardMaterial).clone();
     }
-    modelSource = `resources/read ${SAMPLE_GLB_URI} (${bytes.length} bytes, ${c.mimeType ?? 'no mimeType'}) → GLTFLoader.parse`;
+    modelSource = `resources/read ${SAMPLE_GLB_URI} (${bytes.length} bytes, ${c.mimeType ?? 'no mimeType'}) → parsed in the app`;
     return meshes;
 }
 
