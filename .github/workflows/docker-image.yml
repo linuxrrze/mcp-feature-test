@@ -1,0 +1,263 @@
+name: Docker image - test, build & publish
+# Run title in the Actions list: scheduled/manual runs would otherwise show
+# whatever commit is latest on main. Empty (push/PR) = GitHub's default title.
+run-name: ${{ github.event_name == 'schedule' && 'Scheduled check' || github.event_name == 'workflow_dispatch' && 'Manual run' || '' }}
+
+# Same pattern as the *-rebuild.yml workflows in docker-images (the source
+# lives in this repo; flavor 2 plus the base-digest check):
+#   push to main   -> test, build, banner, Trivy, push to GHCR
+#   pull request   -> test, build, banner, Trivy (nothing is pushed)
+#   daily schedule -> rebuild only when the node:<tag> base image was
+#                     re-published (new digest), then commit the new pin
+#   manual run     -> like a push
+# The helper scripts in .github/scripts/ are copies of
+# docker-images/.gitea/scripts/ (add-banner, base-digest, trivy-scan).
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      # Only what goes into the image or tests it -- not the docs.
+      - src/**
+      - ui/**
+      - scripts/**
+      - test/**
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - Dockerfile
+      - .dockerignore
+      - .trivyignore
+      - .github/scripts/**
+      - .github/workflows/docker-image.yml
+  pull_request:
+    paths:
+      - src/**
+      - ui/**
+      - scripts/**
+      - test/**
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - Dockerfile
+      - .dockerignore
+      - .trivyignore
+      - .github/scripts/**
+      - .github/workflows/docker-image.yml
+
+# One run per ref at a time; a newer push to the same branch supersedes an
+# older run that hasn't finished (the schedule never cancels a push run).
+concurrency:
+  group: docker-image-${{ github.ref }}-${{ github.event_name == 'schedule' && 'schedule' || 'change' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/linuxrrze/mcp-feature-test
+
+jobs:
+  base:
+    name: Check base image
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      tag: ${{ steps.check.outputs.tag }}
+      base_tag: ${{ steps.base.outputs.base_tag }}
+      digest: ${{ steps.base.outputs.digest }}
+      changed: ${{ steps.base.outputs.changed }}
+      build: ${{ steps.base.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image version is the package version: bump `version` in
+      # package.json for a release; a rebuild re-publishes the same version
+      # tag (plus a dated rollback tag).
+      - name: Determine version
+        id: check
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p 'require("./package.json").version')
+          if [ -z "$VERSION" ] || [ "$VERSION" = undefined ]; then
+            echo "::error::no version in package.json" >&2
+            exit 1
+          fi
+          echo "version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$(printf '%s' "$VERSION" | tr '+' '-')" >> "$GITHUB_OUTPUT"
+
+      # The Dockerfile pins the base as `ARG NODE_IMAGE=node:<tag>@sha256:<digest>`.
+      # The pinned digest is the "last built" marker (docker-images keeps it
+      # in a separate .<name>-base-digest file; here the pin itself is it).
+      - name: Check base image digest
+        id: base
+        run: |
+          set -euo pipefail
+          PIN=$(sed -n 's/^ARG NODE_IMAGE=//p' Dockerfile | tail -1)
+          BASE_TAG=${PIN%@*}
+          CURRENT=none
+          case "$PIN" in *@sha256:*) CURRENT=${PIN#*@} ;; esac
+          if [ -z "$BASE_TAG" ]; then
+            echo "::error::no 'ARG NODE_IMAGE=' line in Dockerfile" >&2
+            exit 1
+          fi
+          DIGEST=$(bash .github/scripts/base-digest.sh --ref "$BASE_TAG")
+          echo "base image $BASE_TAG: pinned=$CURRENT latest=$DIGEST"
+          {
+            echo "base_tag=$BASE_TAG"
+            echo "digest=$DIGEST"
+            if [ "$DIGEST" != "$CURRENT" ]; then echo "changed=true"; else echo "changed=false"; fi
+            if [ "$GITHUB_EVENT_NAME" != schedule ] || [ "$DIGEST" != "$CURRENT" ]; then
+              echo "build=true"
+            else
+              echo "build=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Tests
+    needs: base
+    if: needs.base.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Headless Chromium for the MCP App UI tests (they skip without one,
+      # which CI must not do silently -- see the check below).
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium-headless-shell
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          npm test 2>&1 | tee test.log
+          if grep -q '# UI tests skipped' test.log; then
+            echo "::error::UI tests were skipped (no usable Chromium)" >&2
+            exit 1
+          fi
+
+  image:
+    name: Build & publish image
+    needs: [base, test]
+    if: needs.base.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # commit the new base digest pin
+      packages: write   # push to ghcr.io
+    env:
+      TAG: ${{ needs.base.outputs.tag }}
+      BASE_REF: ${{ needs.base.outputs.base_tag }}@${{ needs.base.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Built against the digest resolved above (= the pin in the Dockerfile
+      # unless the base was re-published since).
+      - name: Build image
+        run: |
+          set -euo pipefail
+          docker build --pull \
+            --build-arg "NODE_IMAGE=$BASE_REF" \
+            --build-arg "VERSION=${{ needs.base.outputs.version }}" \
+            --build-arg "REVISION=$GITHUB_SHA" \
+            --build-arg "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --build-arg "SOURCE=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            -t "$IMAGE:$TAG" \
+            -t "$IMAGE:latest" \
+            .
+
+      # Startup banner (image name + version, figlet style), see
+      # .github/scripts/add-banner.sh. The Dockerfile sets
+      # LABEL de.linux-ng.image-banner=builtin: no shell wrapper in front of
+      # the entrypoint (it would print to stdout, which is the MCP protocol
+      # channel in stdio mode); the server prints the file to stderr itself
+      # (src/banner.ts).
+      - name: Add startup banner
+        run: bash .github/scripts/add-banner.sh "$IMAGE:$TAG" "$IMAGE:latest"
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          docker run -d --name smoke -p 127.0.0.1:3457:3457 "$IMAGE:$TAG"
+          trap 'docker logs smoke; docker rm -f smoke >/dev/null' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3457/ >/dev/null; then break; fi
+            [ "$i" = 30 ] && { echo "::error::HTTP endpoint did not come up" >&2; exit 1; }
+            sleep 1
+          done
+          # Banner text added by add-banner.sh, printed by the server on start.
+          docker run --rm --entrypoint cat "$IMAGE:$TAG" /usr/local/share/image-banner.txt
+          # stdio mode: one initialize request, the reply must be pure JSON-RPC
+          # on stdout (banner and logs go to stderr).
+          INIT='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"ci-smoke","version":"0"}}}'
+          # (keep stdin open for a moment: EOF may end the server before it answers)
+          REPLY=$({ printf '%s\n' "$INIT"; sleep 5; } \
+            | timeout 20 docker run -i --rm --no-healthcheck "$IMAGE:$TAG" node dist/stdio.js 2>/dev/null | sed -n 1p)
+          echo "stdio reply: $REPLY"
+          printf '%s' "$REPLY" | node -e 'const r=JSON.parse(require("fs").readFileSync(0,"utf8")); if(!r.result?.serverInfo) process.exit(1)'
+
+      # Fail the publish on a fixable CRITICAL/HIGH. Accepted findings go
+      # into .trivyignore (with a reason).
+      - name: Security scan (Trivy)
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ -f .trivyignore ]; then
+            ARGS+=(--ignorefile .trivyignore)
+          fi
+          bash .github/scripts/trivy-scan.sh "$IMAGE:latest" "${ARGS[@]}"
+
+      # Only main publishes (a manual run on another branch just builds).
+      - name: Push image
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY" \
+            -u "$REGISTRY_USER" --password-stdin
+          docker push "$IMAGE:$TAG"
+          # Dated tag next to the moving version tag: a rebuild (push, base
+          # update) re-publishes the same version tag, this keeps the
+          # previous build pullable for a rollback.
+          DATED="$IMAGE:$TAG-$(date -u +%Y%m%d)"
+          docker tag "$IMAGE:$TAG" "$DATED"
+          docker push "$DATED"
+          docker push "$IMAGE:latest"
+
+      - name: Record base image digest
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.base.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          sed -i "s|^ARG NODE_IMAGE=.*|ARG NODE_IMAGE=$BASE_REF|" Dockerfile
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Dockerfile
+          if git diff --cached --quiet; then
+            echo "no digest change to record"
+            exit 0
+          fi
+          # Pushes made with GITHUB_TOKEN don't trigger workflows, so this
+          # commit doesn't cause a second rebuild.
+          git commit -m "Rebuild on updated base image $BASE_REF"
+          # A push to main can land in the meantime -- retry with rebase on a
+          # non-fast-forward push instead of failing outright.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then
+              echo "::error::failed to push after $attempt attempts" >&2
+              exit 1
+            fi
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin main
+            git rebase origin/main
+          done

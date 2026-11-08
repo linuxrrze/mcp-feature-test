@@ -20,6 +20,7 @@ node --test --test-name-pattern="wizard" "test/integration/*.test.mjs"   # filte
 | `test/unit/clients.test.mjs` | Capability summary (empty `elicitation: {}` means form only, UI extension mimeTypes, sampling, roots, tasks, unknown keys), stable fingerprints, registry dedupe (2026-07-28 logged on first sight only, 2025-era once per connection), ordering |
 | `test/unit/flows.test.mjs` | URL-flow store and pages: unguessable IDs, HTML escaping, empty token → 400, completion and `onComplete`, "already completed", unknown ID → 404, oversized body |
 | `test/unit/server.test.mjs` | Form schemas (every variant contains only spec-allowed primitives, defaults valid, all string formats), tool list and metadata, app-only visibility, MCP App resource (mimeType, `_meta`, self-contained), friendly errors for clients without elicitation, `inspect_client`, `list_seen_clients`, tool-call logging. Runs in-process over `InMemoryTransport` (2025 handshake) |
+| `test/unit/banner.test.mjs` | Container startup banner: printed from the file if present, silent otherwise, and in stdio mode only on stderr (stdout stays empty) |
 | `test/unit/http-config.test.mjs` | `ALLOWED_HOSTS` parsing and which Host/Origin validation applies |
 | `test/integration/matrix.mjs` | The protocol matrix, run for **stdio × {2026-07-28, 2025-11-25}** and **HTTP × {2026-07-28, 2025-11-25}**: era negotiation, capability log line, accept/decline/cancel for every elicitation tool, wizard step dependencies and cancellation at later steps, URL flow (page submitted; early accept with the page submitted afterwards, as Open WebUI does; never submitted → `isError` after `FLOW_WAIT_MS`; cancelled while waiting; declined), legacy push with the `notifications/elicitation/complete` notification (2025) or a clear refusal (2026), progress, cancellation through `AbortSignal` (checked in the server log), MCP App metadata and resource, submit → results round trip, a client without elicitation, `list_seen_clients`, log dedupe |
 | `test/integration/stdio.test.mjs` | Runs the matrix over stdio, plus: no log output on stdout, `FLOW_HOST`/`FLOW_PUBLIC_URL`, `FLOW_PORT` busy → fallback |
@@ -56,6 +57,10 @@ Two quirks of the harness, both handled in code:
 - The app HTML is inlined into the host page as a JSON `<script>`, with `<` escaped. `page.addInitScript` did not deliver it reliably together with `setContent`.
 
 `npm run screenshots` uses the same harness to write `docs/images/dialog-lab-{light,dark}.png` and `docs/images/url-flow-{light,dark}.png`.
+
+## CI
+
+`.github/workflows/docker-image.yml` runs `npm test` on every push and pull request that touches the code, with a headless Chromium installed so the UI suite runs (a skipped UI suite fails the job). It then builds the Docker image and smoke-tests it; see [docker.md](docker.md#ci-and-published-images).
 
 ## What the tests do not cover
 

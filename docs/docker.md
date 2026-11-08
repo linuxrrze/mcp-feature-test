@@ -4,6 +4,18 @@ The image runs the server in **Streamable HTTP mode** by default (`node dist/htt
 
 > **This is a test server with no authentication.** Any client that reaches the port can call every tool. Keep it on localhost or a trusted network (see [Security](#security)).
 
+## Published image
+
+CI publishes the image to the GitHub Container Registry:
+
+```sh
+docker pull ghcr.io/linuxrrze/mcp-feature-test           # latest build of main
+docker pull ghcr.io/linuxrrze/mcp-feature-test:1.0.0     # package.json version
+docker pull ghcr.io/linuxrrze/mcp-feature-test:1.0.0-20261108   # one specific (dated) build, for rollbacks
+```
+
+In all examples below you can use `ghcr.io/linuxrrze/mcp-feature-test` instead of a locally built `mcp-feature-test`. The image is built for `linux/amd64`.
+
 ## Build
 
 ```sh
@@ -188,3 +200,27 @@ To pass options, add `"-e", "LOG_LEVEL=debug"` or `"-p", "127.0.0.1:3458:3458"` 
   - A browser on the same machine could still reach a loopback-published port through DNS rebinding. Don't keep the container running longer than you need it.
   - On a shared network, put it behind a reverse proxy with authentication (basic auth, an SSO proxy, or an IP allow-list).
 - **Container hardening.** The image runs as uid 1000 (non-root), contains no npm, and keeps application files root-owned and read-only. The compose file adds `read_only: true`, `cap_drop: [ALL]` and `no-new-privileges`. The same flags work with `docker run`: `--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges`.
+
+## CI and published images
+
+[`.github/workflows/docker-image.yml`](../.github/workflows/docker-image.yml) follows the conventions of the `*-rebuild.yml` workflows in the docker-images repository; its helper scripts in `.github/scripts/` (`base-digest.sh`, `add-banner.sh`, `trivy-scan.sh`) are copies of `docker-images/.gitea/scripts/`.
+
+| Trigger | What happens |
+|---------|--------------|
+| push to `main` (image-relevant paths only) | tests, build, startup banner, smoke test, Trivy, push to GHCR |
+| pull request | the same, without pushing |
+| daily schedule | rebuild and push only if the `node:<tag>` base image was re-published (its digest differs from the pin in the `Dockerfile`); afterwards the bot commits the new digest pin |
+| manual run (`workflow_dispatch`) | like a push; only `main` publishes |
+
+Steps of the image job:
+
+1. **Tests**: `npm test` with a headless Chromium, so the MCP App UI tests run too (the job fails if they were skipped).
+2. **Build** with `NODE_IMAGE=<tag>@<current digest>` and the OCI labels (version from `package.json`, commit, date, source).
+3. **Startup banner**: `add-banner.sh` in *builtin* mode (`LABEL de.linux-ng.image-banner=builtin`): it only adds `/usr/local/share/image-banner.txt`, and the server prints it to **stderr** on start (`src/banner.ts`). The usual shell-wrapper banner would print to stdout and break stdio mode, where stdout is the MCP protocol channel.
+4. **Smoke test**: the HTTP endpoint answers, and in stdio mode an `initialize` request gets a clean JSON-RPC reply on stdout.
+5. **Trivy**: fails on fixable CRITICAL/HIGH findings. Accepted findings go into a `.trivyignore` file at the repository root, with a reason.
+6. **Push**: `:<version>`, `:<version>-<YYYYMMDD>` (rollback) and `:latest`.
+
+To release a new version, bump `version` in `package.json`. A rebuild without a version bump re-publishes the same version tag; the dated tag keeps the previous build available.
+
+The first push creates the package as **private** on GHCR. To allow anonymous `docker pull`, set the package's visibility to public under *Your profile → Packages → mcp-feature-test → Package settings*.

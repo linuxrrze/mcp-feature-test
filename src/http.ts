@@ -10,8 +10,11 @@
  *   ALLOWED_HOSTS comma-separated hostnames accepted in Host/Origin headers
  *   LOG_LEVEL / LOG_FORMAT, see log.ts
  */
+import { printImageBanner } from './banner.js';
 import { errorData, logger } from './log.js';
 import { parseAllowedHosts, startHttpServer } from './httpServer.js';
+
+printImageBanner();
 
 try {
     const running = await startHttpServer({

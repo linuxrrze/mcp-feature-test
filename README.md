@@ -1,5 +1,7 @@
 # mcp-feature-test
 
+[![Docker image](https://github.com/linuxrrze/mcp-feature-test/actions/workflows/docker-image.yml/badge.svg)](https://github.com/linuxrrze/mcp-feature-test/actions/workflows/docker-image.yml)
+
 An MCP server for checking which **user-interaction features** an MCP client (Claude Desktop, Claude Code, VS Code, Cursor, Open WebUI, the MCP Inspector, or your own client) actually supports:
 
 - **Elicitation, form mode**: the client shows a native dialog built from a JSON schema.
@@ -168,6 +170,12 @@ See [docs/openwebui.md](docs/openwebui.md).
 
 ### Docker
 
+A ready-made image is published to `ghcr.io/linuxrrze/mcp-feature-test` (`latest`, the package version, and dated rollback tags):
+
+```sh
+docker run --rm -p 127.0.0.1:3457:3457 ghcr.io/linuxrrze/mcp-feature-test
+```
+
 See [docs/docker.md](docs/docker.md).
 
 ### Any other HTTP client
@@ -251,6 +259,6 @@ npm run test:ui            # headless Chromium; skipped with a message if none i
 npm run screenshots        # regenerates docs/images/*.png
 ```
 
-See [docs/testing.md](docs/testing.md) for what each suite covers, and [docs/architecture.md](docs/architecture.md) for how the server is put together.
+CI ([.github/workflows/docker-image.yml](.github/workflows/docker-image.yml)) runs the full suite, builds and smoke-tests the image, scans it with Trivy and publishes it; see [docs/docker.md](docs/docker.md#ci-and-published-images). See [docs/testing.md](docs/testing.md) for what each suite covers, and [docs/architecture.md](docs/architecture.md) for how the server is put together.
 
-Source layout: `src/server.ts` (tools and factory), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `ui/` (the MCP App).
+Source layout: `src/server.ts` (tools and factory), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `ui/` (the MCP App).

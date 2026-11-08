@@ -134,7 +134,7 @@ export class LogCollector {
 // --------------------------------------------------------------- servers
 
 // FLOW_WAIT_MS: keep the "accepted but page never submitted" tests short.
-const baseEnv = extra => ({ ...process.env, LOG_FORMAT: 'json', LOG_LEVEL: 'debug', FLOW_PORT: '0', FLOW_WAIT_MS: '1500', ...extra });
+export const baseEnv = extra => ({ ...process.env, LOG_FORMAT: 'json', LOG_LEVEL: 'debug', FLOW_PORT: '0', FLOW_WAIT_MS: '1500', ...extra });
 
 /** Spawn dist/stdio.js and connect `client` to it. */
 export async function connectStdio(client, env = {}) {

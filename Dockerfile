@@ -9,6 +9,8 @@
 # See docs/docker.md for details.
 
 # Pinned base image (tag + multi-arch index digest). Bump both together.
+# CI (.github/workflows/docker-image.yml) checks the tag's digest daily,
+# rebuilds when it was re-published and commits the new digest here.
 ARG NODE_IMAGE=node:24.20.0-alpine3.24@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf
 
 # ---------------------------------------------------------------------------
@@ -54,7 +56,8 @@ LABEL org.opencontainers.image.title="mcp-feature-test" \
       org.opencontainers.image.created="${CREATED}" \
       org.opencontainers.image.source="${SOURCE}" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.base.name="docker.io/library/node:24.20.0-alpine3.24"
+      org.opencontainers.image.base.name="docker.io/library/node:24.20.0-alpine3.24" \
+      de.linux-ng.image-banner="builtin"
 
 # tini as PID 1: forwards signals and reaps zombies, so `docker stop` and Ctrl+C
 # work in both HTTP and stdio mode. npm/npx/corepack/yarn are not needed at
