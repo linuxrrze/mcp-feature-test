@@ -12,6 +12,7 @@
     --fg: var(--color-text-primary, #1c1e21);
     --muted: var(--color-text-secondary, #6b6f76);
     --border: var(--color-border-primary, #d9dce1);
+    --slot: rgba(0, 0, 0, .06);
     --accent: #4f46e5;
     --accent-fg: #ffffff;
     --ok: #15803d;
@@ -19,58 +20,227 @@
     --radius: var(--border-radius-md, 10px);
     --font: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
     --mono: var(--font-mono, ui-monospace, Menlo, monospace);
+    --checker: repeating-conic-gradient(#c9cbd1 0 25%, #f4f5f7 0 50%) 0 0 / 12px 12px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: var(--color-background-primary, #1b1c1f); --panel: var(--color-background-secondary, #25262b);
       --fg: var(--color-text-primary, #ececef); --muted: var(--color-text-secondary, #9c9ea6);
-      --border: var(--color-border-primary, #3a3b41); --accent: #8b85ff; --accent-fg: #111;
+      --border: var(--color-border-primary, #3a3b41); --slot: rgba(255, 255, 255, .07); --accent: #8b85ff; --accent-fg: #111;
       --ok: #4ade80; --err: #f87171;
+      --checker: repeating-conic-gradient(#4a4b52 0 25%, #2c2d33 0 50%) 0 0 / 12px 12px;
     }
   }
   :root[data-theme="dark"] {
     --bg: var(--color-background-primary, #1b1c1f); --panel: var(--color-background-secondary, #25262b);
     --fg: var(--color-text-primary, #ececef); --muted: var(--color-text-secondary, #9c9ea6);
-    --border: var(--color-border-primary, #3a3b41); --accent: #8b85ff; --accent-fg: #111;
+    --border: var(--color-border-primary, #3a3b41); --slot: rgba(255, 255, 255, .07); --accent: #8b85ff; --accent-fg: #111;
     --ok: #4ade80; --err: #f87171;
+    --checker: repeating-conic-gradient(#4a4b52 0 25%, #2c2d33 0 50%) 0 0 / 12px 12px;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--font); }
-  main { padding: 14px 16px; max-width: 520px; }
+  main { padding: 14px 16px; max-width: 760px; }
   h1 { font-size: 16px; margin: 0 0 10px; overflow-wrap: anywhere; }
-  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  input[type=color] { width: 48px; height: 38px; border: none; background: none; padding: 0; cursor: pointer; }
-  input[type=text] { width: 110px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font: 14px var(--mono); }
-  input[type=text][aria-invalid=true] { border-color: var(--err); outline-color: var(--err); }
-  .preview { flex: 1; min-width: 80px; height: 38px; border-radius: 8px; border: 1px solid var(--border); }
-  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-  .presets button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; padding: 0; }
-  .presets button[aria-pressed=true] { border-color: var(--fg); }
-  label.tell { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
-  .actions { display: flex; gap: 8px; margin-top: 10px; }
-  .btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--fg); font: inherit; font-weight: 600; cursor: pointer; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .muted { color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- the picker card */
+  fieldset.card { margin: 0; min-width: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); padding: 12px 14px 0; }
+  fieldset.card:disabled { opacity: .7; }
+  .head { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+  .pair { position: relative; width: 74px; height: 46px; flex: none; }
+  .dot { position: absolute; top: 0; width: 46px; height: 46px; border-radius: 50%; padding: 0; border: 3px solid var(--panel); background: var(--checker); overflow: hidden; }
+  .dot > span { display: block; width: 100%; height: 100%; }
+  #previous { right: 0; cursor: pointer; box-shadow: 0 0 0 1px var(--border); }
+  #previous:hover { transform: scale(1.04); }
+  #current { left: 0; z-index: 1; box-shadow: 0 0 0 1px var(--border); }
+  .readout { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  input[type=text], input[type=number], select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font: 14px var(--mono); }
+  #hex { width: 116px; }
+  input[aria-invalid=true] { border-color: var(--err); outline-color: var(--err); }
+  .css { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+  .presets button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; padding: 0; }
+  .presets button[aria-pressed=true] { border-color: var(--fg); box-shadow: 0 0 0 2px var(--panel) inset; }
+
+  .body { display: grid; gap: 14px 22px; margin: 12px 0 4px; }
+  @media (min-width: 600px) { .body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+  .tabpanel { min-width: 0; }
+
+  /* wheel: hue ring + rotating S/V triangle; square: classic S/V square */
+  .wheel, .square { position: relative; width: 100%; max-width: 340px; margin: 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+  .wheel { aspect-ratio: 1; }
+  .square { aspect-ratio: 4 / 3; border-radius: 10px; }
+  .wheel canvas, .square canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border-radius: inherit; }
+  .handle { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .35), 0 1px 5px rgba(0, 0, 0, .45); pointer-events: none; }
+  .handle.big { width: 30px; height: 30px; margin: -15px 0 0 -15px; }
+  .handle:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  /* range sliders drawn on a gradient track (opacity, hue, value channels) */
+  input[type=range].track { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; margin: 0; border-radius: 13px; border: 1px solid var(--border); background: var(--checker); cursor: pointer; touch-action: none; }
+  input[type=range].track.thin { height: 18px; }
+  input[type=range].track::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--thumb, transparent); border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.4); }
+  input[type=range].track::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--thumb, transparent); border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 1px 4px rgba(0,0,0,.4); }
+  input[type=range].track.thin::-webkit-slider-thumb { width: 20px; height: 20px; }
+  .hue-track { margin-top: 12px !important; background: linear-gradient(to right, #f00, #ff0 16.67%, #0f0 33.33%, #0ff 50%, #00f 66.67%, #f0f 83.33%, #f00) !important; }
+
+  .side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .label { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-bottom: 5px; }
+  .label output { font: 12px var(--mono); }
+  .strip, .grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); border-radius: 8px; overflow: hidden; background: var(--slot); }
+  .sw { display: block; aspect-ratio: 1; min-height: 22px; border: 0; padding: 0; margin: 0; cursor: pointer; background: var(--checker); position: relative; }
+  .sw > span { position: absolute; inset: -0.5px; } /* overlap: no hairline seams between fractional cells */
+  .empty { grid-column: 1 / -1; padding: 0 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; min-height: 32px; }
+  .sw[aria-pressed=true]::after { content: ""; position: absolute; inset: 3px; border-radius: 4px; box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,.5); }
+  .sw:focus-visible { outline-offset: -3px; z-index: 1; }
+  .slot { aspect-ratio: 1; min-height: 22px; }
+  .row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+  .row-head .label { margin: 0; }
+  select { font: 13px var(--font); padding: 3px 6px; }
+  .palette + .palette { margin-top: 12px; }
+
+  /* values tab */
+  .channels { display: grid; gap: 8px; }
+  .group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; grid-template-columns: 22px minmax(0, 1fr) 66px; gap: 6px 8px; align-items: center; }
+  .group legend { padding: 0; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .group label { font: 12px var(--mono); color: var(--muted); }
+  .group input[type=number] { width: 66px; padding: 4px 6px; font-size: 13px; }
+
+  /* pick tab */
+  .pick { display: grid; gap: 12px; }
+  .pick p { margin: 0; font-size: 13px; }
+  .pick .inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  input[type=color] { width: 44px; height: 32px; border: none; background: none; padding: 0; cursor: pointer; }
+  .drop { position: relative; border: 2px dashed var(--border); border-radius: 10px; min-height: 120px; display: grid; place-items: center; padding: 10px; text-align: center; touch-action: none; }
+  .drop.over { border-color: var(--accent); }
+  .drop canvas { display: block; max-width: 100%; cursor: crosshair; border-radius: 6px; }
+  .marker { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; pointer-events: none; }
+
+  .btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font: inherit; font-weight: 600; cursor: pointer; display: inline-block; }
   .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
   .btn:disabled, input:disabled { opacity: .5; cursor: default; }
+
+  /* tab bar at the bottom of the card */
+  .tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--border); margin: 8px -14px 0; }
+  .tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px 7px; border: 0; background: none; color: var(--muted); font: 11px var(--font); cursor: pointer; }
+  .tabs button[aria-selected=true] { color: var(--fg); font-weight: 600; }
+  .tabs button[aria-selected=true] svg { color: var(--accent); }
+  .tabs svg { width: 22px; height: 22px; }
+  .tabs button:focus-visible { outline-offset: -3px; }
+
+  /* answer */
+  label.tell { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
   #status { margin-top: 8px; min-height: 18px; font-size: 13px; }
   #status.ok { color: var(--ok); } #status.err { color: var(--err); }
   ul.report { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; color: var(--muted); }
-  ul.report li[hidden] { display: none; }
   ul.report li[data-state=ok] b { color: var(--ok); }
   ul.report li[data-state=err] b { color: var(--err); }
   details { margin-top: 8px; }
   summary { cursor: pointer; color: var(--muted); font-size: 12px; }
   pre { font: 11px/1.4 var(--mono); background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px; overflow: auto; max-height: 200px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  @media (max-width: 420px) {
+    main { padding: 10px; }
+    fieldset.card { padding: 10px 10px 0; }
+    .tabs { margin: 8px -10px 0; }
+    .presets { margin-left: 0; }
+  }
 </style>
 </head>
 <body>
 <main>
   <h1 id="prompt">Pick a colour</h1>
-  <div class="row">
-    <input id="color" type="color" value="#4f46e5" aria-label="Colour">
-    <input id="hex" type="text" value="#4f46e5" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex colour (#rrggbb)">
-    <div id="preview" class="preview" role="img" aria-label="Preview"></div>
-  </div>
-  <div class="presets" id="presets" aria-label="Presets"></div>
+  <fieldset class="card" id="picker">
+    <legend class="sr-only">Colour</legend>
+    <div class="head">
+      <div class="pair">
+        <button type="button" id="previous" class="dot" title="Previous colour: click to swap"><span></span></button>
+        <div id="current" class="dot" role="img" aria-label="Current colour"><span></span></div>
+      </div>
+      <div class="readout">
+        <input id="hex" type="text" value="#4f46e5" maxlength="9" spellcheck="false" autocomplete="off" aria-label="Hex colour (#rrggbb or #rrggbbaa)">
+        <span class="css" id="css-rgb"></span>
+      </div>
+      <div class="presets" id="presets" role="group" aria-label="Presets"></div>
+    </div>
+
+    <div class="body">
+      <section class="tabpanel" id="panel-wheel" role="tabpanel" aria-labelledby="tab-wheel">
+        <div class="wheel" id="wheel">
+          <canvas id="wheel-canvas" aria-hidden="true"></canvas>
+          <div class="handle big" id="hue-handle" role="slider" tabindex="0" aria-label="Hue (ring)" aria-valuemin="0" aria-valuemax="359"></div>
+          <div class="handle" id="tri-handle" role="slider" tabindex="0" aria-label="Saturation and brightness (triangle): left/right saturation, up/down brightness" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </section>
+      <section class="tabpanel" id="panel-classic" role="tabpanel" aria-labelledby="tab-classic" hidden>
+        <div class="square" id="square">
+          <canvas id="square-canvas" aria-hidden="true"></canvas>
+          <div class="handle" id="sq-handle" role="slider" tabindex="0" aria-label="Saturation and brightness (square): left/right saturation, up/down brightness" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <input type="range" class="track hue-track" id="hue-range" min="0" max="359" step="1" aria-label="Hue">
+      </section>
+      <section class="tabpanel" id="panel-values" role="tabpanel" aria-labelledby="tab-values" hidden>
+        <div class="channels" id="channels"></div>
+        <p class="css" style="margin:10px 0 0"><span id="out-rgb"></span><br><span id="out-hsl"></span></p>
+      </section>
+      <section class="tabpanel pick" id="panel-pick" role="tabpanel" aria-labelledby="tab-pick" hidden>
+        <div>
+          <div class="inline"><button type="button" class="btn" id="eyedropper" hidden>Pick from the screen</button></div>
+          <p id="eyedropper-msg" class="muted" role="status"></p>
+        </div>
+        <label class="inline">System colour dialog <input id="color" type="color" value="#4f46e5"></label>
+        <div>
+          <div class="inline" style="margin-bottom:8px">
+            <label class="btn" for="image-file">Load an image…</label>
+            <input id="image-file" class="sr-only" type="file" accept="image/*">
+            <span class="muted" style="font-size:13px">or drop one below</span>
+          </div>
+          <div class="drop" id="drop">
+            <canvas id="image-canvas" hidden aria-label="Loaded image: click or drag to sample a colour"></canvas>
+            <div class="marker" id="image-marker" hidden></div>
+            <p id="drop-hint" class="muted">Click or drag on the image to sample a colour. The image stays in this page; nothing is uploaded.</p>
+          </div>
+        </div>
+      </section>
+      <section class="tabpanel" id="panel-palettes" role="tabpanel" aria-labelledby="tab-palettes" hidden>
+        <div id="palettes"></div>
+      </section>
+
+      <div class="side" id="side">
+        <div>
+          <label class="label" for="alpha">Opacity <output id="alpha-out">100%</output></label>
+          <input type="range" class="track" id="alpha" min="0" max="100" step="1" value="100">
+        </div>
+        <div>
+          <div class="label" id="recent-label">Recent</div>
+          <div class="strip" id="recent" role="group" aria-labelledby="recent-label"></div>
+        </div>
+        <div id="side-palette-box">
+          <div class="row-head"><label class="label" for="palette-select">Palette</label><select id="palette-select"></select></div>
+          <div class="grid" id="side-palette" role="group" aria-label="Palette"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Picker mode">
+      <button type="button" role="tab" id="tab-classic" aria-controls="panel-classic" aria-selected="false" tabindex="-1" data-tab="classic">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="15" cy="9" r="2" fill="currentColor"/></svg>Classic</button>
+      <button type="button" role="tab" id="tab-wheel" aria-controls="panel-wheel" aria-selected="true" tabindex="0" data-tab="wheel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M8.5 8.2 16 12l-7.5 3.8z" fill="currentColor"/></svg>Wheel</button>
+      <button type="button" role="tab" id="tab-values" aria-controls="panel-values" aria-selected="false" tabindex="-1" data-tab="values">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="2.2" fill="currentColor"/><circle cx="15" cy="12" r="2.2" fill="currentColor"/><circle cx="7" cy="17" r="2.2" fill="currentColor"/></svg>Values</button>
+      <button type="button" role="tab" id="tab-pick" aria-controls="panel-pick" aria-selected="false" tabindex="-1" data-tab="pick">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Pick</button>
+      <button type="button" role="tab" id="tab-palettes" aria-controls="panel-palettes" aria-selected="false" tabindex="-1" data-tab="palettes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="5" height="6" rx="1.5" fill="currentColor"/><rect x="9.5" y="5" width="5" height="6" rx="1.5" fill="currentColor"/><rect x="16" y="5" width="5" height="6" rx="1.5" fill="currentColor"/><rect x="3" y="13" width="5" height="6" rx="1.5" fill="currentColor"/><rect x="9.5" y="13" width="5" height="6" rx="1.5" fill="currentColor"/><rect x="16" y="13" width="5" height="6" rx="1.5" fill="currentColor"/></svg>Palettes</button>
+    </div>
+  </fieldset>
+
   <label class="tell"><input id="tell" type="checkbox" checked> Also tell the assistant in the chat (ui/message)</label>
   <div class="actions">
     <button class="btn primary" id="ok" type="button" disabled>OK</button>

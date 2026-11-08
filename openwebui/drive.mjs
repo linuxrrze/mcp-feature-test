@@ -484,6 +484,89 @@ const scenarios = {
         r.notes.push(`retry: ${(await app.locator('#report').innerText()).replace(/\s+/g, ' ')}`);
     },
 
+    async pick_color_features(r) {
+        // The richer picker inside Open WebUI's sandbox: size, Recent from earlier answers, wheel drag,
+        // EyeDropper availability, the file chooser + image sampling, opacity → #rrggbbaa.
+        await newChat('call pick_color {"prompt":"Overlay colour (with opacity)?","initial":"#336699"}');
+        const { iframe, app } = await appFrame('pick_color');
+        await app.locator('#ok:not([disabled])').waitFor({ timeout: 30000 });
+        await page.waitForTimeout(800);
+        const box = await iframe.boundingBox();
+        r.notes.push(`iframe size: ${Math.round(box.width)}×${Math.round(box.height)}`);
+        const env = await app.locator('body').evaluate(() => {
+            let storage;
+            try {
+                localStorage.setItem('x', '1');
+                storage = 'localStorage works';
+            } catch (e) {
+                storage = `localStorage throws: ${e.name}`;
+            }
+            return {
+                eyeDropper: typeof window.EyeDropper,
+                storage,
+                dpr: window.devicePixelRatio,
+                scrollWidth: document.documentElement.scrollWidth,
+                clientWidth: document.documentElement.clientWidth,
+                bodyHeight: document.body.scrollHeight
+            };
+        });
+        r.notes.push(`app environment: ${JSON.stringify(env)}`);
+        r.notes.push(`recent from server: ${JSON.stringify(await app.locator('#recent button').evaluateAll(bs => bs.map(b => b.dataset.color)))}`);
+
+        // Drag on the hue ring (from hue 210° to 120°): pointer events inside the iframe.
+        const wheel = await app.locator('#wheel').boundingBox();
+        const g = { cx: wheel.x + wheel.width / 2, cy: wheel.y + wheel.width / 2, r: wheel.width / 2 - 1 - Math.max(16, wheel.width * 0.09) / 2 };
+        const at = h => [g.cx + g.r * Math.cos((h * Math.PI) / 180), g.cy - g.r * Math.sin((h * Math.PI) / 180)];
+        await page.mouse.move(...at(210));
+        await page.mouse.down();
+        await page.mouse.move(...at(160), { steps: 5 });
+        await page.mouse.move(...at(120), { steps: 5 });
+        await page.mouse.up();
+        r.notes.push(`after ring drag: hue ${await app.locator('#hue-handle').getAttribute('aria-valuenow')}, ${await app.locator('#hex').inputValue()}`);
+
+        // Pick tab: EyeDropper message, then the real file chooser (does the sandbox allow it?).
+        await app.locator('#tab-pick').click();
+        await page.waitForTimeout(300);
+        r.notes.push(`eyedropper: available=${await app.locator('#eyedropper-msg').getAttribute('data-available')} "${await app.locator('#eyedropper-msg').textContent()}"`);
+        if (await app.locator('#eyedropper').isVisible()) {
+            // Headless Chromium has no screen to pick from; this shows whether the sandbox lets the call through.
+            await app.locator('#eyedropper').click();
+            await page.waitForTimeout(1500);
+            r.notes.push(`eyedropper click → "${await app.locator('#eyedropper-msg').textContent()}"`);
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            r.notes.push(`after Escape → "${await app.locator('#eyedropper-msg').textContent()}"`);
+        }
+        const chooser = page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null);
+        await app.locator('label[for=image-file]').click();
+        const fc = await chooser;
+        r.notes.push(`file chooser opened from the sandboxed iframe: ${!!fc}`);
+        if (fc) {
+            await fc.setFiles(join(root, 'docs/images/color-picker-palettes.png'));
+            await app.locator('#image-canvas:not([hidden])').waitFor({ timeout: 10000 });
+            const ib = await app.locator('#image-canvas').boundingBox();
+            await page.mouse.click(ib.x + ib.width * 0.2, ib.y + ib.height * 0.25);
+            r.notes.push(`sampled from the image: ${await app.locator('#hex').inputValue()} (image ${Math.round(ib.width)}×${Math.round(ib.height)})`);
+        }
+        await iframe.scrollIntoViewIfNeeded();
+        r.shots.push(await shot('pick-color-pick-tab'));
+
+        // Opacity 50 % → #rrggbbaa; message off, so only the server gets it (one confirmation).
+        await app.locator('#tab-wheel').click();
+        await app.locator('#alpha').fill('50');
+        const hex = await app.locator('#hex').inputValue();
+        r.notes.push(`with opacity: ${hex}`);
+        await app.locator('#tell').uncheck();
+        await app.locator('#ok').click();
+        await confirmToolCall(r);
+        await app.locator('#status.ok').waitFor({ timeout: 15000 });
+        await page.click('#chat-input');
+        await page.keyboard.type('call pick_color_result');
+        await page.keyboard.press('Enter');
+        await waitForText('The user picked #', 30000);
+        r.notes.push((await lastAssistantText()).slice(0, 400));
+    },
+
     async return_files(r) {
         await newChat('call return_files');
         await waitForText('Tool result:');

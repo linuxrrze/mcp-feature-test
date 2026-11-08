@@ -17,17 +17,20 @@ import { fileURLToPath } from 'node:url';
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import * as z from 'zod/v4';
+import { describeHex, HEX_COLOR, normalizeHex } from './colorMath.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 export const COLOR_PICKER_URI = 'ui://feature-test/color-picker.html';
-export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+export { HEX_COLOR };
 export const DEFAULT_PICK_PROMPT = 'Pick a colour';
 export const DEFAULT_PICK_COLOR = '#4f46e5';
 /** Requests kept (oldest dropped first) and how long they stay answerable / readable. */
 export const MAX_COLOR_REQUESTS = 200;
 export const COLOR_REQUEST_TTL_MS = 60 * 60_000;
 export const MAX_PICK_PROMPT_CHARS = 500;
+/** How many recently picked colours pick_color hands to the picker (its "Recent" row). */
+export const MAX_RECENT_COLORS = 10;
 
 export interface ColorRequest {
     requestId: string;
@@ -53,7 +56,7 @@ function prune(now = Date.now()): void {
 
 export function createColorRequest(prompt: string, initial: string, now = Date.now()): ColorRequest {
     prune(now);
-    const r: ColorRequest = { requestId: randomUUID(), prompt, initial: initial.toLowerCase(), createdAt: now };
+    const r: ColorRequest = { requestId: randomUUID(), prompt, initial: normalizeHex(initial) ?? initial.toLowerCase(), createdAt: now };
     requests.set(r.requestId, r);
     return r;
 }
@@ -77,6 +80,18 @@ export function colorRequestCount(): number {
     return requests.size;
 }
 
+/**
+ * Colours picked in the most recent answered requests, newest first, without
+ * duplicates. The picker shows them as "Recent": an MCP App iframe usually has
+ * no usable storage of its own (opaque sandbox origin), so the server remembers.
+ */
+export function recentColors(limit = MAX_RECENT_COLORS, now = Date.now()): string[] {
+    prune(now);
+    // Reversed first, so that answers within the same millisecond keep newest-first order (sort is stable).
+    const picked = [...requests.values()].reverse().filter(r => r.action === 'accept' && r.color).sort((a, b) => (b.answeredAt ?? 0) - (a.answeredAt ?? 0));
+    return [...new Set(picked.map(r => r.color!))].slice(0, limit);
+}
+
 /** For tests. */
 export function resetColorRequests(): void {
     requests.clear();
@@ -90,8 +105,9 @@ export function answerColorRequest(requestId: string, action: 'accept' | 'cancel
     if (!r) return { ok: false, error: `Unknown or expired colour request "${requestId}". Ask the assistant to call pick_color again.` };
     if (r.answeredAt) return { ok: false, error: `Colour request ${requestId} was already answered (${r.action}${r.color ? ` ${r.color}` : ''}).` };
     if (action === 'accept') {
-        if (typeof color !== 'string' || !HEX_COLOR.test(color)) return { ok: false, error: `Invalid colour ${JSON.stringify(color ?? null)}: expected #rrggbb.` };
-        r.color = color.toLowerCase();
+        const hex = typeof color === 'string' ? normalizeHex(color) : null;
+        if (!hex) return { ok: false, error: `Invalid colour ${JSON.stringify(color ?? null)}: expected #rrggbb or #rrggbbaa.` };
+        r.color = hex;
     } else {
         if (color != null) return { ok: false, error: 'A cancelled request carries no colour (color must be null).' };
         r.color = null;
@@ -104,16 +120,21 @@ export function answerColorRequest(requestId: string, action: 'accept' | 'cancel
 export function describeColorRequest(r: ColorRequest): string {
     if (!r.answeredAt) return `Still waiting: the user has not answered the colour picker yet ("${r.prompt}", requestId ${r.requestId}).`;
     if (r.action === 'cancel') return `The user cancelled the colour picker ("${r.prompt}") without choosing a colour.`;
-    return `The user picked ${r.color} for "${r.prompt}".`;
+    const d = describeHex(r.color ?? '');
+    return `The user picked ${r.color}${d ? ` (${d.rgb}, ${d.hsl})` : ''} for "${r.prompt}".`;
 }
 
 function publicView(r: ColorRequest) {
+    const d = r.color ? describeHex(r.color) : null;
     return {
         requestId: r.requestId,
         prompt: r.prompt,
         initial: r.initial,
         status: r.answeredAt ? (r.action === 'accept' ? 'picked' : 'cancelled') : 'waiting',
         color: r.color ?? null,
+        rgb: d?.rgb ?? null,
+        hsl: d?.hsl ?? null,
+        alpha: d?.alpha ?? null,
         createdAt: new Date(r.createdAt).toISOString(),
         answeredAt: r.answeredAt ? new Date(r.answeredAt).toISOString() : null
     };
@@ -139,7 +160,7 @@ export function registerColorPicker(server: McpServer): void {
         server,
         'Colour picker',
         COLOR_PICKER_URI,
-        { description: 'A small colour picker that asks the user one question', _meta: { ui: { prefersBorder: true } } },
+        { description: 'A colour picker (hue wheel, square, values, image sampling, palettes) that asks the user one question', _meta: { ui: { prefersBorder: true } } },
         async () => ({
             contents: [{ uri: COLOR_PICKER_URI, mimeType: RESOURCE_MIME_TYPE, text: loadHtml(), _meta: { ui: { prefersBorder: true } } }]
         })
@@ -151,21 +172,22 @@ export function registerColorPicker(server: McpServer): void {
         {
             title: 'Ask the user for a colour (MCP App)',
             description:
-                'Show a small colour picker (MCP App) that asks the user a question. The call returns immediately; the user answers afterwards. ' +
+                'Show a colour picker (MCP App) that asks the user a question; the user may also choose an opacity (the answer is then #rrggbbaa). The call returns immediately; the user answers afterwards. ' +
                 'The answer reaches you as a chat message or model context, or call pick_color_result to read it.',
             inputSchema: {
                 prompt: z.string().min(1).max(MAX_PICK_PROMPT_CHARS).optional().describe('Question shown above the picker'),
-                initial: z.string().regex(HEX_COLOR, 'expected #rrggbb').optional().describe('Pre-selected colour, #rrggbb')
+                initial: z.string().regex(HEX_COLOR, 'expected #rrggbb or #rrggbbaa').optional().describe('Pre-selected colour, #rrggbb or #rrggbbaa (alpha)')
             },
             annotations: { readOnlyHint: true },
             _meta: { ui: { resourceUri: COLOR_PICKER_URI } }
         },
         async ({ prompt, initial }) => {
+            const recent = recentColors();
             const r = createColorRequest(prompt ?? DEFAULT_PICK_PROMPT, initial ?? DEFAULT_PICK_COLOR);
             return text(
                 'A colour picker is shown to the user; wait for their choice. If no picker appeared, this client does not render MCP Apps. ' +
                     `(requestId ${r.requestId}; pick_color_result reads the answer.)`,
-                { structuredContent: { requestId: r.requestId, prompt: r.prompt, initial: r.initial } }
+                { structuredContent: { requestId: r.requestId, prompt: r.prompt, initial: r.initial, recent } }
             );
         }
     );

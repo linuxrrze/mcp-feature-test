@@ -20,7 +20,11 @@ The server speaks both protocol generations, **2026-07-28** (stateless, `input_r
 | --- | --- |
 | ![Dialog Lab, light theme](docs/images/dialog-lab-light.png) | ![Dialog Lab, dark theme](docs/images/dialog-lab-dark.png) |
 
-These screenshots come from the automated browser test (`npm run screenshots`). They show the app inside a minimal test host, not inside a particular MCP client. Each client draws its own frame around the iframe.
+| Colour picker (`pick_color`), Wheel, dark | Values, light | Palettes, dark |
+| --- | --- | --- |
+| ![Colour picker: hue ring and S/V triangle, dark](docs/images/color-picker-wheel-dark.png) | ![Colour picker: RGB/HSL/HSV/alpha values, light](docs/images/color-picker-values.png) | ![Colour picker: palettes, dark](docs/images/color-picker-palettes.png) |
+
+These screenshots come from the automated browser test (`npm run screenshots`). They show the apps inside a minimal test host, not inside a particular MCP client. Each client draws its own frame around the iframe. The colour picker also fits narrow hosts ([360 px](docs/images/color-picker-wheel-light-narrow.png)).
 
 ## Contents
 
@@ -57,8 +61,8 @@ These screenshots come from the automated browser test (`npm run screenshots`). 
 | Resource template `test://files/{name}` | The sample files behind `return_files` (`sample.csv`, `gradient.png`, `sample.pdf`, `beep.wav`, `linked-notes.md`), listed in `resources/list` and `resources/templates/list`, readable with `resources/read`, names completable | Resource templates: 2024-11-05 |
 | `elicit_format_probe` | Form elicitation with schema features **outside the spec**, one dialog per probe: a `pattern`, format `color`, format `time`, a nested object, a free-text array, a file-like `data-url` field. Reports per probe whether the user accepted (and what came back), declined or cancelled. `variant`: `all` or one probe | Not in any spec version (deliberately) |
 | `upload_file_experimental` | **Experimental, not in the spec:** a `file` argument marked with `x-mcp-file` per the draft [files extension](https://github.com/modelcontextprotocol/experimental-ext-file-uploads) (`io.modelcontextprotocol/files`), inline base64 only. Returns size and SHA-256 and checks a supplied digest | Draft extension, not a SEP |
-| `pick_color` | MCP App used like a question: a small colour picker (`ui://feature-test/color-picker.html`; `prompt`, `initial` `#rrggbb`). The call returns at once with a `requestId`; the answer comes back in a later step through `pick_color_submit` (app-only), `ui/update-model-context` and `ui/message`, each reported in the UI. See [server-vs-app.md](docs/server-vs-app.md#second-example-a-colour-picker-as-a-question) | MCP Apps extension |
-| `pick_color_result` | Returns the colour the user picked (or "cancelled" / "still waiting") for a `requestId`, or for the latest `pick_color` | n/a |
+| `pick_color` | MCP App used like a question: a colour picker (`ui://feature-test/color-picker.html`; `prompt`, `initial` `#rrggbb` or `#rrggbbaa`) with tabs Wheel (hue ring + S/V triangle), Classic (S/V square), Values (RGB/HSL/HSV/alpha), Pick (EyeDropper API, system dialog, sampling from a local image) and Palettes, plus opacity, previous colour and Recent (`structuredContent.recent` from earlier answers, since the sandboxed iframe has no storage). Drag, touch and keyboard, HiDPI canvases, light/dark. The call returns at once with a `requestId`; the answer comes back in a later step through `pick_color_submit` (app-only, `#rrggbb` or `#rrggbbaa`), `ui/update-model-context` and `ui/message`, each reported in the UI. See [server-vs-app.md](docs/server-vs-app.md#second-example-a-colour-picker-as-a-question) | MCP Apps extension |
+| `pick_color_result` | Returns the colour the user picked as hex, `rgb()`/`rgba()` and `hsl()`/`hsla()` (or "cancelled" / "still waiting") for a `requestId`, or for the latest `pick_color` | n/a |
 | Prompt `try_all_dialogs` | A prompt that walks the assistant through every tool above | Prompts |
 
 Nothing these tools do has side effects: "delete" and "order" are only pretend, the tokens entered on the URL page are kept in memory and shown masked, and uploaded files are hashed and discarded (their contents are never logged).
@@ -216,17 +220,19 @@ curl -s http://127.0.0.1:3457/          # "mcp-feature-test is running."
 | `return_files` | Seven blocks: the list, a CSV, a PNG, a PDF, a link to a Markdown file, an image and a short beep | Whatever is missing from the list was dropped (or handed only to the model) |
 | `elicit_format_probe` | One dialog per probe. The result says per probe what came back; every one of these is outside the spec, so a fallback text box, a dropped field or a refusal is all legitimate | A client that refuses a schema ends the whole call with an error (the official TypeScript SDK client refuses everything except `pattern`). Use single variants to find which probe it refuses |
 | `upload_file_experimental` | Only clients implementing the draft files extension render a file picker; others show the raw object | A model can still call it with inline base64 |
-| `pick_color` | A small colour picker with the question, OK and Cancel. After OK the assistant learns the colour from the model context and/or a chat message ("I picked #xxxxxx for: …"); the picker lists which of the three channels worked | Only the text result; `pick_color_result` then keeps answering "still waiting" |
+| `pick_color` | A colour picker panel (screenshots at the top) with the question, OK and Cancel. After OK the assistant learns the colour from the model context and/or a chat message ("I picked #xxxxxx for: …", `#xxxxxxxx` with opacity); the picker lists which of the three channels worked | Only the text result; `pick_color_result` then keeps answering "still waiting" |
 
 ![URL-mode elicitation page, light](docs/images/url-flow-light.png)
 
-`pick_color` in Open WebUI 0.13.2. Open WebUI asks for two confirmations per answer: one for the app's tool call and one for its chat message. Details are in [docs/openwebui.md](docs/openwebui.md).
+`pick_color` in Open WebUI 0.13.2. Open WebUI asks for two confirmations per answer: one for the app's tool call and one for its chat message. Dragging, image sampling through the file chooser and the EyeDropper API work inside its sandbox; browser storage does not. Details are in [docs/openwebui.md](docs/openwebui.md#colour-picker-pick_color).
 
 | 1. The picker, rendered inline under the tool call | 2. OK: confirm the app's call to `pick_color_submit` |
 | --- | --- |
 | ![pick_color picker in Open WebUI](docs/images/openwebui-pick-color.png) | ![Tool call confirmation for pick_color_submit](docs/images/openwebui-pick-color-toolcall-confirm.png) |
 | **3. Confirm the chat message ("I picked …")** | **4. The model reads the answer with `pick_color_result`** |
 | ![Message confirmation for ui/message](docs/images/openwebui-pick-color-message-confirm.png) | ![pick_color_result answer in the chat](docs/images/openwebui-pick-color-result.png) |
+| **The Pick tab: a loaded image, a sampled colour** | |
+| ![Pick tab in Open WebUI with a sampled image](docs/images/openwebui-pick-color-pick-tab.png) | |
 
 ## Capability logging
 
@@ -288,4 +294,4 @@ npm run screenshots        # regenerates docs/images/*.png
 
 CI ([.github/workflows/docker-image.yml](.github/workflows/docker-image.yml)) runs the full suite, builds and smoke-tests the image, scans it with Trivy and publishes it; see [docs/docker.md](docs/docker.md#ci-and-published-images). See [docs/testing.md](docs/testing.md) for what each suite covers, and [docs/architecture.md](docs/architecture.md) for how the server is put together.
 
-Source layout: `src/server.ts` (tools and factory), `src/files.ts` (generated sample files, upload decoding and limits), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `src/colorPicker.ts` (the `pick_color` tools), `ui/` (the MCP Apps).
+Source layout: `src/server.ts` (tools and factory), `src/files.ts` (generated sample files, upload decoding and limits), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `src/colorPicker.ts` (the `pick_color` tools), `src/colorMath.ts` (colour maths shared with the picker UI), `ui/` (the MCP Apps).

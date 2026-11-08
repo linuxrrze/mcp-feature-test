@@ -14,7 +14,7 @@
  *    A `{"$generateFile": N}` value anywhere in the args is replaced by a generated
  *    FileInput object (N pseudo-random bytes as inline base64, with size and sha-256
  *    digest), so large x-mcp-file uploads need not be typed into the chat.
- *  - user message "I picked #rrggbb for: …" / "I cancelled the colour picker for: …"
+ *  - user message "I picked #rrggbb[aa] for: …" / "I cancelled the colour picker for: …"
  *    (the colour picker's ui/message) and pick_color_result is offered
  *      → a tool call to pick_color_result (what a real model should do next)
  *  - last message is a tool result (or the user message with the result's images that
@@ -91,7 +91,7 @@ function decide(body) {
     }
     if (last.role === 'user') {
         const t = textOf(last.content);
-        if (/^I (picked #[0-9a-f]{6}|cancelled the colour picker) for: /i.test(t.trim())) {
+        if (/^I (picked #[0-9a-f]{6}(?:[0-9a-f]{2})?|cancelled the colour picker) for: /i.test(t.trim())) {
             const name = toolNames.find(n => n.endsWith('pick_color_result'));
             if (name) return { toolCall: { id: `call_${Date.now()}_${++counter}`, name, arguments: '{}' } };
         }

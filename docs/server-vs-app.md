@@ -54,12 +54,30 @@ The MCP Apps extension (`io.modelcontextprotocol/ui`, proposed as SEP-1865; this
 
 ## Second example: a colour picker as a question
 
-`pick_color` uses an app the way elicitation is used: to ask the user one thing (*"Which colour for the header?"*) and get the answer back to the model. The app (`ui/color-picker.html` + `ui/color-picker.ts`, served as `ui://feature-test/color-picker.html`) shows the question, a colour input with a validated `#rrggbb` field, preset swatches, a preview, and OK / Cancel.
+`pick_color` uses an app the way elicitation is used: to ask the user one thing (*"Which colour for the header?"*) and get the answer back to the model. The app (`ui/color-picker.html` + `ui/color-picker.ts`, served as `ui://feature-test/color-picker.html`) shows the question, the picker, and OK / Cancel.
+
+The picker itself shows what an app can do that a form field cannot. Elicitation has no colour type at all (format `color` is [outside the spec](openwebui.md#elicit_format_probe-non-spec-form-fields), Open WebUI renders a plain text box), while the app is a small painting-program colour panel, plain TypeScript and `<canvas>`, no UI library:
+
+| Wheel (dark, 700 px) | Values (light) | Palettes (dark) |
+| --- | --- | --- |
+| ![Wheel tab, dark](images/color-picker-wheel-dark.png) | ![Values tab, light](images/color-picker-values.png) | ![Palettes tab, dark](images/color-picker-palettes.png) |
+
+- **Wheel** (default): a hue ring and, inside it, a saturation/brightness triangle that turns so its tip points at the chosen hue. Both have draggable handles (pointer capture, so a drag that leaves the wheel keeps going; points outside the triangle are clamped onto it).
+- **Classic**: a saturation/brightness square with a hue slider.
+- **Values**: RGB, HSL, HSV and alpha as numbers and gradient sliders, all kept in sync, plus the CSS `rgb()`/`hsl()` text.
+- **Pick**: the EyeDropper API when the browser offers it (otherwise an explanation), the system colour dialog, and sampling from an image the user loads with a file input or drops on the page. The image never leaves the iframe.
+- **Palettes**: four original 3 × 10 palettes.
+- Always visible: current and previous colour (click the previous one to swap back), the hex field (`#rrggbb` or `#rrggbbaa`), presets, an opacity slider over a checkerboard, and **Recent**. An app in a sandboxed iframe usually cannot store anything (in Open WebUI `localStorage` throws), so the server remembers: `pick_color` returns the colours of the last answered requests as `structuredContent.recent`, and the picker shows them.
+- Keyboard: arrow keys move the ring, triangle and square handles (Shift: ×10), the tab bar is an ARIA tab list. Canvases are drawn at the device pixel ratio; the layout has two columns from 600 px and one below (360 px works, [screenshot](images/color-picker-wheel-light-narrow.png)); light and dark follow the host theme.
+
+The colour maths (HSV ↔ RGB ↔ HSL, the triangle's barycentric mapping) is in `src/colorMath.ts`, shared by the server and the app and unit-tested on its own.
+
+With an opacity below 100 % the answer is `#rrggbbaa`; an opaque colour stays `#rrggbb`, as before. `pick_color_result` reports hex, `rgb()`/`rgba()` and `hsl()`/`hsla()`, in the text and in `structuredContent` (`color`, `rgb`, `hsl`, `alpha`).
 
 The important difference to elicitation is **when** the answer arrives:
 
 - With elicitation the tool call **waits** (2025: the server's `elicitation/create` request is pending; 2026-07-28: the client retries the call with `inputResponses`). The answer becomes part of the tool's own result.
-- With an app, the tool call has **already returned** by the time the user sees the picker: the host renders the app from the tool's result. The MCP Apps extension has no mechanism for an app to complete or amend a tool call that is already finished, and no way for a tool to wait for its own app. So `pick_color` returns at once (*"A colour picker is shown to the user; wait for their choice …"*, plus `structuredContent {requestId, prompt, initial}`), and the answer reaches the model **in a later step**.
+- With an app, the tool call has **already returned** by the time the user sees the picker: the host renders the app from the tool's result. The MCP Apps extension has no mechanism for an app to complete or amend a tool call that is already finished, and no way for a tool to wait for its own app. So `pick_color` returns at once (*"A colour picker is shown to the user; wait for their choice …"*, plus `structuredContent {requestId, prompt, initial, recent}`), and the answer reaches the model **in a later step**.
 
 On OK or Cancel the app tries three ways back, one after another, and shows the outcome of each:
 

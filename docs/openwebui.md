@@ -167,21 +167,35 @@ The app runs from an opaque `srcdoc` origin. Every app request goes through the 
 
 ### Colour picker (`pick_color`)
 
-Verified with the scenarios `pick_color`, `pick_color_cancel` and `pick_color_deny`, on both the 2026-07-28 and the 2025-11-25 connection (same results).
+Verified with the scenarios `pick_color`, `pick_color_cancel`, `pick_color_deny` and `pick_color_features`, on both the 2026-07-28 and the 2025-11-25 connection (same results), re-run on 2026-11-08 with the richer picker (wheel, classic square, values, image sampling, palettes, opacity; see [server-vs-app.md](server-vs-app.md#second-example-a-colour-picker-as-a-question)).
 
 ![pick_color in Open WebUI](images/openwebui-pick-color.png)
 
 | Step | Result in Open WebUI 0.13.2 | Evidence |
 |---|---|---|
-| `pick_color` | The picker renders inline under the tool call with the prompt and initial colour from the tool input; OK is enabled once the tool result with the `requestId` arrives. The model gets the text plus `structuredContent` (`requestId`, `prompt`, `initial`). | verified |
+| `pick_color` | The picker renders inline under the tool call with the prompt and initial colour from the tool input; OK is enabled once the tool result with the `requestId` arrives. The model gets the text plus `structuredContent` (`requestId`, `prompt`, `initial`, `recent`). | verified |
 | OK → `tools/call pick_color_submit` | A "Tool call" confirmation dialog showing `{requestId, color, action}` ([screenshot](images/openwebui-pick-color-toolcall-confirm.png)). After *Confirm* the picker reports *Server: stored*. The call goes through `/mcp/app/rpc` on a fresh MCP connection that declares only the UI extension. | verified (trace) |
 | `ui/update-model-context` | `Method not found`; the picker reports *not supported by host*. Open WebUI does not advertise `updateModelContext`. | verified |
 | `ui/message` (checkbox on, the default) | A "Confirm Prompt from Embed" dialog with "I picked #ec4899 for: …" (below), then the text is sent as the next user message and starts the model's next turn. | verified |
-| `pick_color_result` | Returns the stored answer ("The user picked #ec4899 for …" plus `status: picked`). Server state is module-level, so Open WebUI's per-request MCP connections don't lose it. | verified (the harness's fake LLM calls it in reply to the picker's message, as a real model should) |
+| `pick_color_result` | Returns the stored answer ("The user picked #ec4899 (rgb(236, 72, 153), hsl(330, 81%, 60%)) for …" plus `status: picked`, `rgb`, `hsl`, `alpha`). Server state is module-level, so Open WebUI's per-request MCP connections don't lose it. | verified (the harness's fake LLM calls it in reply to the picker's message, as a real model should) |
 | Cancel, checkbox off | Only `pick_color_submit` (`action: cancel`, `color: null`) after the confirmation; no prompt dialog. `pick_color_result` on the next turn: "The user cancelled …". | verified (`pick_color_cancel`) |
 | *Cancel* in Open WebUI's "Tool call" dialog | The app gets the error "Tool call cancelled"; nothing reaches the server. With the message checkbox off nothing was delivered at all, so the picker unlocks for another try (fixed in this round, see below); the retry is stored normally. | verified (`pick_color_deny`) |
 
 ![picker message confirmation](images/openwebui-pick-color-message-confirm.png)
+
+What the richer picker can use inside Open WebUI's sandbox (`allow-scripts allow-downloads allow-popups`, opaque origin), checked by `pick_color_features` with Chromium 1248:
+
+| Feature | Result in Open WebUI 0.13.2 | Evidence |
+|---|---|---|
+| Size | The iframe is 860 px wide in a 1280 px window (the chat column); the picker caps itself at 760 px and uses its two-column layout. Height follows the content (about 670 px on the Wheel tab, more on Values and Palettes) through `ui/notifications/size-changed`; no inner scrollbars. | verified (`iframe size`, `scrollWidth` = `clientWidth`) |
+| Dragging (ring, triangle, square, image) | Works: pointer events and pointer capture inside the iframe. A drag on the ring from 210° to 120° gives hue 120. | verified |
+| Browser storage | `localStorage` throws `SecurityError` (opaque origin). Recent colours therefore come from the server: the next `pick_color` lists earlier answers in `structuredContent.recent`, and the picker shows them. | verified (`recent from server: ["#4f46e5","#ec4899","#b7473080"]`) |
+| EyeDropper API (*Pick from the screen*) | `window.EyeDropper` exists in Chromium here: the page is `http://127.0.0.1`, a secure context, and the API is only exposed in secure contexts (so an Open WebUI served over plain HTTP from another host would not have it; not tested). The sandbox does not block it: in headed Chromium (Xvfb) `open()` stays pending, i.e. the screen picker is active; in the headless shell it rejects at once with `AbortError` ("Screen picking cancelled", there is no screen). Completing a pick cannot be automated. Firefox and Safari have no EyeDropper; the picker then explains that and offers the other ways. | verified (availability, no `NotAllowedError`); the actual pick not automated |
+| Image from a file (*Load an image…*) | Works. The file chooser opens from the sandboxed iframe (no `allow-forms` needed); the image is decoded with `createImageBitmap` (never taints the canvas, even with an opaque origin) and clicking samples its pixels (`#b74730` from a PNG). Nothing is sent anywhere. | verified (Playwright `filechooser` event, sampled colour) |
+| System colour dialog (`<input type=color>`) | Present; not opened by the harness (the native dialog is outside the page). | not verified |
+| Opacity → `#rrggbbaa` | `pick_color_submit` gets `#b7473080`; `pick_color_result` answers "The user picked #b7473080 (rgba(183, 71, 48, 0.502), hsla(10, 58%, 45%, 0.502)) …". | verified |
+
+![The Pick tab inside Open WebUI: a loaded image, a sampled colour, Recent from earlier answers](images/openwebui-pick-color-pick-tab.png)
 
 So in Open WebUI the user confirms **twice** per answer (tool call and message). Unchecking *Also tell the assistant* leaves only the server-side answer, which the model sees when it calls `pick_color_result` on a later turn. The final state, with the model's `pick_color_result` call after the message: [screenshot](images/openwebui-pick-color-result.png).
 
@@ -311,7 +325,8 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
   This server waits for the page after `accept` (both tools, both eras), sends progress heartbeats while it waits if the client asked for progress, gives up with an error after `FLOW_WAIT_MS` (default 300000 ms), and stops waiting when the call is cancelled.
 - **No `ui/update-model-context`.** Use `ui/message` (which needs user confirmation) or `tools/call` into an app-only tool that stores the data, as `dialog_lab_submit` and `dialog_lab_results` do here. Both work in Open WebUI. `pick_color` tries all three and reports which worked: in Open WebUI the tool call and the message get through (each after a confirmation), model context does not.
 - **No fullscreen.** Design apps for inline width. The iframe grows to the reported height, 100–10000 px.
-- **No browser storage in apps.** The iframe has an opaque origin.
+- **No browser storage in apps.** The iframe has an opaque origin; `localStorage` throws `SecurityError`. Keep anything that should survive on the server (the colour picker's Recent row comes from `pick_color`'s `structuredContent.recent`).
+- **Local files and images work in apps.** `<input type=file>` opens the file chooser from the sandboxed iframe, and `createImageBitmap(file)` gives an untainted canvas; the EyeDropper API is available in Chromium when Open WebUI is served from a secure context.
 - **Files in tool results:** use an `image` block for pictures the user should see (embedded image blobs reach only the model). Don't rely on `resource_link` (dropped) or `audio` (not shown). Put text files inline as embedded text resources; other binaries arrive only as a placeholder line, so offer a URL in the text instead.
 - **Uploads from an app** work through app-only tools, but every call shows a confirmation dialog with the full arguments. For anything above a few KB, consider uploading out of band (an HTTP endpoint of your server) and passing only an id through `tools/call`.
 - **Non-spec form fields** are tolerated: unknown formats become text boxes, and Open WebUI validates `pattern` server-side. Nested objects and free-text arrays can't be answered (Decline/Cancel only), so keep forms flat.
@@ -325,7 +340,7 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
 | File | Purpose |
 |---|---|
 | `openwebui/start.sh` / `stop.sh` | Installs `open-webui==$OWUI_VERSION` (default 0.13.2) into `$OWUI_VENV` if it's missing, then starts the MCP server (:3600), the fake LLM (:3601), Open WebUI (:3602, `WEBUI_AUTH=False`, connections via `TOOL_SERVER_CONNECTIONS`, `ENABLE_PERSISTENT_CONFIG=False`) and two trace proxies (:3603 modern, :3604 `FORCE_LEGACY=1`). Finally it runs `setup.mjs`. State and logs go to `$WORK` (default `/tmp/owui-mcp-test`). |
-| `openwebui/fake-llm.mjs` | Dependency-free OpenAI-compatible endpoint (`/v1/models`, `/v1/chat/completions`, streaming and non-streaming). `call <tool> {json}` in the last user message produces exactly one tool call to the offered tool whose name ends with `<tool>` (typographic quotes from Open WebUI's input box are turned back into `"`). `{"$generateFile": N}` in the arguments becomes an inline `x-mcp-file` object with N random bytes, size and SHA-256 digest. The colour picker's message ("I picked #… for: …") is answered with a `pick_color_result` call. A tool result, or the image follow-up message Open WebUI appends to one, produces the text "Tool result: …". Each request is logged with the shape of what the model was given after its tool call (roles, part types, sizes) and the tools whose schema contains `x-mcp-file`. |
+| `openwebui/fake-llm.mjs` | Dependency-free OpenAI-compatible endpoint (`/v1/models`, `/v1/chat/completions`, streaming and non-streaming). `call <tool> {json}` in the last user message produces exactly one tool call to the offered tool whose name ends with `<tool>` (typographic quotes from Open WebUI's input box are turned back into `"`). `{"$generateFile": N}` in the arguments becomes an inline `x-mcp-file` object with N random bytes, size and SHA-256 digest. The colour picker's message ("I picked #rrggbb[aa] for: …") is answered with a `pick_color_result` call. A tool result, or the image follow-up message Open WebUI appends to one, produces the text "Tool result: …". Each request is logged with the shape of what the model was given after its tool call (roles, part types, sizes) and the tools whose schema contains `x-mcp-file`. |
 | `openwebui/mcp-trace-proxy.mjs` | Logging reverse proxy. Prints one JSON line per JSON-RPC message (request size, method, protocol version, capabilities, `_meta` envelope, `resultType`, `inputRequests`, result content block types). `FORCE_LEGACY=1` refuses `server/discover` to force the 2025-11-25 handshake. |
 | `openwebui/setup.mjs` | Signs in as the implicit admin (`POST /api/v1/auths/signin` with empty credentials works when `WEBUI_AUTH=False`). Checks the connections, and creates the models `mcp-tester` and `mcp-tester-legacy` (fake LLM, `meta.toolIds: ["server:mcp:<id>"]`, native function calling), so every new chat has the MCP server enabled. |
 | `openwebui/drive.mjs` | Playwright (`playwright-core` from the project's `node_modules`, Chromium headless shell 1248). Opens `/?models=mcp-tester`, dismisses the "What's new" modal, types the prompt, waits for dialogs and iframes, interacts with them, and writes `docs/images/openwebui-*.png` and `openwebui/out/report.json`. |
@@ -348,7 +363,7 @@ openwebui/stop.sh
 
 `WORK`, `OWUI_VENV` and the other variables of `start.sh` let you reuse an existing venv; pass the same `WORK` to `stop.sh`.
 
-Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the modern connection** (one full run, about 3 minutes). On the legacy connection the original 11 passed earlier, and `inspect_client` plus the 9 new scenarios pass too (about 1.5 minutes). `elicit_url_legacy_push` is not available on the modern connection, by design.
+Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the modern connection** (one full run, about 3 minutes). On the legacy connection the original 11 passed earlier, and `inspect_client` plus the 9 new scenarios pass too (about 1.5 minutes). `elicit_url_legacy_push` is not available on the modern connection, by design. After the colour picker was extended, the four `pick_color*` scenarios (with the new `pick_color_features`) were re-run on both connections: all pass, about 30 s per connection.
 
 | Scenario | Time | What it checks |
 |---|---|---|
@@ -363,6 +378,7 @@ Results on 2026-11-08 with Open WebUI 0.13.2: **20 of 20 scenarios pass on the m
 | `pick_color` | 7 s | Picker with prompt and initial colour; preset → OK; confirm `pick_color_submit`; model context refused; confirm `ui/message`; the model's `pick_color_result` |
 | `pick_color_cancel` | 5 s | Cancel with the message checkbox off; `pick_color_result` on the next turn |
 | `pick_color_deny` | 5 s | Refuse the "Tool call" dialog; the picker unlocks; retry is stored |
+| `pick_color_features` | 10 s | Iframe size and environment (EyeDropper, `localStorage`), Recent from the server, a drag on the hue ring, the EyeDropper button, the real file chooser and sampling from the loaded image, opacity 50 % → `#rrggbbaa` stored and read back with `pick_color_result` |
 | `return_files` | 6 s | Which blocks the chat shows; the expanded result |
 | `elicit_format_probe` | 28 s | The six non-spec probes one by one (`PROBES` picks some): rendered fields, buttons, answer |
 | `elicit_format_probe_all` | 10 s | All probes in one tool call |

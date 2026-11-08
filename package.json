@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc && node scripts/build-ui.mjs",
     "build:ui": "node scripts/build-ui.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.ui.json",
     "start": "node dist/stdio.js",
     "start:http": "node dist/http.js",
     "inspector": "npx @modelcontextprotocol/inspector node dist/stdio.js",

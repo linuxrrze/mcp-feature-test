@@ -41,7 +41,10 @@ export function colorPickerTests({ client, call }) {
         const r = await call('pick_color_result', { requestId });
         assert.equal(r.structuredContent.status, 'picked');
         assert.equal(r.structuredContent.color, '#ffcc00');
-        assert.equal(textOf(r), 'The user picked #ffcc00 for "Brand colour?".');
+        assert.equal(textOf(r), 'The user picked #ffcc00 (rgb(255, 204, 0), hsl(48, 100%, 50%)) for "Brand colour?".');
+        const next = await call('pick_color', { initial: '#33669980' });
+        assert.equal(next.structuredContent.initial, '#33669980');
+        assert.equal(next.structuredContent.recent[0], '#ffcc00', 'the last answer comes back as recent');
     });
 
     it('pick_color: cancel path and an unknown requestId', async () => {

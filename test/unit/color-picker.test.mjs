@@ -14,6 +14,7 @@ import {
     createColorRequest,
     getColorRequest,
     latestColorRequest,
+    recentColors,
     resetColorRequests
 } from '../../dist/colorPicker.js';
 import { createFeatureTestServer } from '../../dist/server.js';
@@ -28,6 +29,33 @@ describe('colour request store', () => {
         assert.notEqual(a.requestId, b.requestId);
         assert.equal(a.initial, '#abcdef');
         assert.equal(latestColorRequest().requestId, b.requestId);
+        assert.equal(createColorRequest('Q', '#ABCDEF80').initial, '#abcdef80', 'alpha kept');
+        assert.equal(createColorRequest('Q', '#ABCDEFFF').initial, '#abcdef', 'opaque alpha dropped');
+    });
+
+    it('accepts #rrggbbaa: lowercase, and #rrggbb when the alpha is ff', () => {
+        const a = createColorRequest('Q', '#000000');
+        assert.equal(answerColorRequest(a.requestId, 'accept', '#FF880080').ok, true);
+        assert.equal(getColorRequest(a.requestId).color, '#ff880080');
+        const b = createColorRequest('Q', '#000000');
+        assert.equal(answerColorRequest(b.requestId, 'accept', '#FF8800FF').ok, true);
+        assert.equal(getColorRequest(b.requestId).color, '#ff8800');
+    });
+
+    it('recentColors: picked colours of answered requests, newest first, unique', () => {
+        const t0 = Date.now();
+        const pick = (color, dt) => {
+            const r = createColorRequest('Q', '#000000', t0);
+            answerColorRequest(r.requestId, color ? 'accept' : 'cancel', color, t0 + dt);
+        };
+        pick('#111111', 1);
+        pick('#222222', 2);
+        pick(null, 3); // cancelled: no colour
+        pick('#111111', 4);
+        pick('#33333380', 5);
+        createColorRequest('waiting', '#000000', t0);
+        assert.deepEqual(recentColors(10, t0 + 10), ['#33333380', '#111111', '#222222']);
+        assert.deepEqual(recentColors(2, t0 + 10), ['#33333380', '#111111']);
     });
 
     it('accepts a valid colour once, then refuses a second answer', () => {
@@ -43,10 +71,10 @@ describe('colour request store', () => {
 
     it('validates the colour', () => {
         const r = createColorRequest('Q', '#000000');
-        for (const bad of ['red', '#fff', '#12345g', '#1234567', '', null, undefined]) {
+        for (const bad of ['red', '#fff', '#12345g', '#1234567', '#123456789', '#1234567g', '', null, undefined]) {
             const out = answerColorRequest(r.requestId, 'accept', bad);
             assert.equal(out.ok, false, String(bad));
-            assert.match(out.error, /expected #rrggbb/);
+            assert.match(out.error, /expected #rrggbb or #rrggbbaa/);
         }
         assert.equal(getColorRequest(r.requestId).answeredAt, undefined, 'still unanswered');
         assert.equal(answerColorRequest(r.requestId, 'cancel', '#ffffff').ok, false, 'cancel carries no colour');
@@ -106,9 +134,10 @@ describe('pick_color tools (in-memory)', () => {
     it('pick_color returns at once with a requestId; the result tool reports waiting, then the answer', async () => {
         const r = await call('pick_color', { prompt: 'Accent colour?', initial: '#00AA00' });
         assert.match(textOf(r), /A colour picker is shown to the user; wait for their choice\. If no picker appeared, this client does not render MCP Apps\./);
-        const { requestId, prompt, initial } = r.structuredContent;
+        const { requestId, prompt, initial, recent } = r.structuredContent;
         assert.equal(prompt, 'Accent colour?');
         assert.equal(initial, '#00aa00');
+        assert.deepEqual(recent, [], 'nothing picked yet');
 
         let res = await call('pick_color_result');
         assert.equal(res.structuredContent.status, 'waiting');
@@ -119,11 +148,29 @@ describe('pick_color tools (in-memory)', () => {
         res = await call('pick_color_result', { requestId });
         assert.equal(res.structuredContent.status, 'picked');
         assert.equal(res.structuredContent.color, '#123abc');
-        assert.equal(textOf(res), 'The user picked #123abc for "Accent colour?".');
+        assert.equal(res.structuredContent.rgb, 'rgb(18, 58, 188)');
+        assert.equal(res.structuredContent.hsl, 'hsl(226, 83%, 40%)');
+        assert.equal(res.structuredContent.alpha, 1);
+        assert.equal(textOf(res), 'The user picked #123abc (rgb(18, 58, 188), hsl(226, 83%, 40%)) for "Accent colour?".');
 
         const dup = await call('pick_color_submit', { requestId, color: null, action: 'cancel' });
         assert.equal(dup.isError, true);
         assert.match(textOf(dup), /already answered/);
+    });
+
+    it('a colour with opacity: #rrggbbaa in, rgba()/hsla() out; later pick_color calls list it as recent', async () => {
+        const opened = await call('pick_color', { prompt: 'Overlay?', initial: '#000000CC' });
+        assert.equal(opened.structuredContent.initial, '#000000cc');
+        const { requestId } = opened.structuredContent;
+        const sub = await call('pick_color_submit', { requestId, color: '#FF000080', action: 'accept' });
+        assert.ok(!sub.isError, textOf(sub));
+        const res = await call('pick_color_result', { requestId });
+        assert.equal(res.structuredContent.color, '#ff000080');
+        assert.equal(res.structuredContent.rgb, 'rgba(255, 0, 0, 0.502)');
+        assert.equal(res.structuredContent.alpha, 0.502);
+        assert.equal(textOf(res), 'The user picked #ff000080 (rgba(255, 0, 0, 0.502), hsla(0, 100%, 50%, 0.502)) for "Overlay?".');
+        const next = await call('pick_color');
+        assert.deepEqual(next.structuredContent.recent, ['#ff000080']);
     });
 
     it('defaults prompt and initial colour', async () => {
@@ -136,6 +183,8 @@ describe('pick_color tools (in-memory)', () => {
         const r = await call('pick_color', { initial: 'blue' }).catch(e => ({ isError: true, content: [{ type: 'text', text: e.message }] }));
         assert.equal(r.isError, true);
         assert.match(textOf(r), /#rrggbb|initial/);
+        const r2 = await call('pick_color', { initial: '#1234567' }).catch(e => ({ isError: true, content: [{ type: 'text', text: e.message }] }));
+        assert.equal(r2.isError, true);
     });
 
     it('submit errors: unknown request and invalid colour', async () => {

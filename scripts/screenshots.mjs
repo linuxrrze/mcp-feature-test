@@ -4,7 +4,7 @@ import { mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 import { ROOT } from '../test/helpers.mjs';
-import { fillDemoAnswers, launchBrowser, openDialogLab } from '../test/ui/harness.mjs';
+import { fillDemoAnswers, launchBrowser, openColorPicker, openDialogLab } from '../test/ui/harness.mjs';
 import { createFlow, handleFlowRequest, setFlowBaseUrl } from '../dist/flows.js';
 
 const outDir = join(ROOT, 'docs', 'images');
@@ -30,6 +30,38 @@ try {
             console.log(file);
         } finally {
             await lab.close();
+        }
+    }
+
+    // ---- pick_color colour picker: a few tabs, wide and narrow. Earlier answers seed the Recent row.
+    const seedRecent = async client => {
+        for (const color of ['#2f6f73', '#f2c14e', '#d1495b80', '#1b1b1e', '#edede9']) {
+            const { requestId } = (await client.callTool({ name: 'pick_color', arguments: {} })).structuredContent;
+            await client.callTool({ name: 'pick_color_submit', arguments: { requestId, color, action: 'accept' } });
+        }
+    };
+    const pickerShots = [
+        { file: 'color-picker-wheel-dark.png', theme: 'dark', width: 700, tab: 'wheel', alpha: '85' },
+        { file: 'color-picker-wheel-light-narrow.png', theme: 'light', width: 360, tab: 'wheel' },
+        { file: 'color-picker-values.png', theme: 'light', width: 700, tab: 'values', alpha: '85' },
+        { file: 'color-picker-palettes.png', theme: 'dark', width: 700, tab: 'palettes' }
+    ];
+    for (const s of pickerShots) {
+        const picker = await openColorPicker(browser, {
+            theme: s.theme,
+            viewport: { width: s.width, height: 1600 },
+            args: { prompt: 'Accent colour for the new logo?', initial: '#e8a33d' },
+            setup: seedRecent
+        });
+        try {
+            if (s.alpha) await picker.app.locator('#alpha').fill(s.alpha);
+            await picker.app.locator(`#tab-${s.tab}`).click();
+            await picker.page.waitForTimeout(200);
+            const file = join(outDir, s.file);
+            await picker.page.screenshot({ path: file, clip: { x: 0, y: 0, width: s.width, height: (await picker.contentHeight()) + 8 } });
+            console.log(file);
+        } finally {
+            await picker.close();
         }
     }
 
