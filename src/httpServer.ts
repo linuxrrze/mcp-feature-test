@@ -60,8 +60,17 @@ export function parseAllowedHosts(raw: string | undefined): string[] | undefined
 type Validator = (req: IncomingMessage, res: ServerResponse) => boolean;
 
 /** Decide which Host/Origin validation applies (exported for unit tests). */
+/**
+ * Which Host/Origin validation (DNS-rebinding protection) applies:
+ * - `allow-list`: exactly the names in ALLOWED_HOSTS;
+ * - `localhost`: localhost names, when the bind address or PUBLIC_URL is local;
+ * - `public-url`: otherwise the PUBLIC_URL hostname plus the localhost names
+ *   (health checks, port forwards); other names need ALLOWED_HOSTS;
+ * - `none`: only when PUBLIC_URL can't be parsed (a warning is logged).
+ */
 export function chooseValidation(opts: { host: string; publicUrl: string; allowedHosts?: string[] }): {
-    mode: 'allow-list' | 'localhost' | 'none';
+    mode: 'allow-list' | 'localhost' | 'public-url' | 'none';
+    allowed?: string[];
     validators: Validator[];
 } {
     if (opts.allowedHosts?.length) {
@@ -75,6 +84,10 @@ export function chooseValidation(opts: { host: string; publicUrl: string; allowe
     }
     if (LOCAL_NAMES.has(opts.host) || LOCAL_NAMES.has(publicHost)) {
         return { mode: 'localhost', validators: [localhostHostValidation(), localhostOriginValidation()] };
+    }
+    if (publicHost) {
+        const allowed = [publicHost, 'localhost', '127.0.0.1', '[::1]'];
+        return { mode: 'public-url', allowed, validators: [hostHeaderValidation(allowed), originValidation(allowed)] };
     }
     return { mode: 'none', validators: [] };
 }
@@ -235,10 +248,13 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
         port,
         host,
         hostValidation: validation.mode,
-        allowedHosts: options.allowedHosts ?? null
+        allowedHosts: options.allowedHosts ?? validation.allowed ?? null
     });
+    if (validation.mode === 'public-url') {
+        logger.info('http.security', `Host/Origin validation accepts the PUBLIC_URL host and localhost: ${validation.allowed!.join(', ')}. Set ALLOWED_HOSTS if clients use other names (e.g. a Docker service name).`);
+    }
     if (validation.mode === 'none') {
-        logger.warn('http.security', 'Host/Origin validation is OFF (non-local bind and PUBLIC_URL). Set ALLOWED_HOSTS to enable DNS-rebinding protection.');
+        logger.warn('http.security', 'Host/Origin validation is OFF (PUBLIC_URL is not a valid URL). Set ALLOWED_HOSTS to enable DNS-rebinding protection.');
     }
 
     return {

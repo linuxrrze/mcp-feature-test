@@ -107,7 +107,7 @@ Only one container at a time can publish host port 3458. If two clients start th
 | Variable     | Default in image | Mode  | Meaning |
 |--------------|------------------|-------|---------|
 | `HOST`       | `0.0.0.0`        | HTTP  | Bind address inside the container. Host/Origin localhost checks still apply while `PUBLIC_URL` is a localhost URL (see [Security](#security)). |
-| `ALLOWED_HOSTS` | (unset)       | HTTP  | Comma-separated hostnames accepted in `Host`/`Origin`, e.g. `mcp.example.com`. Set it when `PUBLIC_URL` is not localhost; otherwise validation is off and a warning is logged. |
+| `ALLOWED_HOSTS` | (unset)       | HTTP  | Comma-separated hostnames accepted in `Host`/`Origin`, e.g. `mcp.example.com`. When unset and `PUBLIC_URL` is not localhost, the `PUBLIC_URL` hostname plus the localhost names are accepted. Set it when clients reach the server under other names, e.g. a Docker service name (`http://mcp-feature-test:3457`). |
 | `PORT`       | `3457`           | HTTP  | Listen port inside the container. If you change it, change `-p …:<PORT>` to match. The healthcheck follows it. |
 | `PUBLIC_URL` | `http://127.0.0.1:$PORT` | HTTP | Externally reachable base URL, without `/mcp` or a trailing slash. Used for URL-elicitation links and in the `GET /` banner. |
 | `FLOW_PORT`  | `3458`           | stdio | Port of the lazily started URL-flow listener. |
@@ -195,7 +195,7 @@ To pass options, add `"-e", "LOG_LEVEL=debug"` or `"-p", "127.0.0.1:3458:3458"` 
 ## Security
 
 - **No authentication.** Every tool is open to anyone who can reach `/mcp`. The URL-flow pages accept any "token" and keep it in memory. Don't store real secrets in them.
-- **Binding.** Inside the container the server binds `0.0.0.0`, which is needed for Docker port forwarding. Its localhost Host/Origin validation (DNS-rebinding protection) stays active as long as `PUBLIC_URL` is a localhost URL (the default); for any other `PUBLIC_URL`, set `ALLOWED_HOSTS`, otherwise validation is off. In addition:
+- **Binding.** Inside the container the server binds `0.0.0.0`, which is needed for Docker port forwarding. Its localhost Host/Origin validation (DNS-rebinding protection) stays active as long as `PUBLIC_URL` is a localhost URL (the default); for any other `PUBLIC_URL`, the `PUBLIC_URL` hostname (plus localhost) is accepted automatically, and `ALLOWED_HOSTS` replaces that list when clients use other names. In addition:
   - Publish on loopback only: `-p 127.0.0.1:3457:3457` (the compose default). A plain `-p 3457:3457` exposes the server on every host interface, and Docker's iptables rules bypass most host firewalls.
   - A browser on the same machine could still reach a loopback-published port through DNS rebinding. Don't keep the container running longer than you need it.
   - On a shared network, put it behind a reverse proxy with authentication (basic auth, an SSO proxy, or an IP allow-list).

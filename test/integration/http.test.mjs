@@ -229,11 +229,25 @@ describe('http configuration', () => {
         }
     });
 
-    it('HOST=0.0.0.0 with a public PUBLIC_URL warns that validation is off and uses PUBLIC_URL for flows', async () => {
+    it('HOST=0.0.0.0 with a public PUBLIC_URL accepts that host (and localhost) and uses PUBLIC_URL for flows', async () => {
         const srv = await startHttp({ HOST: '0.0.0.0', PUBLIC_URL: 'https://mcp.example.test/' });
         try {
-            assert.equal(srv.logs.find(e => e.event === 'http.listening').hostValidation, 'none');
-            await srv.logs.waitFor(e => e.event === 'http.security' && e.level === 'warn');
+            assert.equal(srv.logs.find(e => e.event === 'http.listening').hostValidation, 'public-url');
+            await srv.logs.waitFor(e => e.event === 'http.security' && e.level === 'info');
+            const pub = await rawRequest(srv.mcpUrl, { headers: { ...JSON_HEADERS, host: 'mcp.example.test' }, body: legacyToolsList });
+            assert.equal(pub.status, 400, 'PUBLIC_URL host passes validation (then: missing session)');
+            const pubOrigin = await rawRequest(srv.mcpUrl, {
+                headers: { ...JSON_HEADERS, host: 'mcp.example.test', origin: 'https://mcp.example.test' },
+                body: legacyToolsList
+            });
+            assert.equal(pubOrigin.status, 400, 'same-origin browser request passes');
+            const other = await rawRequest(srv.mcpUrl, { headers: { ...JSON_HEADERS, host: 'mcp-service' }, body: legacyToolsList });
+            assert.equal(other.status, 403, 'other names need ALLOWED_HOSTS');
+            const badOrigin = await rawRequest(srv.mcpUrl, {
+                headers: { ...JSON_HEADERS, host: 'mcp.example.test', origin: 'https://evil.example' },
+                body: legacyToolsList
+            });
+            assert.equal(badOrigin.status, 403, 'foreign Origin is rejected (DNS rebinding / CSRF)');
             const { client, dialogs } = makeClient('modern', { name: 'public-url', answer: async () => ({ action: 'cancel' }) });
             const c = await connectHttp(client, srv.mcpUrl);
             await client.callTool({ name: 'elicit_url', arguments: {} });

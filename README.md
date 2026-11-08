@@ -84,7 +84,7 @@ HTTP mode serves both protocol generations on one endpoint. 2026-07-28 requests 
 | `PORT` | `3457` | HTTP | Listen port. `0` picks a free port, and the actual URL is logged. |
 | `HOST` | `127.0.0.1` | HTTP | Bind address. Use `0.0.0.0` in containers. |
 | `PUBLIC_URL` | `http://<HOST>:<PORT>` | HTTP | Externally visible base URL, without `/mcp`. Used for URL-elicitation links. Also enables localhost Host/Origin validation when it points at `localhost`/`127.0.0.1`. |
-| `ALLOWED_HOSTS` | (unset) | HTTP | Comma-separated hostnames accepted in the `Host` and `Origin` headers, for example `mcp.example.com`. When unset, localhost names are enforced if `HOST` or `PUBLIC_URL` is local. Otherwise validation is off and a warning is logged. |
+| `ALLOWED_HOSTS` | (unset) | HTTP | Comma-separated hostnames accepted in the `Host` and `Origin` headers, for example `mcp.example.com`. When unset, localhost names are enforced if `HOST` or `PUBLIC_URL` is local; otherwise the `PUBLIC_URL` hostname plus the localhost names are accepted. Set it when clients use another name (for example a Docker service name). |
 | `FLOW_PORT` | `3458` | stdio | Port for the URL-elicitation pages. Falls back to a free port (with a warning) if it is busy. `0` always picks a free port. |
 | `FLOW_HOST` | `127.0.0.1` | stdio | Bind address of that listener. Use `0.0.0.0` in Docker. |
 | `FLOW_PUBLIC_URL` | `http://<FLOW_HOST>:<port>` | stdio | Base URL that the URL-elicitation links point to, when the browser has to use a different address or port. |

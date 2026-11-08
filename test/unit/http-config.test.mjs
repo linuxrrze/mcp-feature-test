@@ -24,7 +24,11 @@ describe('HTTP Host/Origin validation choice', () => {
         assert.equal(chooseValidation({ host: '0.0.0.0', publicUrl: 'http://localhost:3457' }).mode, 'localhost');
     });
     it('turns validation off only for non-local bind + non-local PUBLIC_URL without allow-list', () => {
-        assert.equal(chooseValidation({ host: '0.0.0.0', publicUrl: 'https://mcp.example.com' }).mode, 'none');
+        const pub = chooseValidation({ host: '0.0.0.0', publicUrl: 'https://mcp.example.com' });
+        assert.equal(pub.mode, 'public-url');
+        assert.deepEqual(pub.allowed, ['mcp.example.com', 'localhost', '127.0.0.1', '[::1]']);
+        assert.equal(pub.validators.length, 2);
+        assert.deepEqual(chooseValidation({ host: '0.0.0.0', publicUrl: 'http://[2001:db8::1]:3457' }).allowed[0], '[2001:db8::1]');
         assert.equal(chooseValidation({ host: '0.0.0.0', publicUrl: 'not a url' }).mode, 'none');
     });
 });
