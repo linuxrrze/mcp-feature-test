@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1450" viewBox="0 0 1600 1450">
+  <title>elicitation-form-mode</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <rect x="0" y="0" width="1600" height="1450" fill="#ffffff"/>
+    <text transform="matrix(1 0 0 1 40 58)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="32" font-weight="bold" fill="#111827"><tspan x="0" y="0">MCP elicitation: form mode</tspan></text>
+    <text transform="matrix(1 0 0 1 40 92)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="16.5" fill="#4b5563"><tspan x="0" y="0">The server asks for structured input; the MCP client renders a native dialog from requestedSchema. The answer travels back through the MCP client.</tspan></text>
+    <path d="M36 212 L1564 212 C1570.627 212 1576 217.373 1576 224 L1576 678 C1576 684.627 1570.627 690 1564 690 L36 690 C29.373 690 24 684.627 24 678 L24 224 C24 217.373 29.373 212 36 212 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" stroke-miterlimit="10"/>
+    <path d="M36 712 L1564 712 C1570.627 712 1576 717.373 1576 724 L1576 1260 C1576 1266.627 1570.627 1272 1564 1272 L36 1272 C29.373 1272 24 1266.627 24 1260 L24 724 C24 717.373 29.373 712 36 712 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" stroke-miterlimit="10"/>
+    <line x1="170" y1="182" x2="170" y2="1290" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <line x1="620" y1="182" x2="620" y2="1290" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <line x1="1110" y1="182" x2="1110" y2="1290" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <path d="M70 122 L270 122 C275.523 122 280 126.477 280 132 L280 176 C280 181.523 275.523 186 270 186 L70 186 C64.477 186 60 181.523 60 176 L60 132 C60 126.477 64.477 122 70 122 Z" fill="#ecfdf5" stroke="#047857" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 170 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">User</tspan></text>
+    <text transform="matrix(1 0 0 1 170 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">person at the keyboard</tspan></text>
+    <path d="M470 122 L770 122 C775.523 122 780 126.477 780 132 L780 176 C780 181.523 775.523 186 770 186 L470 186 C464.477 186 460 181.523 460 176 L460 132 C460 126.477 464.477 122 470 122 Z" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 620 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP client / host</tspan></text>
+    <text transform="matrix(1 0 0 1 620 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">renders dialog from requestedSchema</tspan></text>
+    <path d="M970 122 L1250 122 C1255.523 122 1260 126.477 1260 132 L1260 176 C1260 181.523 1255.523 186 1250 186 L970 186 C964.477 186 960 181.523 960 176 L960 132 C960 126.477 964.477 122 970 122 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1110 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP server</tspan></text>
+    <text transform="matrix(1 0 0 1 1110 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">mcp-feature-test (src/server.ts)</tspan></text>
+    <text transform="matrix(1 0 0 1 44 242)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="18" font-weight="bold" fill="#111827"><tspan x="0" y="0">A   Protocol 2025-11-25 (and 2025-06-18): server→client request while tools/call is pending</tspan></text>
+    <g>
+      <g>
+        <path d="M620 310.75 L1105 310.75 L1105 313.25 L620 313.25 Z" fill="#1d4ed8"/>
+        <path d="M1110 312 L1100 317 L1100 307 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="656" cy="312" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 317.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">1</tspan></text>
+    <text transform="matrix(1 0 0 1 678 282)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  elicit_confirm</tspan></text>
+    <text transform="matrix(1 0 0 1 678 302)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">(request stays open)</tspan></text>
+    <g>
+      <g>
+        <path d="M1110 395.25 L625 395.25 L625 392.75 L1110 392.75 Z" fill="#1d4ed8"/>
+        <path d="M620 394 L630 389 L630 399 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="656" cy="394" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 399.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">2</tspan></text>
+    <text transform="matrix(1 0 0 1 678 364)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">elicitation/create</tspan></text>
+    <text transform="matrix(1 0 0 1 678 384)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">{ mode: &quot;form&quot;, message, requestedSchema }</tspan></text>
+    <g>
+      <g>
+        <path d="M620 467.25 L175 467.25 L175 464.75 L620 464.75 Z" fill="#047857"/>
+        <path d="M170 466 L180 461 L180 471 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="206" cy="466" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 206 471.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">3</tspan></text>
+    <text transform="matrix(1 0 0 1 228 456)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">shows a native dialog</tspan></text>
+    <g>
+      <g>
+        <path d="M170 526.75 L615 526.75 L615 529.25 L170 529.25 Z" fill="#047857"/>
+        <path d="M620 528 L610 533 L610 523 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="206" cy="528" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 206 533.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">4</tspan></text>
+    <text transform="matrix(1 0 0 1 228 498)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">fills in the fields, then</tspan></text>
+    <text transform="matrix(1 0 0 1 228 518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">Accept / Decline / Cancel</tspan></text>
+    <g>
+      <g>
+        <path d="M620 608.25 L1103 608.25 L1103 611.75 L620 611.75 Z" fill="#c2410c"/>
+        <path d="M1110 610 L1096 617 L1096 603 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <circle cx="656" cy="610" r="14" fill="#c2410c" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 615.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">5</tspan></text>
+    <text transform="matrix(1 0 0 1 678 580)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">response to elicitation/create</tspan></text>
+    <text transform="matrix(1 0 0 1 678 600)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">{ action: &quot;accept&quot;, content: { … } }</tspan></text>
+    <g>
+      <g>
+        <path d="M1110 683.25 L1101 683.25 L1101 680.75 L1110 680.75 Z M1095 683.25 L1086 683.25 L1086 680.75 L1095 680.75 Z M1080 683.25 L1071 683.25 L1071 680.75 L1080 680.75 Z M1065 683.25 L1056 683.25 L1056 680.75 L1065 680.75 Z M1050 683.25 L1041 683.25 L1041 680.75 L1050 680.75 Z M1035 683.25 L1026 683.25 L1026 680.75 L1035 680.75 Z M1020 683.25 L1011 683.25 L1011 680.75 L1020 680.75 Z M1005 683.25 L996 683.25 L996 680.75 L1005 680.75 Z M990 683.25 L981 683.25 L981 680.75 L990 680.75 Z M975 683.25 L966 683.25 L966 680.75 L975 680.75 Z M960 683.25 L951 683.25 L951 680.75 L960 680.75 Z M945 683.25 L936 683.25 L936 680.75 L945 680.75 Z M930 683.25 L921 683.25 L921 680.75 L930 680.75 Z M915 683.25 L906 683.25 L906 680.75 L915 680.75 Z M900 683.25 L891 683.25 L891 680.75 L900 680.75 Z M885 683.25 L876 683.25 L876 680.75 L885 680.75 Z M870 683.25 L861 683.25 L861 680.75 L870 680.75 Z M855 683.25 L846 683.25 L846 680.75 L855 680.75 Z M840 683.25 L831 683.25 L831 680.75 L840 680.75 Z M825 683.25 L816 683.25 L816 680.75 L825 680.75 Z M810 683.25 L801 683.25 L801 680.75 L810 680.75 Z M795 683.25 L786 683.25 L786 680.75 L795 680.75 Z M780 683.25 L771 683.25 L771 680.75 L780 680.75 Z M765 683.25 L756 683.25 L756 680.75 L765 680.75 Z M750 683.25 L741 683.25 L741 680.75 L750 680.75 Z M735 683.25 L726 683.25 L726 680.75 L735 680.75 Z M720 683.25 L711 683.25 L711 680.75 L720 680.75 Z M705 683.25 L696 683.25 L696 680.75 L705 680.75 Z M690 683.25 L681 683.25 L681 680.75 L690 680.75 Z M675 683.25 L666 683.25 L666 680.75 L675 680.75 Z M660 683.25 L651 683.25 L651 680.75 L660 680.75 Z M645 683.25 L636 683.25 L636 680.75 L645 680.75 Z M630 683.25 L625 683.25 L625 680.75 L630 680.75 Z" fill="#1d4ed8"/>
+        <path d="M620 682 L630 677 L630 687 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="656" cy="682" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 687.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">6</tspan></text>
+    <text transform="matrix(1 0 0 1 678 652)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call result</tspan></text>
+    <text transform="matrix(1 0 0 1 678 672)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">text + structuredContent</tspan></text>
+    <path d="M1268 268 L1562 268 C1566.418 268 1570 271.582 1570 276 L1570 499.999 C1570 504.417 1566.418 507.999 1562 507.999 L1268 507.999 C1263.582 507.999 1260 504.417 1260 499.999 L1260 276 C1260 271.582 1263.582 268 1268 268 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1274 288)" x="0" y="14.047" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="14.047">Push style. The server sends a request</tspan><tspan x="0" y="31.447">back to the client while the tool call</tspan><tspan x="0" y="48.847">is still open, so it needs a channel to</tspan><tspan x="0" y="66.247">the client: stdio, or a sessionful HTTP</tspan><tspan x="0" y="83.647">connection (Mcp-Session-Id).</tspan><tspan x="0" y="118.447">The tools here are written in the</tspan><tspan x="0" y="135.847">2026 style; on 2025-era connections</tspan><tspan x="0" y="153.247">the SDK&apos;s legacy shim turns their</tspan><tspan x="0" y="170.647">input_required result into elicitation/</tspan><tspan x="0" y="188.047">create (one per input request) and calls</tspan><tspan x="0" y="205.447">the handler again.</tspan></text>
+    <text transform="matrix(1 0 0 1 44 742)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="18" font-weight="bold" fill="#111827"><tspan x="0" y="0">B   Protocol 2026-07-28: tools/call returns input_required, the client retries (stateless, multi round-trip)</tspan></text>
+    <g>
+      <g>
+        <path d="M620 810.75 L1105 810.75 L1105 813.25 L620 813.25 Z" fill="#1d4ed8"/>
+        <path d="M1110 812 L1100 817 L1100 807 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="656" cy="812" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 817.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">1</tspan></text>
+    <text transform="matrix(1 0 0 1 678 782)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  elicit_wizard</tspan></text>
+    <text transform="matrix(1 0 0 1 678 802)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">_meta: clientInfo, clientCapabilities</tspan></text>
+    <g>
+      <g>
+        <path d="M1110 905.25 L1101 905.25 L1101 902.75 L1110 902.75 Z M1095 905.25 L1086 905.25 L1086 902.75 L1095 902.75 Z M1080 905.25 L1071 905.25 L1071 902.75 L1080 902.75 Z M1065 905.25 L1056 905.25 L1056 902.75 L1065 902.75 Z M1050 905.25 L1041 905.25 L1041 902.75 L1050 902.75 Z M1035 905.25 L1026 905.25 L1026 902.75 L1035 902.75 Z M1020 905.25 L1011 905.25 L1011 902.75 L1020 902.75 Z M1005 905.25 L996 905.25 L996 902.75 L1005 902.75 Z M990 905.25 L981 905.25 L981 902.75 L990 902.75 Z M975 905.25 L966 905.25 L966 902.75 L975 902.75 Z M960 905.25 L951 905.25 L951 902.75 L960 902.75 Z M945 905.25 L936 905.25 L936 902.75 L945 902.75 Z M930 905.25 L921 905.25 L921 902.75 L930 902.75 Z M915 905.25 L906 905.25 L906 902.75 L915 902.75 Z M900 905.25 L891 905.25 L891 902.75 L900 902.75 Z M885 905.25 L876 905.25 L876 902.75 L885 902.75 Z M870 905.25 L861 905.25 L861 902.75 L870 902.75 Z M855 905.25 L846 905.25 L846 902.75 L855 902.75 Z M840 905.25 L831 905.25 L831 902.75 L840 902.75 Z M825 905.25 L816 905.25 L816 902.75 L825 902.75 Z M810 905.25 L801 905.25 L801 902.75 L810 902.75 Z M795 905.25 L786 905.25 L786 902.75 L795 902.75 Z M780 905.25 L771 905.25 L771 902.75 L780 902.75 Z M765 905.25 L756 905.25 L756 902.75 L765 902.75 Z M750 905.25 L741 905.25 L741 902.75 L750 902.75 Z M735 905.25 L726 905.25 L726 902.75 L735 902.75 Z M720 905.25 L711 905.25 L711 902.75 L720 902.75 Z M705 905.25 L696 905.25 L696 902.75 L705 902.75 Z M690 905.25 L681 905.25 L681 902.75 L690 902.75 Z M675 905.25 L666 905.25 L666 902.75 L675 902.75 Z M660 905.25 L651 905.25 L651 902.75 L660 902.75 Z M645 905.25 L636 905.25 L636 902.75 L645 902.75 Z M630 905.25 L625 905.25 L625 902.75 L630 902.75 Z" fill="#1d4ed8"/>
+        <path d="M620 904 L630 899 L630 909 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="656" cy="904" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 909.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">2</tspan></text>
+    <text transform="matrix(1 0 0 1 678 854)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">result  resultType: &quot;input_required&quot;</tspan></text>
+    <text transform="matrix(1 0 0 1 678 874)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">inputRequests { stepN: { requestedSchema } }</tspan></text>
+    <text transform="matrix(1 0 0 1 678 894)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">+ requestState (HMAC-signed, from round 2)</tspan></text>
+    <g>
+      <g>
+        <path d="M620 967.25 L175 967.25 L175 964.75 L620 964.75 Z" fill="#047857"/>
+        <path d="M170 966 L180 961 L180 971 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="206" cy="966" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 206 971.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">3</tspan></text>
+    <text transform="matrix(1 0 0 1 228 956)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">shows a native dialog</tspan></text>
+    <g>
+      <g>
+        <path d="M170 1026.75 L615 1026.75 L615 1029.25 L170 1029.25 Z" fill="#047857"/>
+        <path d="M620 1028 L610 1033 L610 1023 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="206" cy="1028" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 206 1033.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">4</tspan></text>
+    <text transform="matrix(1 0 0 1 228 1018)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">Accept / Decline / Cancel</tspan></text>
+    <g>
+      <g>
+        <path d="M620 1128.25 L1103 1128.25 L1103 1131.75 L620 1131.75 Z" fill="#c2410c"/>
+        <path d="M1110 1130 L1096 1137 L1096 1123 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <circle cx="656" cy="1130" r="14" fill="#c2410c" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 1135.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">5</tspan></text>
+    <text transform="matrix(1 0 0 1 678 1080)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">tools/call  elicit_wizard  (retry)</tspan></text>
+    <text transform="matrix(1 0 0 1 678 1100)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">inputResponses { stepN: { action, content } }</tspan></text>
+    <text transform="matrix(1 0 0 1 678 1120)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">+ requestState echoed unchanged</tspan></text>
+    <path d="M44 826.001 L1162 826.001 C1166.418 826.001 1170 829.583 1170 834.001 L1170 1144 C1170 1148.418 1166.418 1152 1162 1152 L44 1152 C39.582 1152 36 1148.418 36 1144 L36 834.001 C36 829.583 39.582 826.001 44 826.001 Z" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="8 5"/>
+    <path d="M46 830 L254 830 C257.314 830 260 832.686 260 836 L260 850 C260 853.314 257.314 856 254 856 L46 856 C42.686 856 40 853.314 40 850 L40 836 C40 832.686 42.686 830 46 830 Z" fill="#e5e7eb"/>
+    <text transform="matrix(1 0 0 1 50 848)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#111827"><tspan x="0" y="0">loop: step1 → step2 → step3</tspan></text>
+    <g>
+      <g>
+        <path d="M1110 1223.25 L1101 1223.25 L1101 1220.75 L1110 1220.75 Z M1095 1223.25 L1086 1223.25 L1086 1220.75 L1095 1220.75 Z M1080 1223.25 L1071 1223.25 L1071 1220.75 L1080 1220.75 Z M1065 1223.25 L1056 1223.25 L1056 1220.75 L1065 1220.75 Z M1050 1223.25 L1041 1223.25 L1041 1220.75 L1050 1220.75 Z M1035 1223.25 L1026 1223.25 L1026 1220.75 L1035 1220.75 Z M1020 1223.25 L1011 1223.25 L1011 1220.75 L1020 1220.75 Z M1005 1223.25 L996 1223.25 L996 1220.75 L1005 1220.75 Z M990 1223.25 L981 1223.25 L981 1220.75 L990 1220.75 Z M975 1223.25 L966 1223.25 L966 1220.75 L975 1220.75 Z M960 1223.25 L951 1223.25 L951 1220.75 L960 1220.75 Z M945 1223.25 L936 1223.25 L936 1220.75 L945 1220.75 Z M930 1223.25 L921 1223.25 L921 1220.75 L930 1220.75 Z M915 1223.25 L906 1223.25 L906 1220.75 L915 1220.75 Z M900 1223.25 L891 1223.25 L891 1220.75 L900 1220.75 Z M885 1223.25 L876 1223.25 L876 1220.75 L885 1220.75 Z M870 1223.25 L861 1223.25 L861 1220.75 L870 1220.75 Z M855 1223.25 L846 1223.25 L846 1220.75 L855 1220.75 Z M840 1223.25 L831 1223.25 L831 1220.75 L840 1220.75 Z M825 1223.25 L816 1223.25 L816 1220.75 L825 1220.75 Z M810 1223.25 L801 1223.25 L801 1220.75 L810 1220.75 Z M795 1223.25 L786 1223.25 L786 1220.75 L795 1220.75 Z M780 1223.25 L771 1223.25 L771 1220.75 L780 1220.75 Z M765 1223.25 L756 1223.25 L756 1220.75 L765 1220.75 Z M750 1223.25 L741 1223.25 L741 1220.75 L750 1220.75 Z M735 1223.25 L726 1223.25 L726 1220.75 L735 1220.75 Z M720 1223.25 L711 1223.25 L711 1220.75 L720 1220.75 Z M705 1223.25 L696 1223.25 L696 1220.75 L705 1220.75 Z M690 1223.25 L681 1223.25 L681 1220.75 L690 1220.75 Z M675 1223.25 L666 1223.25 L666 1220.75 L675 1220.75 Z M660 1223.25 L651 1223.25 L651 1220.75 L660 1220.75 Z M645 1223.25 L636 1223.25 L636 1220.75 L645 1220.75 Z M630 1223.25 L625 1223.25 L625 1220.75 L630 1220.75 Z" fill="#1d4ed8"/>
+        <path d="M620 1222 L630 1217 L630 1227 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="656" cy="1222" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 656 1227.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">6</tspan></text>
+    <text transform="matrix(1 0 0 1 678 1192)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#111827"><tspan x="0" y="0">final tools/call result</tspan></text>
+    <text transform="matrix(1 0 0 1 678 1212)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">&quot;Imaginary pizza ordered …&quot; + structuredContent</tspan></text>
+    <path d="M1268 768 L1562 768 C1566.418 768 1570 771.582 1570 776 L1570 1050.002 C1570 1054.42 1566.418 1058.002 1562 1058.002 L1268 1058.002 C1263.582 1058.002 1260 1054.42 1260 1050.002 L1260 776 C1260 771.582 1263.582 768 1268 768 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1274 788)" x="0" y="14.047" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="14.047">No server→client requests exist in 2026-</tspan><tspan x="0" y="31.447">07-28. Each round is a separate tools/</tspan><tspan x="0" y="48.847">call (on HTTP a separate stateless</tspan><tspan x="0" y="66.247">request).</tspan><tspan x="0" y="101.047">elicit_wizard keeps its progress in</tspan><tspan x="0" y="118.447">requestState, which the client stores and</tspan><tspan x="0" y="135.847">returns. The server verifies the HMAC</tspan><tspan x="0" y="153.247">(random per-process key, 15-min TTL)</tspan><tspan x="0" y="170.647">before the handler runs; tampered or</tspan><tspan x="0" y="188.047">expired state → JSON-RPC -32602.</tspan><tspan x="0" y="222.847">elicit_confirm and elicit_all_field_types</tspan><tspan x="0" y="240.247">need one round; the wizard repeats</tspan><tspan x="0" y="257.647">steps 2–5 three times.</tspan></text>
+    <path d="M34 1294 L1566 1294 C1571.523 1294 1576 1298.477 1576 1304 L1576 1358 C1576 1363.523 1571.523 1368 1566 1368 L34 1368 C28.477 1368 24 1363.523 24 1358 L24 1304 C24 1298.477 28.477 1294 34 1294 Z" fill="#fef2f2" stroke="#b91c1c" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 44 1324)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#b91c1c"><tspan x="0" y="0">Security:</tspan></text>
+    <text transform="matrix(1 0 0 1 132 1324)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" fill="#111827"><tspan x="0" y="0">form answers (step 4/5) pass through the MCP client and can end up in the model&apos;s context.</tspan></text>
+    <text transform="matrix(1 0 0 1 132 1350)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" fill="#111827"><tspan x="0" y="0">The spec forbids requesting passwords, API keys or tokens in form mode. Use URL mode for secrets (see elicitation-url-mode.png).</tspan></text>
+    <text transform="matrix(1 0 0 1 40 1416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">Legend</tspan></text>
+    <g>
+      <g>
+        <path d="M140 1408.75 L195 1408.75 L195 1411.25 L140 1411.25 Z" fill="#1d4ed8"/>
+        <path d="M200 1410 L190 1415 L190 1405 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 212 1416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP request</tspan></text>
+    <g>
+      <g>
+        <path d="M320 1408.75 L329 1408.75 L329 1411.25 L320 1411.25 Z M335 1408.75 L344 1408.75 L344 1411.25 L335 1411.25 Z M350 1408.75 L359 1408.75 L359 1411.25 L350 1411.25 Z M365 1408.75 L374 1408.75 L374 1411.25 L365 1411.25 Z" fill="#1d4ed8"/>
+        <path d="M380 1410 L370 1415 L370 1405 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 392 1416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP result / response</tspan></text>
+    <g>
+      <g>
+        <path d="M560 1408.25 L613 1408.25 L613 1411.75 L560 1411.75 Z" fill="#c2410c"/>
+        <path d="M620 1410 L606 1417 L606 1403 Z" fill="#c2410c"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 632 1416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">carries the user&apos;s answer</tspan></text>
+    <g>
+      <g>
+        <path d="M830 1408.75 L885 1408.75 L885 1411.25 L830 1411.25 Z" fill="#047857"/>
+        <path d="M890 1410 L880 1415 L880 1405 Z" fill="#047857"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 902 1416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">UI interaction (not MCP)</tspan></text>
+    <circle cx="1104" cy="1410" r="14" fill="#374151" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1104 1415.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">n</tspan></text>
+    <text transform="matrix(1 0 0 1 1128 1416)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">step, as in docs/elicitation.md</tspan></text>
+  </g>
+</svg>

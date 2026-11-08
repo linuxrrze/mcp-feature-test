@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1548" viewBox="0 0 1600 1548">
+  <title>elicitation-url-mode</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <rect x="0" y="0" width="1600" height="1548.005" fill="#ffffff"/>
+    <text transform="matrix(1 0 0 1 40 58)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="32" font-weight="600" fill="#111827"><tspan x="0" y="0">MCP elicitation: URL mode</tspan></text>
+    <text transform="matrix(1 0 0 1 40 92)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="16.5" fill="#4b5563"><tspan x="0" y="0">The secret is typed into a page served by the MCP server itself and POSTed straight to it. The MCP client only learns that the user agreed (accept).</tspan></text>
+    <path d="M852 110 L1558 110 C1564.627 110 1570 115.373 1570 122 L1570 214 C1570 220.627 1564.627 226 1558 226 L852 226 C845.373 226 840 220.627 840 214 L840 122 C840 115.373 845.373 110 852 110 Z" fill="#fafafa" stroke="#9ca3af" stroke-width="1.2" stroke-miterlimit="10" stroke-dasharray="6 4"/>
+    <line x1="100" y1="186" x2="100" y2="1328" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <line x1="330" y1="186" x2="330" y2="1328" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <line x1="600" y1="186" x2="600" y2="1328" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <line x1="1010" y1="186" x2="1010" y2="1328" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <line x1="1380" y1="186" x2="1380" y2="1328" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-miterlimit="10" stroke-dasharray="6 6"/>
+    <path d="M35 122 L165 122 C170.523 122 175 126.477 175 132 L175 160 C175 165.523 170.523 170 165 170 L35 170 C29.477 170 25 165.523 25 160 L25 132 C25 126.477 29.477 122 35 122 Z" fill="#ecfdf5" stroke="#047857" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 100 154)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="600" fill="#111827" text-anchor="middle"><tspan x="0" y="0">User</tspan></text>
+    <path d="M230 122 L430 122 C435.523 122 440 126.477 440 132 L440 176 C440 181.523 435.523 186 430 186 L230 186 C224.477 186 220 181.523 220 176 L220 132 C220 126.477 224.477 122 230 122 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 330 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="600" fill="#111827" text-anchor="middle"><tspan x="0" y="0">Browser</tspan></text>
+    <text transform="matrix(1 0 0 1 330 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">user&apos;s web browser</tspan></text>
+    <path d="M470 122 L730 122 C735.523 122 740 126.477 740 132 L740 176 C740 181.523 735.523 186 730 186 L470 186 C464.477 186 460 181.523 460 176 L460 132 C460 126.477 464.477 122 470 122 Z" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 600 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="600" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP client / host</tspan></text>
+    <text transform="matrix(1 0 0 1 600 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">shows URL, asks consent</tspan></text>
+    <path d="M875 122 L1145 122 C1150.523 122 1155 126.477 1155 132 L1155 176 C1155 181.523 1150.523 186 1145 186 L875 186 C869.477 186 865 181.523 865 176 L865 132 C865 126.477 869.477 122 875 122 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1010 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="600" fill="#111827" text-anchor="middle"><tspan x="0" y="0">MCP server</tspan></text>
+    <text transform="matrix(1 0 0 1 1010 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">src/server.ts: elicit_url</tspan></text>
+    <path d="M1225 122 L1535 122 C1540.523 122 1545 126.477 1545 132 L1545 176 C1545 181.523 1540.523 186 1535 186 L1225 186 C1219.477 186 1215 181.523 1215 176 L1215 132 C1215 126.477 1219.477 122 1225 122 Z" fill="#fff7ed" stroke="#c2410c" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1380 150)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="600" fill="#111827" text-anchor="middle"><tspan x="0" y="0">Flow page  /flow/&lt;uuid&gt;</tspan></text>
+    <text transform="matrix(1 0 0 1 1380 172)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">src/flows.ts</tspan></text>
+    <text transform="matrix(1 0 0 1 855 216)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">one process.  HTTP mode: same port as /mcp (3457).  stdio mode: own FLOW_PORT listener (3458).</tspan></text>
+    <path d="M1006 762 L1014 762 C1015.657 762 1017 763.343 1017 765 L1017 1129 C1017 1130.657 1015.657 1132 1014 1132 L1006 1132 C1004.343 1132 1003 1130.657 1003 1129 L1003 765 C1003 763.343 1004.343 762 1006 762 Z" fill="#fde68a" stroke="#b45309" stroke-width="1.5" stroke-miterlimit="10"/>
+    <g>
+      <g>
+        <path d="M600 290.75 L1005 290.75 L1005 293.25 L600 293.25 Z" fill="#1d4ed8"/>
+        <path d="M1010 292 L1000 297 L1000 287 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="636" cy="292" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 636 297.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">1</tspan></text>
+    <text transform="matrix(1 0 0 1 658 282)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">tools/call  elicit_url</tspan></text>
+    <g>
+      <g>
+        <path d="M1010 369 L1014 369 L1014 371 L1010 371 Z M1018 369 L1022 369 L1022 371 L1018 371 Z M1026 369 L1030 369 L1030 371 L1026 371 Z M1034 369 L1038 369 L1038 371 L1034 371 Z M1042 369 L1046 369 L1046 371 L1042 371 Z M1050 369 L1054 369 L1054 371 L1050 371 Z M1058 369 L1062 369 L1062 371 L1058 371 Z M1066 369 L1070 369 L1070 371 L1066 371 Z M1074 369 L1078 369 L1078 371 L1074 371 Z M1082 369 L1086 369 L1086 371 L1082 371 Z M1090 369 L1094 369 L1094 371 L1090 371 Z M1098 369 L1102 369 L1102 371 L1098 371 Z M1106 369 L1110 369 L1110 371 L1106 371 Z M1114 369 L1118 369 L1118 371 L1114 371 Z M1122 369 L1126 369 L1126 371 L1122 371 Z M1130 369 L1134 369 L1134 371 L1130 371 Z M1138 369 L1142 369 L1142 371 L1138 371 Z M1146 369 L1150 369 L1150 371 L1146 371 Z M1154 369 L1158 369 L1158 371 L1154 371 Z M1162 369 L1166 369 L1166 371 L1162 371 Z M1170 369 L1174 369 L1174 371 L1170 371 Z M1178 369 L1182 369 L1182 371 L1178 371 Z M1186 369 L1190 369 L1190 371 L1186 371 Z M1194 369 L1198 369 L1198 371 L1194 371 Z M1202 369 L1206 369 L1206 371 L1202 371 Z M1210 369 L1214 369 L1214 371 L1210 371 Z M1218 369 L1222 369 L1222 371 L1218 371 Z M1226 369 L1230 369 L1230 371 L1226 371 Z M1234 369 L1238 369 L1238 371 L1234 371 Z M1242 369 L1246 369 L1246 371 L1242 371 Z M1250 369 L1254 369 L1254 371 L1250 371 Z M1258 369 L1262 369 L1262 371 L1258 371 Z M1266 369 L1270 369 L1270 371 L1266 371 Z M1274 369 L1278 369 L1278 371 L1274 371 Z M1282 369 L1286 369 L1286 371 L1282 371 Z M1290 369 L1294 369 L1294 371 L1290 371 Z M1298 369 L1302 369 L1302 371 L1298 371 Z M1306 369 L1310 369 L1310 371 L1306 371 Z M1314 369 L1318 369 L1318 371 L1314 371 Z M1322 369 L1326 369 L1326 371 L1322 371 Z M1330 369 L1334 369 L1334 371 L1330 371 Z M1338 369 L1342 369 L1342 371 L1338 371 Z M1346 369 L1350 369 L1350 371 L1346 371 Z M1354 369 L1358 369 L1358 371 L1354 371 Z M1362 369 L1366 369 L1366 371 L1362 371 Z M1370 369 L1374 369 L1374 371 L1370 371 Z" fill="#6b7280"/>
+        <path d="M1380 370 L1372 374 L1372 366 Z" fill="#6b7280"/>
+      </g>
+    </g>
+    <circle cx="1046" cy="370" r="14" fill="#6b7280" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1046 375.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">2</tspan></text>
+    <text transform="matrix(1 0 0 1 1068 340)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">createFlow(): random UUID</tspan></text>
+    <text transform="matrix(1 0 0 1 1068 360)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">URL = &lt;base&gt;/flow/&lt;uuid&gt;</tspan></text>
+    <g>
+      <g>
+        <path d="M1010 509.25 L1001 509.25 L1001 506.75 L1010 506.75 Z M995 509.25 L986 509.25 L986 506.75 L995 506.75 Z M980 509.25 L971 509.25 L971 506.75 L980 506.75 Z M965 509.25 L956 509.25 L956 506.75 L965 506.75 Z M950 509.25 L941 509.25 L941 506.75 L950 506.75 Z M935 509.25 L926 509.25 L926 506.75 L935 506.75 Z M920 509.25 L911 509.25 L911 506.75 L920 506.75 Z M905 509.25 L896 509.25 L896 506.75 L905 506.75 Z M890 509.25 L881 509.25 L881 506.75 L890 506.75 Z M875 509.25 L866 509.25 L866 506.75 L875 506.75 Z M860 509.25 L851 509.25 L851 506.75 L860 506.75 Z M845 509.25 L836 509.25 L836 506.75 L845 506.75 Z M830 509.25 L821 509.25 L821 506.75 L830 506.75 Z M815 509.25 L806 509.25 L806 506.75 L815 506.75 Z M800 509.25 L791 509.25 L791 506.75 L800 506.75 Z M785 509.25 L776 509.25 L776 506.75 L785 506.75 Z M770 509.25 L761 509.25 L761 506.75 L770 506.75 Z M755 509.25 L746 509.25 L746 506.75 L755 506.75 Z M740 509.25 L731 509.25 L731 506.75 L740 506.75 Z M725 509.25 L716 509.25 L716 506.75 L725 506.75 Z M710 509.25 L701 509.25 L701 506.75 L710 506.75 Z M695 509.25 L686 509.25 L686 506.75 L695 506.75 Z M680 509.25 L671 509.25 L671 506.75 L680 506.75 Z M665 509.25 L656 509.25 L656 506.75 L665 506.75 Z M650 509.25 L641 509.25 L641 506.75 L650 506.75 Z M635 509.25 L626 509.25 L626 506.75 L635 506.75 Z M620 509.25 L611 509.25 L611 506.75 L620 506.75 Z" fill="#1d4ed8"/>
+        <path d="M600 508 L610 503 L610 513 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="636" cy="508" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 636 513.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">3</tspan></text>
+    <text transform="matrix(1 0 0 1 658 418)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">2026-07-28: result input_required</tspan></text>
+    <text transform="matrix(1 0 0 1 658 438)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">signin: elicitUrl(message, url)</tspan></text>
+    <text transform="matrix(1 0 0 1 658 458)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">+ requestState { flowId } (signed)</tspan></text>
+    <text transform="matrix(1 0 0 1 658 478)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">2025-11-25: elicitation/create</tspan></text>
+    <text transform="matrix(1 0 0 1 658 498)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">{ mode: &quot;url&quot;, message, url, elicitationId }</tspan></text>
+    <g>
+      <g>
+        <path d="M600 587.25 L105 587.25 L105 584.75 L600 584.75 Z" fill="#047857"/>
+        <path d="M100 586 L110 581 L110 591 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="352" cy="586" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 352 591.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">4</tspan></text>
+    <text transform="matrix(1 0 0 1 374 556)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">shows the full URL</tspan></text>
+    <text transform="matrix(1 0 0 1 374 576)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">and asks for consent</tspan></text>
+    <g>
+      <g>
+        <path d="M100 642.75 L595 642.75 L595 645.25 L100 645.25 Z" fill="#047857"/>
+        <path d="M600 644 L590 649 L590 639 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="352" cy="644" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 352 649.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">5</tspan></text>
+    <text transform="matrix(1 0 0 1 374 634)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">agrees to open it</tspan></text>
+    <g>
+      <g>
+        <path d="M600 760.75 L1005 760.75 L1005 763.25 L600 763.25 Z" fill="#1d4ed8"/>
+        <path d="M1010 762 L1000 767 L1000 757 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="636" cy="762" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 636 767.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">6</tspan></text>
+    <text transform="matrix(1 0 0 1 658 692)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">accept  (carries no secret)</tspan></text>
+    <text transform="matrix(1 0 0 1 658 712)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">2026: tools/call retry + inputResponses</tspan></text>
+    <text transform="matrix(1 0 0 1 658 732)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">{ signin: accept } + requestState</tspan></text>
+    <text transform="matrix(1 0 0 1 658 752)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">2025: response { action: &quot;accept&quot; }</tspan></text>
+    <g>
+      <g>
+        <path d="M600 821.25 L335 821.25 L335 818.75 L600 818.75 Z" fill="#6d28d9"/>
+        <path d="M330 820 L340 815 L340 825 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <circle cx="366" cy="820" r="14" fill="#6d28d9" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 366 825.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">7</tspan></text>
+    <text transform="matrix(1 0 0 1 388 810)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">opens the URL</tspan></text>
+    <g>
+      <g>
+        <path d="M330 896.75 L1375 896.75 L1375 899.25 L330 899.25 Z" fill="#6d28d9"/>
+        <path d="M1380 898 L1370 903 L1370 893 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <circle cx="366" cy="898" r="14" fill="#6d28d9" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 366 903.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">8</tspan></text>
+    <text transform="matrix(1 0 0 1 388 868)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">GET /flow/&lt;uuid&gt;</tspan></text>
+    <text transform="matrix(1 0 0 1 388 888)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">→ token form</tspan></text>
+    <g>
+      <g>
+        <path d="M100 974.75 L325 974.75 L325 977.25 L100 977.25 Z" fill="#047857"/>
+        <path d="M330 976 L320 981 L320 971 Z" fill="#047857"/>
+      </g>
+    </g>
+    <circle cx="136" cy="976" r="14" fill="#047857" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 136 981.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">9</tspan></text>
+    <text transform="matrix(1 0 0 1 158 946)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">types the</tspan></text>
+    <text transform="matrix(1 0 0 1 158 966)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">secret token</tspan></text>
+    <g>
+      <g>
+        <path d="M330 1052 L1372 1052 L1372 1056 L330 1056 Z" fill="#b91c1c"/>
+        <path d="M1380 1054 L1364 1062 L1364 1046 Z" fill="#b91c1c"/>
+      </g>
+    </g>
+    <circle cx="366" cy="1054" r="14" fill="#b91c1c" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 366 1059.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">10</tspan></text>
+    <text transform="matrix(1 0 0 1 388 1024)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">POST /flow/&lt;uuid&gt;</tspan></text>
+    <text transform="matrix(1 0 0 1 388 1044)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">token=… (the secret)</tspan></text>
+    <text transform="matrix(1 0 0 1 630 1044)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#b91c1c"><tspan x="0" y="0">straight to the server, not via the MCP client</tspan></text>
+    <g>
+      <g>
+        <path d="M1380 1133 L1376 1133 L1376 1131 L1380 1131 Z M1372 1133 L1368 1133 L1368 1131 L1372 1131 Z M1364 1133 L1360 1133 L1360 1131 L1364 1131 Z M1356 1133 L1352 1133 L1352 1131 L1356 1131 Z M1348 1133 L1344 1133 L1344 1131 L1348 1131 Z M1340 1133 L1336 1133 L1336 1131 L1340 1131 Z M1332 1133 L1328 1133 L1328 1131 L1332 1131 Z M1324 1133 L1320 1133 L1320 1131 L1324 1131 Z M1316 1133 L1312 1133 L1312 1131 L1316 1131 Z M1308 1133 L1304 1133 L1304 1131 L1308 1131 Z M1300 1133 L1296 1133 L1296 1131 L1300 1131 Z M1292 1133 L1288 1133 L1288 1131 L1292 1131 Z M1284 1133 L1280 1133 L1280 1131 L1284 1131 Z M1276 1133 L1272 1133 L1272 1131 L1276 1131 Z M1268 1133 L1264 1133 L1264 1131 L1268 1131 Z M1260 1133 L1256 1133 L1256 1131 L1260 1131 Z M1252 1133 L1248 1133 L1248 1131 L1252 1131 Z M1244 1133 L1240 1133 L1240 1131 L1244 1131 Z M1236 1133 L1232 1133 L1232 1131 L1236 1131 Z M1228 1133 L1224 1133 L1224 1131 L1228 1131 Z M1220 1133 L1216 1133 L1216 1131 L1220 1131 Z M1212 1133 L1208 1133 L1208 1131 L1212 1131 Z M1204 1133 L1200 1133 L1200 1131 L1204 1131 Z M1196 1133 L1192 1133 L1192 1131 L1196 1131 Z M1188 1133 L1184 1133 L1184 1131 L1188 1131 Z M1180 1133 L1176 1133 L1176 1131 L1180 1131 Z M1172 1133 L1168 1133 L1168 1131 L1172 1131 Z M1164 1133 L1160 1133 L1160 1131 L1164 1131 Z M1156 1133 L1152 1133 L1152 1131 L1156 1131 Z M1148 1133 L1144 1133 L1144 1131 L1148 1131 Z M1140 1133 L1136 1133 L1136 1131 L1140 1131 Z M1132 1133 L1128 1133 L1128 1131 L1132 1131 Z M1124 1133 L1120 1133 L1120 1131 L1124 1131 Z M1116 1133 L1112 1133 L1112 1131 L1116 1131 Z M1108 1133 L1104 1133 L1104 1131 L1108 1131 Z M1100 1133 L1096 1133 L1096 1131 L1100 1131 Z M1092 1133 L1088 1133 L1088 1131 L1092 1131 Z M1084 1133 L1080 1133 L1080 1131 L1084 1131 Z M1076 1133 L1072 1133 L1072 1131 L1076 1131 Z M1068 1133 L1064 1133 L1064 1131 L1068 1131 Z M1060 1133 L1056 1133 L1056 1131 L1060 1131 Z M1052 1133 L1048 1133 L1048 1131 L1052 1131 Z M1044 1133 L1040 1133 L1040 1131 L1044 1131 Z M1036 1133 L1032 1133 L1032 1131 L1036 1131 Z M1028 1133 L1024 1133 L1024 1131 L1028 1131 Z M1020 1133 L1016 1133 L1016 1131 L1020 1131 Z" fill="#6b7280"/>
+        <path d="M1010 1132 L1018 1128 L1018 1136 Z" fill="#6b7280"/>
+      </g>
+    </g>
+    <circle cx="1046" cy="1132" r="14" fill="#6b7280" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1046 1137.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">11</tspan></text>
+    <text transform="matrix(1 0 0 1 1068 1102)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">flow completed:</tspan></text>
+    <text transform="matrix(1 0 0 1 1068 1122)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">waitForFlow() resolves</tspan></text>
+    <g>
+      <g>
+        <path d="M1010 1211 L1007 1211 L1007 1209 L1010 1209 Z M1003 1211 L1000 1211 L1000 1209 L1003 1209 Z M996 1211 L993 1211 L993 1209 L996 1209 Z M989 1211 L986 1211 L986 1209 L989 1209 Z M982 1211 L979 1211 L979 1209 L982 1209 Z M975 1211 L972 1211 L972 1209 L975 1209 Z M968 1211 L965 1211 L965 1209 L968 1209 Z M961 1211 L958 1211 L958 1209 L961 1209 Z M954 1211 L951 1211 L951 1209 L954 1209 Z M947 1211 L944 1211 L944 1209 L947 1209 Z M940 1211 L937 1211 L937 1209 L940 1209 Z M933 1211 L930 1211 L930 1209 L933 1209 Z M926 1211 L923 1211 L923 1209 L926 1209 Z M919 1211 L916 1211 L916 1209 L919 1209 Z M912 1211 L909 1211 L909 1209 L912 1209 Z M905 1211 L902 1211 L902 1209 L905 1209 Z M898 1211 L895 1211 L895 1209 L898 1209 Z M891 1211 L888 1211 L888 1209 L891 1209 Z M884 1211 L881 1211 L881 1209 L884 1209 Z M877 1211 L874 1211 L874 1209 L877 1209 Z M870 1211 L867 1211 L867 1209 L870 1209 Z M863 1211 L860 1211 L860 1209 L863 1209 Z M856 1211 L853 1211 L853 1209 L856 1209 Z M849 1211 L846 1211 L846 1209 L849 1209 Z M842 1211 L839 1211 L839 1209 L842 1209 Z M835 1211 L832 1211 L832 1209 L835 1209 Z M828 1211 L825 1211 L825 1209 L828 1209 Z M821 1211 L818 1211 L818 1209 L821 1209 Z M814 1211 L811 1211 L811 1209 L814 1209 Z M807 1211 L804 1211 L804 1209 L807 1209 Z M800 1211 L797 1211 L797 1209 L800 1209 Z M793 1211 L790 1211 L790 1209 L793 1209 Z M786 1211 L783 1211 L783 1209 L786 1209 Z M779 1211 L776 1211 L776 1209 L779 1209 Z M772 1211 L769 1211 L769 1209 L772 1209 Z M765 1211 L762 1211 L762 1209 L765 1209 Z M758 1211 L755 1211 L755 1209 L758 1209 Z M751 1211 L748 1211 L748 1209 L751 1209 Z M744 1211 L741 1211 L741 1209 L744 1209 Z M737 1211 L734 1211 L734 1209 L737 1209 Z M730 1211 L727 1211 L727 1209 L730 1209 Z M723 1211 L720 1211 L720 1209 L723 1209 Z M716 1211 L713 1211 L713 1209 L716 1209 Z M709 1211 L706 1211 L706 1209 L709 1209 Z M702 1211 L699 1211 L699 1209 L702 1209 Z M695 1211 L692 1211 L692 1209 L695 1209 Z M688 1211 L685 1211 L685 1209 L688 1209 Z M681 1211 L678 1211 L678 1209 L681 1209 Z M674 1211 L671 1211 L671 1209 L674 1209 Z M667 1211 L664 1211 L664 1209 L667 1209 Z M660 1211 L657 1211 L657 1209 L660 1209 Z M653 1211 L650 1211 L650 1209 L653 1209 Z M646 1211 L643 1211 L643 1209 L646 1209 Z M639 1211 L636 1211 L636 1209 L639 1209 Z M632 1211 L629 1211 L629 1209 L632 1209 Z M625 1211 L622 1211 L622 1209 L625 1209 Z M618 1211 L615 1211 L615 1209 L618 1209 Z M611 1211 L608 1211 L608 1209 L611 1209 Z" fill="#1d4ed8"/>
+        <path d="M600 1210 L608 1206 L608 1214 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="636" cy="1210" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 636 1215.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">12</tspan></text>
+    <text transform="matrix(1 0 0 1 658 1180)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">2025 only, elicit_url_legacy_push:</tspan></text>
+    <text transform="matrix(1 0 0 1 658 1200)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">notifications/elicitation/complete</tspan></text>
+    <g>
+      <g>
+        <path d="M1010 1289.25 L1001 1289.25 L1001 1286.75 L1010 1286.75 Z M995 1289.25 L986 1289.25 L986 1286.75 L995 1286.75 Z M980 1289.25 L971 1289.25 L971 1286.75 L980 1286.75 Z M965 1289.25 L956 1289.25 L956 1286.75 L965 1286.75 Z M950 1289.25 L941 1289.25 L941 1286.75 L950 1286.75 Z M935 1289.25 L926 1289.25 L926 1286.75 L935 1286.75 Z M920 1289.25 L911 1289.25 L911 1286.75 L920 1286.75 Z M905 1289.25 L896 1289.25 L896 1286.75 L905 1286.75 Z M890 1289.25 L881 1289.25 L881 1286.75 L890 1286.75 Z M875 1289.25 L866 1289.25 L866 1286.75 L875 1286.75 Z M860 1289.25 L851 1289.25 L851 1286.75 L860 1286.75 Z M845 1289.25 L836 1289.25 L836 1286.75 L845 1286.75 Z M830 1289.25 L821 1289.25 L821 1286.75 L830 1286.75 Z M815 1289.25 L806 1289.25 L806 1286.75 L815 1286.75 Z M800 1289.25 L791 1289.25 L791 1286.75 L800 1286.75 Z M785 1289.25 L776 1289.25 L776 1286.75 L785 1286.75 Z M770 1289.25 L761 1289.25 L761 1286.75 L770 1286.75 Z M755 1289.25 L746 1289.25 L746 1286.75 L755 1286.75 Z M740 1289.25 L731 1289.25 L731 1286.75 L740 1286.75 Z M725 1289.25 L716 1289.25 L716 1286.75 L725 1286.75 Z M710 1289.25 L701 1289.25 L701 1286.75 L710 1286.75 Z M695 1289.25 L686 1289.25 L686 1286.75 L695 1286.75 Z M680 1289.25 L671 1289.25 L671 1286.75 L680 1286.75 Z M665 1289.25 L656 1289.25 L656 1286.75 L665 1286.75 Z M650 1289.25 L641 1289.25 L641 1286.75 L650 1286.75 Z M635 1289.25 L626 1289.25 L626 1286.75 L635 1286.75 Z M620 1289.25 L611 1289.25 L611 1286.75 L620 1286.75 Z" fill="#1d4ed8"/>
+        <path d="M600 1288 L610 1283 L610 1293 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <circle cx="636" cy="1288" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 636 1293.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">13</tspan></text>
+    <text transform="matrix(1 0 0 1 658 1258)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="600" fill="#111827"><tspan x="0" y="0">tools/call result</tspan></text>
+    <text transform="matrix(1 0 0 1 658 1278)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#4b5563"><tspan x="0" y="0">only a masked token, e.g. &quot;sk…56&quot;</tspan></text>
+    <path d="M1034 918 L1348 918 C1352.418 918 1356 921.582 1356 926 L1356 1008 C1356 1012.418 1352.418 1016 1348 1016 L1034 1016 C1029.582 1016 1026 1012.418 1026 1008 L1026 926 C1026 921.582 1029.582 918 1034 918 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1038 936)" x="0" y="13.078" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#111827"><tspan x="0" y="13.078">Yellow bar: finishBrowserFlow() waits up to</tspan><tspan x="0" y="29.278">FLOW_WAIT_MS (default 5 min) for step 10,</tspan><tspan x="0" y="45.478">with progress heartbeats if requested; timeout</tspan><tspan x="0" y="61.678">or cancel → isError.</tspan></text>
+    <path d="M34 1348 L780 1348 C785.523 1348 790 1352.477 790 1358 L790 1458 C790 1463.523 785.523 1468 780 1468 L34 1468 C28.477 1468 24 1463.523 24 1458 L24 1358 C24 1352.477 28.477 1348 34 1348 Z" fill="#fef2f2" stroke="#b91c1c" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 44 1364)" x="0" y="14.047" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="14.047">Why URL mode: data typed in the browser (token, password, OAuth sign-in, payment) goes to the</tspan><tspan x="0" y="31.447">server in step 10 and never passes through the MCP client or the model. The spec requires URL mode</tspan><tspan x="0" y="48.847">for such data and requires the client to show the full URL and ask before opening it (step 4). Flow URLs</tspan><tspan x="0" y="66.247">are bearer capabilities (random UUIDv4, 1 h TTL); a production server must also bind the flow to the</tspan><tspan x="0" y="83.647">user who started it.</tspan></text>
+    <path d="M820 1348 L1566 1348 C1571.523 1348 1576 1352.477 1576 1358 L1576 1458 C1576 1463.523 1571.523 1468 1566 1468 L820 1468 C814.477 1468 810 1463.523 810 1458 L810 1358 C810 1352.477 814.477 1348 820 1348 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 830 1364)" x="0" y="14.047" xml:space="preserve" font-family="Inter, sans-serif" font-size="14.5" fill="#111827"><tspan x="0" y="14.047">accept is not &quot;finished&quot;. accept (step 6) only means the user agreed to open the URL, so it can arrive</tspan><tspan x="0" y="31.447">before the page is submitted; Open WebUI sends it the moment the link is clicked. The server keeps</tspan><tspan x="0" y="48.847">the call open (yellow bar) until step 11; if accept comes after the page was submitted, the wait ends at</tspan><tspan x="0" y="66.247">once. On 2025-era connections elicit_url goes through the SDK shim (elicitation/create, no step 12);</tspan><tspan x="0" y="83.647">elicit_url_legacy_push uses the push API and sends step 12.</tspan></text>
+    <text transform="matrix(1 0 0 1 40 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="600" fill="#111827"><tspan x="0" y="0">Legend</tspan></text>
+    <g>
+      <g>
+        <path d="M140 1510.75 L195 1510.75 L195 1513.25 L140 1513.25 Z" fill="#1d4ed8"/>
+        <path d="M200 1512 L190 1517 L190 1507 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 212 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP request</tspan></text>
+    <g>
+      <g>
+        <path d="M320 1510.75 L329 1510.75 L329 1513.25 L320 1513.25 Z M335 1510.75 L344 1510.75 L344 1513.25 L335 1513.25 Z M350 1510.75 L359 1510.75 L359 1513.25 L350 1513.25 Z M365 1510.75 L374 1510.75 L374 1513.25 L365 1513.25 Z" fill="#1d4ed8"/>
+        <path d="M380 1512 L370 1517 L370 1507 Z" fill="#1d4ed8"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 392 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP result / notification</tspan></text>
+    <g>
+      <g>
+        <path d="M590 1510.75 L645 1510.75 L645 1513.25 L590 1513.25 Z" fill="#6d28d9"/>
+        <path d="M650 1512 L640 1517 L640 1507 Z" fill="#6d28d9"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 662 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">HTTP (browser)</tspan></text>
+    <g>
+      <g>
+        <path d="M790 1510 L842 1510 L842 1514 L790 1514 Z" fill="#b91c1c"/>
+        <path d="M850 1512 L834 1520 L834 1504 Z" fill="#b91c1c"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 862 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">carries the secret</tspan></text>
+    <g>
+      <g>
+        <path d="M1010 1510.75 L1065 1510.75 L1065 1513.25 L1010 1513.25 Z" fill="#047857"/>
+        <path d="M1070 1512 L1060 1517 L1060 1507 Z" fill="#047857"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 1082 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">UI interaction</tspan></text>
+    <g>
+      <g>
+        <path d="M1200 1511 L1204 1511 L1204 1513 L1200 1513 Z M1208 1511 L1212 1511 L1212 1513 L1208 1513 Z M1216 1511 L1220 1511 L1220 1513 L1216 1513 Z M1224 1511 L1228 1511 L1228 1513 L1224 1513 Z M1232 1511 L1236 1511 L1236 1513 L1232 1513 Z M1240 1511 L1244 1511 L1244 1513 L1240 1513 Z M1248 1511 L1252 1511 L1252 1513 L1248 1513 Z" fill="#6b7280"/>
+        <path d="M1260 1512 L1252 1516 L1252 1508 Z" fill="#6b7280"/>
+      </g>
+    </g>
+    <text transform="matrix(1 0 0 1 1272 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">in-process</tspan></text>
+    <circle cx="1384" cy="1512" r="14" fill="#374151" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10"/>
+    <text transform="matrix(1 0 0 1 1384 1517.5)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" font-weight="600" fill="#ffffff" text-anchor="middle"><tspan x="0" y="0">n</tspan></text>
+    <text transform="matrix(1 0 0 1 1408 1518)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">step (see docs)</tspan></text>
+  </g>
+</svg>

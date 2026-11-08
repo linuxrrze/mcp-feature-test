@@ -54,5 +54,5 @@ The MCP Apps extension (`io.modelcontextprotocol/ui`, proposed as SEP-1865; this
 
 ## Which one to use
 
-- **Server plus elicitation only**, when your questions fit a simple form. It works in more clients and needs no UI code.
+- **Server plus elicitation only**, when your questions fit a simple form. It works in more clients and needs no UI code. [elicitation.md](elicitation.md) shows how both elicitation modes work.
 - **Add an MCP App** when you need real interaction (visual input, live preview, several steps on one page, file selection) and the client supports the extension. Clients without support show only the tool's text result, which is why `open_dialog_lab` also returns a plain-text fallback that tells the model no UI appeared if the client does not render MCP Apps.
