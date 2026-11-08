@@ -72,7 +72,7 @@ jobs:
       changed: ${{ steps.base.outputs.changed }}
       build: ${{ steps.base.outputs.build }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The image version is the package version: bump `version` in
       # package.json for a release; a rebuild re-publishes the same version
@@ -124,8 +124,8 @@ jobs:
     if: needs.base.outputs.build == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -155,7 +155,7 @@ jobs:
       TAG: ${{ needs.base.outputs.tag }}
       BASE_REF: ${{ needs.base.outputs.base_tag }}@${{ needs.base.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Built against the digest resolved above (= the pin in the Dockerfile
       # unless the base was re-published since).
