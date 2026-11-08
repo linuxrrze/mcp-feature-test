@@ -9,7 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { createMcpHandler, DEFAULT_MAX_REQUEST_BODY_SIZE, isInitializeRequest, isLegacyRequest } from '@modelcontextprotocol/server';
+import { createMcpHandler, isInitializeRequest, isLegacyRequest } from '@modelcontextprotocol/server';
 import {
     NodeStreamableHTTPServerTransport,
     hostHeaderValidation,
@@ -19,6 +19,7 @@ import {
     toNodeHandler,
     toWebRequest
 } from '@modelcontextprotocol/node';
+import { maxRequestBodyBytes } from './files.js';
 import { handleFlowRequest, setFlowBaseUrl } from './flows.js';
 import { errorData, logger } from './log.js';
 import { createFeatureTestServer } from './server.js';
@@ -92,21 +93,24 @@ export function chooseValidation(opts: { host: string; publicUrl: string; allowe
     return { mode: 'none', validators: [] };
 }
 
-/** Largest accepted MCP request body (the SDK's own default, which we bypass by pre-parsing the body). */
-export const MAX_BODY_BYTES = DEFAULT_MAX_REQUEST_BODY_SIZE;
 /** Upper bound on concurrent 2025-era sessions; the least recently used one is closed beyond it. */
 export const MAX_LEGACY_SESSIONS = 500;
 
-class BodyTooLargeError extends Error {}
+class BodyTooLargeError extends Error {
+    constructor(readonly limit: number) {
+        super(`request body larger than ${limit} bytes`);
+    }
+}
 
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+/** Read and parse a POST body, refusing anything above `limit` bytes (see maxRequestBodyBytes). */
+async function readJsonBody(req: IncomingMessage, limit: number): Promise<unknown> {
     if (req.method !== 'POST') return undefined;
-    if (Number(req.headers['content-length']) > MAX_BODY_BYTES) throw new BodyTooLargeError();
+    if (Number(req.headers['content-length']) > limit) throw new BodyTooLargeError(limit);
     const chunks: Buffer[] = [];
-    let size = 0;
+    let received = 0;
     for await (const c of req) {
-        size += (c as Buffer).length;
-        if (size > MAX_BODY_BYTES) throw new BodyTooLargeError();
+        received += (c as Buffer).length;
+        if (received > limit) throw new BodyTooLargeError(limit);
         chunks.push(c as Buffer);
     }
     const raw = Buffer.concat(chunks).toString('utf8');
@@ -120,6 +124,7 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
 
 export async function startHttpServer(options: HttpServerOptions = {}): Promise<RunningHttpServer> {
     const host = options.host ?? '127.0.0.1';
+    const maxBody = maxRequestBodyBytes();
     const modern = createMcpHandler(() => createFeatureTestServer({ transport: 'http' }), {
         legacy: 'reject',
         onerror: e => logger.warn('http.modern', e.message, errorData(e))
@@ -157,13 +162,14 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
 
             let body: unknown;
             try {
-                body = await readJsonBody(req);
+                body = await readJsonBody(req, maxBody);
             } catch (e) {
                 if (!(e instanceof BodyTooLargeError)) throw e;
+                logger.warn('http.body', `rejected a request body above ${e.limit} bytes`, { limit: e.limit });
                 res.writeHead(413, { 'content-type': 'application/json', connection: 'close' }).end(
                     JSON.stringify({
                         jsonrpc: '2.0',
-                        error: { code: -32000, message: `Payload Too Large: request body must not exceed ${MAX_BODY_BYTES} bytes` },
+                        error: { code: -32600, message: `Request body too large (limit ${e.limit} bytes, derived from UPLOAD_MAX_BYTES)` },
                         id: null
                     })
                 );

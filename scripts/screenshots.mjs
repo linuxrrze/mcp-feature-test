@@ -19,7 +19,7 @@ if (!browser) {
 try {
     // ---- MCP App (Dialog Lab) in a minimal host, both themes
     for (const theme of ['light', 'dark']) {
-        const lab = await openDialogLab(browser, { theme, viewport: { width: 760, height: 1000 } });
+        const lab = await openDialogLab(browser, { theme, viewport: { width: 760, height: 1400 } });
         try {
             await fillDemoAnswers(lab);
             await lab.app.locator('#submit').click();

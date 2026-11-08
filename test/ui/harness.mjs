@@ -44,9 +44,12 @@ export async function launchBrowser() {
  * Open the Dialog Lab in a fresh page. Returns helpers to drive it plus the
  * MCP client (so tests can read server state) and a close() function.
  */
-export async function openDialogLab(browser, { theme = 'light', toolInput = DEFAULT_INPUT, viewport = { width: 760, height: 1000 } } = {}) {
+export async function openDialogLab(
+    browser,
+    { theme = 'light', toolInput = DEFAULT_INPUT, viewport = { width: 760, height: 1000 }, hostCapabilities, env = {} } = {}
+) {
     const { client } = makeClient('modern', { name: 'ui-test-host' });
-    const conn = await connectStdio(client);
+    const conn = await connectStdio(client, env);
     const res = await client.readResource({ uri: 'ui://feature-test/dialog-lab.html' });
     const appHtml = res.contents[0].text;
 
@@ -61,7 +64,7 @@ export async function openDialogLab(browser, { theme = 'light', toolInput = DEFA
         `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:${theme === 'dark' ? '#111214' : '#e9ebef'}}` +
             `iframe{display:block;width:100%;height:${viewport.height}px;border:0}</style></head><body>` +
             `<iframe id="app" sandbox="allow-scripts allow-forms"></iframe>` +
-            `<script>window.appHtml=${inline(appHtml)};window.hostConfig=${inline({ theme, toolInput })}</script>` +
+            `<script>window.appHtml=${inline(appHtml)};window.hostConfig=${inline({ theme, toolInput, hostCapabilities })}</script>` +
             `<script type="module">${await hostBundle()}</script></body></html>`
     );
     await page.waitForFunction(() => window.hostReady === true, null, { timeout: 10_000 });

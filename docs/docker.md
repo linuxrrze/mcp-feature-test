@@ -114,6 +114,7 @@ Only one container at a time can publish host port 3458. If two clients start th
 | `FLOW_HOST`  | `0.0.0.0`        | stdio | Bind address of that listener. |
 | `FLOW_PUBLIC_URL` | (derived)   | stdio | Base URL used in URL-elicitation links, if the browser must use another address/port. |
 | `FLOW_WAIT_MS` | `300000` | both | How long the URL tools wait for the browser page after the client already answered `accept`. |
+| `UPLOAD_MAX_BYTES` | `10485760` | both | Largest decoded file the upload tools accept; also sizes the HTTP body limit (base64 of this plus 1 MiB → 413 above) and the stdio message buffer. |
 | `NODE_ENV`   | `production`     | both  | |
 | `LOG_FORMAT`, `LOG_LEVEL` | (server default) | both | `LOG_LEVEL` = debug/info/warn/error/silent (default info), `LOG_FORMAT` = text/json (default text). Client capabilities and tool calls are logged. Logs go to stderr, so `docker logs` shows them. |
 

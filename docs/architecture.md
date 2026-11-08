@@ -10,8 +10,8 @@ How mcp-feature-test serves one set of tools to two protocol generations over tw
              ┌──────────── src/httpServer.ts ───────────────┐  ├─► src/server.ts  (tools, prompt, ui:// resource)
  HTTP ─────► │ /mcp  2026-07-28 → createMcpHandler (per req) │──┘     ├─ src/clients.ts (capability log, registry)
  :3457       │       2025-era   → session transport map      │        ├─ src/flows.ts   (URL-elicitation pages)
-             │ /flow/<uuid> → flows.ts   /  → banner         │        └─ src/log.ts     (stderr logger)
-             └──────────────────────────────────────────────┘
+             │ /flow/<uuid> → flows.ts   /  → banner         │        ├─ src/log.ts     (stderr logger)
+             └──────────────────────────────────────────────┘        └─ src/files.ts   (sample files, upload limits)
 ```
 
 ## Protocol eras
@@ -92,8 +92,35 @@ host                                   server                          app (ifra
 
 - The UI (`ui/dialog-lab.html` + `ui/dialog-lab.ts`) is bundled with esbuild into **one self-contained HTML file** (`dist/ui/dialog-lab.html`), so the host needs no CSP `resourceDomains` configuration.
 - `dialog_lab_submit` has `_meta.ui.visibility: ["app"]`. Hosts should not offer it to the model, only to the app. The server cannot enforce this; it depends on the host. To the server it is an ordinary tool, so any client can call it.
+- `dialog_lab_upload` is app-only in the same way. The **File upload** card reads the file with `FileReader`, sends base64 through `tools/call`, and compares the returned size and SHA-256 with its own (`crypto.subtle`, when the frame is a secure context). The download buttons are enabled only when `hostCapabilities.downloadFile` is present and send a text resource, a blob resource and a `resource_link` respectively.
 - The app follows the host theme (`hostContext.theme` → `data-theme`) and host CSS variables. The browser test checks light and dark.
 - `registerAppTool` also writes the deprecated flat key `_meta["ui/resourceUri"]` for older hosts.
+
+## Files
+
+There is no file upload in the MCP spec, and form elicitation has no file (or colour) field. What exists, and what this server exercises:
+
+| Direction | Mechanism | Tool |
+| --- | --- | --- |
+| server → client | Tool result content: `resource` (embedded, `text` or base64 `blob`), `resource_link` (the client reads it with `resources/read`), `image`, `audio` | `return_files` |
+| server → client | Resource template `test://files/{name}` (`resources/templates/list`, `resources/list` via the template's `list` callback, `completion/complete` for `name`) | `return_files` links into it |
+| app → host → user | MCP Apps `ui/download-file` with `contents: (EmbeddedResource \| ResourceLink)[]`, only when the host advertises `hostCapabilities.downloadFile` | Dialog Lab download buttons |
+| user → app → server | `<input type=file>` → base64 → `tools/call dialog_lab_upload` (app-only) | Dialog Lab **File upload** |
+| user → client → server | Experimental `io.modelcontextprotocol/files` draft: a tool argument marked `x-mcp-file` (`maxSize`), value `{id, name?, mimeType, size, digest?, data?}`, inline base64 up to the server's `maxInlineBytes` | `upload_file_experimental` |
+
+`src/files.ts` generates the sample files in code (a gradient PNG with real CRCs, a one-page PDF with correct xref offsets, an 8-bit PCM WAV, CSV and Markdown), so there are no binary fixtures in the repository.
+
+The server advertises `capabilities.extensions["io.modelcontextprotocol/files"] = { maxInlineBytes: UPLOAD_MAX_BYTES }`. It implements only inline transfer: a non-empty file without `data` is a tool error (the draft's out-of-band `upload_required` flow is not implemented, and `upload` is not advertised).
+
+### Non-spec form fields (`elicit_format_probe`)
+
+The probe schemas are passed to `inputRequired.elicit()` as **plain JSON**, so they travel exactly like the spec-conforming ones: as `input_required` on 2026-07-28 and through the legacy shim's `elicitation/create` on 2025-era connections. One probe per round, with the remaining probes and the results so far in HMAC-signed `requestState`.
+
+What the SDK does with them (checked in `@modelcontextprotocol/server` 2.4.0 and `client` 2.4.0):
+
+- **Server SDK:** a raw JSON `requestedSchema` is **not** validated before it is sent. Only a Standard Schema (zod) is converted and checked, and that conversion throws for shapes outside the spec, which is why the probes are plain JSON. On 2025-era connections the shim forwards accepted content **without** validating it against the schema (`validateAcceptedContent: false`), so a format such as `color` doesn't trip the server-side AJV validator. Nothing was worked around: spec-conforming clients get exactly the same requests.
+- **Client SDK:** the official TypeScript client parses every elicitation request with the spec schema. It refuses unknown formats, `object` properties and free arrays (`-32602 Invalid elicitation request`), and silently strips unknown keywords such as `pattern` before the app's handler sees the request.
+- **How a refusal surfaces:** on 2026-07-28 the client fails the whole `tools/call` locally; the server is never told. On 2025-era connections the shim turns the client's JSON-RPC error into a tool result with `isError` ("Fulfilling input required by 'tools/call' failed: …"). Either way the tool cannot report the refused probe itself, so the report says so, and the server log shows the last `tool.input_required` probe.
 
 ## Security notes
 
@@ -106,6 +133,8 @@ This is a **test server**. It stores nothing persistently, and its "secrets" are
 - **Clients should show the full URL and ask before opening it.** The spec requires this; whether a given client does it is something you can observe with `elicit_url`.
 - **DNS rebinding:** the HTTP server validates the `Host` and `Origin` headers on `/mcp`. It accepts localhost names when bound to localhost or when `PUBLIC_URL` is local (so `docker run -p 127.0.0.1:3457:3457` stays protected), and exactly the names in `ALLOWED_HOSTS` when that is set. With a non-local bind address, a non-local `PUBLIC_URL` and no `ALLOWED_HOSTS`, it accepts the `PUBLIC_URL` hostname plus the localhost names (mode `public-url`), as the 2026-07-28 Streamable HTTP transport requires Origin validation. Validation is only off (with a warning) if `PUBLIC_URL` is not a valid URL.
 - **No authentication.** Anyone who can reach the HTTP port can call the tools and read `dialog_lab_results` and `list_seen_clients`. Keep the server on localhost or a trusted network.
-- **Memory is bounded.** MCP request bodies over 4 MiB get **413** (the SDK's default limit, applied by `src/httpServer.ts` because it parses the body itself). At most 500 2025-era HTTP sessions are kept; beyond that the least recently used one is closed (its client gets 404 and re-initializes). The seen-clients registry keeps 200 entries, and `dialog_lab_submit` keeps the last 50 submissions of at most 1 MiB each (larger ones are rejected with `isError`). Other HTTP methods than GET, POST and DELETE on `/mcp` get **405**.
+- **Memory is bounded.** MCP request bodies above `UPLOAD_MAX_BYTES` as base64 plus 1 MiB (about 14.3 MiB by default) get **413**, enforced by `src/httpServer.ts` because it parses the body itself. At most 500 2025-era HTTP sessions are kept; beyond that the least recently used one is closed (its client gets 404 and re-initializes). The seen-clients registry keeps 200 entries, and `dialog_lab_submit` keeps the last 50 submissions of at most 1 MiB each (larger ones are rejected with `isError`). Other HTTP methods than GET, POST and DELETE on `/mcp` get **405**.
 - **requestState** is HMAC-signed with a TTL (see above), so clients cannot forge wizard or flow state.
+- **Uploads are size-capped and never stored or logged.** `dialog_lab_upload` and `upload_file_experimental` decode strict base64 only (no whitespace, no `data:` prefix), check the decoded size against `UPLOAD_MAX_BYTES` (default 10 MiB) **before** decoding, hash the bytes and drop them. Logs (`upload.received`, `upload.rejected`) carry only size, SHA-256 and the base64 length. The HTTP server rejects request bodies above `UPLOAD_MAX_BYTES` as base64 plus 1 MiB with **413** while reading, and the stdio message buffer is raised to the same size (the SDK default is 10 MB, which a 10 MiB file in base64 would exceed and close the connection).
+- **The sample-file template has no path to traverse.** `test://files/{name}` looks the name up in a fixed in-memory list. Unknown names, `..` and encoded separators are `-32602` errors; nothing touches the filesystem.
 - **The MCP App** runs in the host's sandboxed iframe, uses no external resources, and talks to the host only through `postMessage` (JSON-RPC).

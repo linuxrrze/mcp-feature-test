@@ -10,6 +10,8 @@ import { AppBridge, PostMessageTransport } from '@modelcontextprotocol/ext-apps/
 interface HostConfig {
     theme: 'light' | 'dark';
     toolInput: Record<string, unknown>;
+    /** Host capabilities to advertise; the default advertises everything the Dialog Lab uses. */
+    hostCapabilities?: Record<string, unknown>;
 }
 declare global {
     interface Window {
@@ -31,7 +33,7 @@ const iframe = document.getElementById('app') as HTMLIFrameElement;
 const bridge = new AppBridge(
     null,
     { name: 'TestHost', version: '1.0.0' },
-    { openLinks: {}, serverTools: {}, logging: {}, updateModelContext: { text: {} }, message: { text: {} }, downloadFile: {} } as any,
+    (cfg.hostCapabilities ?? { openLinks: {}, serverTools: {}, logging: {}, updateModelContext: { text: {} }, message: { text: {} }, downloadFile: {} }) as any,
     { hostContext: context('inline') }
 );
 bridge.oncalltool = async p => {

@@ -1,6 +1,7 @@
 // Browser test of the Dialog Lab MCP App (headless Chromium via playwright-core).
 // Skips with a clear message when no Chromium is available.
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
 import { DEFAULT_INPUT, fillDemoAnswers, launchBrowser, openDialogLab } from './harness.mjs';
 
@@ -76,11 +77,68 @@ describe('Dialog Lab MCP App in a browser host', { skip }, () => {
             const resource = ev.params.contents[0].resource;
             assert.equal(resource.mimeType, 'application/json');
             assert.equal(JSON.parse(resource.text).rating, 5);
+            assert.match(await lab.app.locator('#downloadNote').textContent(), /host advertises downloadFile/);
+        });
+
+        it('offers a blob download (sketch PNG) and a resource_link download', async () => {
+            await lab.app.locator('#downloadBlob').click();
+            await lab.app.locator('#status', { hasText: 'PNG blob' }).waitFor();
+            const blob = (await lab.hostEvents()).filter(e => e.type === 'ui/download-file').at(-1).params.contents[0];
+            assert.equal(blob.type, 'resource');
+            assert.equal(blob.resource.mimeType, 'image/png');
+            assert.ok(Buffer.from(blob.resource.blob, 'base64').subarray(1, 4).toString() === 'PNG', 'valid PNG bytes');
+
+            await lab.app.locator('#downloadLink').click();
+            await lab.app.locator('#status', { hasText: 'resource_link' }).waitFor();
+            const link = (await lab.hostEvents()).filter(e => e.type === 'ui/download-file').at(-1).params.contents[0];
+            assert.equal(link.type, 'resource_link');
+            assert.equal(link.uri, 'test://files/sample.pdf');
+            // The link must be readable from the server, as a host would do.
+            const read = await lab.client.readResource({ uri: link.uri });
+            assert.equal(read.contents[0].mimeType, 'application/pdf');
+        });
+
+        it('uploads a file through the app-only tool and shows size and SHA-256', async () => {
+            const buffer = Buffer.from(Array.from({ length: 150_000 }, (_, i) => i % 251));
+            const sha256 = createHash('sha256').update(buffer).digest('hex');
+            assert.equal(await lab.app.locator('#upload').isDisabled(), true, 'disabled until a file is chosen');
+            await lab.app.locator('#file').setInputFiles({ name: 'probe.bin', mimeType: 'application/octet-stream', buffer });
+            await lab.app.locator('#upload').click();
+            await lab.app.locator('#uploadStatus.ok').waitFor();
+            const shown = await lab.app.locator('#uploadStatus').textContent();
+            assert.match(shown, /Received "probe\.bin" \(application\/octet-stream\): 146\.5 KiB \(150000 bytes\)/);
+            assert.ok(shown.includes(sha256), shown);
+            const call = (await lab.hostEvents()).filter(e => e.type === 'tools/call').at(-1);
+            assert.equal(call.params.name, 'dialog_lab_upload');
+            assert.equal(Buffer.from(call.params.arguments.data, 'base64').length, 150_000);
         });
 
         it('raised no page errors', () => {
             assert.deepEqual(lab.errors, []);
         });
+    });
+
+    it('host without downloadFile and a small UPLOAD_MAX_BYTES: downloads disabled, oversized upload rejected', async () => {
+        const lab = await openDialogLab(browser, {
+            hostCapabilities: { serverTools: {}, message: { text: {} } },
+            env: { UPLOAD_MAX_BYTES: '1000' }
+        });
+        try {
+            await lab.app.locator('#downloadNote', { hasText: 'Downloads disabled' }).waitFor();
+            for (const id of ['#download', '#downloadBlob', '#downloadLink']) assert.equal(await lab.app.locator(id).isDisabled(), true, id);
+            // Another action re-enables the action buttons; the download buttons must stay disabled.
+            await lab.app.locator('#submit').click();
+            await lab.app.locator('#status.ok').waitFor();
+            assert.equal(await lab.app.locator('#downloadBlob').isDisabled(), true);
+
+            await lab.app.locator('#file').setInputFiles({ name: 'big.txt', mimeType: 'text/plain', buffer: Buffer.alloc(2000, 'x') });
+            await lab.app.locator('#upload').click();
+            await lab.app.locator('#uploadStatus.err').waitFor();
+            assert.match(await lab.app.locator('#uploadStatus').textContent(), /failed: .*above the limit of 1000 B \(1000 bytes, UPLOAD_MAX_BYTES\)/);
+            assert.deepEqual(lab.errors, []);
+        } finally {
+            await lab.close();
+        }
     });
 
     for (const theme of ['light', 'dark']) {
