@@ -30,6 +30,8 @@ A client picks its era: the official TypeScript client uses the 2025 handshake b
 
 ## input_required vs. push elicitation, and the legacy shim
 
+Sequence diagrams of both elicitation modes (form and URL) on both protocol generations are in [elicitation.md](elicitation.md).
+
 Every elicitation tool except `elicit_url_legacy_push` is written once, in the 2026-07-28 style:
 
 ```ts
@@ -73,6 +75,8 @@ The legacy path stays sessionful because the shim's `elicitation/create` request
 2025-era connections are logged from the SDK's `server.server.oninitialized` hook (`client.connected`). `list_seen_clients` exposes the registry, which holds at most 200 entries.
 
 ## MCP Apps flow
+
+For the difference between the server and the app it ships, see [MCP server vs. MCP App](server-vs-app.md).
 
 ```
 host                                   server                          app (iframe)

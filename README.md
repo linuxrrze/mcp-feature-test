@@ -7,6 +7,8 @@ An MCP server for checking which **user-interaction features** an MCP client (Cl
 - **Elicitation, form mode**: the client shows a native dialog built from a JSON schema.
 - **Elicitation, URL mode**: the client opens a web page in the browser (the pattern for OAuth or secret entry).
 - **Multi-step elicitation**: a three-dialog wizard that carries signed `requestState` between rounds.
+
+  How both elicitation modes flow between user, client, browser and server, on both protocol generations, is drawn step by step in [docs/elicitation.md](docs/elicitation.md).
 - **MCP Apps**: an interactive HTML UI (`ui://` resource) that the host renders in a sandboxed iframe.
 - **Progress, logging and cancellation** for long-running tools.
 - **Capability inspection**: the server logs what each client declares and can report it back (`inspect_client`, `list_seen_clients`).
@@ -31,7 +33,7 @@ These screenshots come from the automated browser test (`npm run screenshots`). 
 - [Troubleshooting](#troubleshooting)
 - [Client support](#client-support)
 - [Development and tests](#development-and-tests)
-- More documentation: [architecture](docs/architecture.md) · [testing](docs/testing.md) · [Docker](docs/docker.md) · [Open WebUI](docs/openwebui.md)
+- More documentation: [elicitation: form vs. URL mode (diagrams)](docs/elicitation.md) · [MCP server vs. MCP App](docs/server-vs-app.md) · [architecture](docs/architecture.md) · [testing](docs/testing.md) · [Docker](docs/docker.md) · [Open WebUI](docs/openwebui.md)
 
 ## Tools and the features they test
 
