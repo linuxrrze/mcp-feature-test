@@ -61,6 +61,7 @@ import {
     sha256Hex,
     uploadMaxBytes
 } from './files.js';
+import { registerColorPicker } from './colorPicker.js';
 import { createFlow, flowWaitMs, getFlow, waitForFlow } from './flows.js';
 import { errorData, logger } from './log.js';
 
@@ -422,7 +423,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
             requestState: { verify: stateCodec.verify },
             instructions:
                 'Test server for MCP user-interaction features. Call the tools when the user wants to try dialogs: ' +
-                'elicit_* tools show native client dialogs (elicitation), open_dialog_lab shows an interactive HTML UI (MCP Apps), return_files returns files in every content form. ' +
+                'elicit_* tools show native client dialogs (elicitation), open_dialog_lab shows an interactive HTML UI (MCP Apps), pick_color asks the user for a colour in a small app (fetch the answer with pick_color_result), return_files returns files in every content form. ' +
                 'Call inspect_client first to see what the current client supports.'
         }
     );
@@ -1172,6 +1173,8 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
         }
     );
 
+    registerColorPicker(server); // pick_color, pick_color_submit, pick_color_result (src/colorPicker.ts)
+
     // --------------------------------------------------------------- prompt
     server.registerPrompt(
         'try_all_dialogs',
@@ -1188,7 +1191,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
                         text:
                             'Please test the MCP user-interaction features of the mcp-feature-test server, one at a time, telling me what to expect before each: ' +
                             '1) inspect_client, 2) elicit_confirm, 3) elicit_all_field_types, 4) elicit_parallel, 5) elicit_wizard, 6) elicit_url, ' +
-                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) slow_task, 9) return_files, 10) elicit_format_probe (non-spec fields). Summarize which features worked in this client.'
+                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields). Summarize which features worked in this client.'
                     }
                 }
             ]

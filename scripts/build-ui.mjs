@@ -18,3 +18,12 @@ const html = readFileSync('ui/dialog-lab.html', 'utf8').replace('<!--APP_SCRIPT-
 mkdirSync('dist/ui', { recursive: true });
 writeFileSync('dist/ui/dialog-lab.html', html);
 console.log(`dist/ui/dialog-lab.html (${(html.length / 1024).toFixed(1)} KiB)`);
+
+// The colour picker app (pick_color), built the same way.
+for (const name of ['color-picker']) {
+    const r = await build({ entryPoints: [`ui/${name}.ts`], bundle: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true, write: false, legalComments: 'none' });
+    const appJs = r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+    const page = readFileSync(`ui/${name}.html`, 'utf8').replace('<!--APP_SCRIPT-->', () => `<script type="module">${appJs}</script>`);
+    writeFileSync(`dist/ui/${name}.html`, page);
+    console.log(`dist/ui/${name}.html (${(page.length / 1024).toFixed(1)} KiB)`);
+}

@@ -95,6 +95,7 @@ host                                   server                          app (ifra
 - `dialog_lab_upload` is app-only in the same way. The **File upload** card reads the file with `FileReader`, sends base64 through `tools/call`, and compares the returned size and SHA-256 with its own (`crypto.subtle`, when the frame is a secure context). The download buttons are enabled only when `hostCapabilities.downloadFile` is present and send a text resource, a blob resource and a `resource_link` respectively.
 - The app follows the host theme (`hostContext.theme` → `data-theme`) and host CSS variables. The browser test checks light and dark.
 - `registerAppTool` also writes the deprecated flat key `_meta["ui/resourceUri"]` for older hosts.
+- The second app, the `pick_color` colour picker (`src/colorPicker.ts`, `ui/color-picker.*`, `ui://feature-test/color-picker.html`), is built the same way. `pick_color` returns immediately with a random `requestId` (UUID). The app answers through the app-only `pick_color_submit`, then `ui/update-model-context` and `ui/message`; the model can also poll `pick_color_result`. Requests live at module level like the other stores: at most 200, expiring after one hour, each answerable once. Why the answer arrives in a later step instead of in the tool result is explained in [server-vs-app.md](server-vs-app.md#second-example-a-colour-picker-as-a-question).
 
 ## Files
 

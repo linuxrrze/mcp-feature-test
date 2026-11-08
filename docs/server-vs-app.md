@@ -52,6 +52,23 @@ The MCP Apps extension (`io.modelcontextprotocol/ui`, proposed as SEP-1865; this
 
 [docs/architecture.md](architecture.md#mcp-apps-flow) shows the same flow at the message level.
 
+## Second example: a colour picker as a question
+
+`pick_color` uses an app the way elicitation is used: to ask the user one thing (*"Which colour for the header?"*) and get the answer back to the model. The app (`ui/color-picker.html` + `ui/color-picker.ts`, served as `ui://feature-test/color-picker.html`) shows the question, a colour input with a validated `#rrggbb` field, preset swatches, a preview, and OK / Cancel.
+
+The important difference to elicitation is **when** the answer arrives:
+
+- With elicitation the tool call **waits** (2025: the server's `elicitation/create` request is pending; 2026-07-28: the client retries the call with `inputResponses`). The answer becomes part of the tool's own result.
+- With an app, the tool call has **already returned** by the time the user sees the picker: the host renders the app from the tool's result. The MCP Apps extension has no mechanism for an app to complete or amend a tool call that is already finished, and no way for a tool to wait for its own app. So `pick_color` returns at once (*"A colour picker is shown to the user; wait for their choice …"*, plus `structuredContent {requestId, prompt, initial}`), and the answer reaches the model **in a later step**.
+
+On OK or Cancel the app tries three ways back, one after another, and shows the outcome of each:
+
+1. `tools/call pick_color_submit` (app-only, `{requestId, color, action}`): the server validates the colour, refuses unknown or already answered requests, and stores the answer. The model can read it with `pick_color_result`, which answers "still waiting" until then. Works wherever the host forwards app tool calls.
+2. `ui/update-model-context` with the answer: the model sees it on its next turn. The app shows *not supported by host* when the host answers `Method not found` (as Open WebUI does).
+3. `ui/message` "I picked #xxxxxx for: …" (or "I cancelled the colour picker for: …"): this starts the next turn, so the model reacts without the user typing anything. It is sent automatically after OK or Cancel; a checkbox in the picker turns it off. Model context is sent before the message, so the turn the message starts already sees it.
+
+A host without MCP Apps support shows only the text result; the model then knows that no picker appeared.
+
 ## Which one to use
 
 - **Server plus elicitation only**, when your questions fit a simple form. It works in more clients and needs no UI code. [elicitation.md](elicitation.md) shows how both elicitation modes work.

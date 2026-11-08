@@ -12,6 +12,10 @@ interface HostConfig {
     toolInput: Record<string, unknown>;
     /** Host capabilities to advertise; the default advertises everything the Dialog Lab uses. */
     hostCapabilities?: Record<string, unknown>;
+    /** Tool result sent to the app (default: a plain "opened" text). */
+    toolResult?: Record<string, unknown>;
+    /** App → host methods this host leaves unhandled, so they answer "Method not found". */
+    unsupported?: string[];
 }
 declare global {
     interface Window {
@@ -44,10 +48,12 @@ bridge.onmessage = async p => {
     record('ui/message', p);
     return {};
 };
-bridge.onupdatemodelcontext = async p => {
-    record('ui/update-model-context', p);
-    return {};
-};
+if (!cfg.unsupported?.includes('ui/update-model-context')) {
+    bridge.onupdatemodelcontext = async p => {
+        record('ui/update-model-context', p);
+        return {};
+    };
+}
 bridge.onrequestdisplaymode = async p => {
     record('ui/request-display-mode', p);
     bridge.setHostContext(context(p.mode as 'inline' | 'fullscreen'));
@@ -60,7 +66,7 @@ bridge.ondownloadfile = async p => {
 bridge.oninitialized = () => {
     record('initialized', null);
     bridge.sendToolInput({ arguments: cfg.toolInput });
-    bridge.sendToolResult({ content: [{ type: 'text', text: 'opened' }] });
+    bridge.sendToolResult((cfg.toolResult ?? { content: [{ type: 'text', text: 'opened' }] }) as any);
     window.hostReady = true;
 };
 iframe.addEventListener(

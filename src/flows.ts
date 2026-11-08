@@ -18,7 +18,7 @@ export interface Flow {
     createdAt: number;
     completedAt?: number;
     token?: string;
-    /** Called when the browser flow finishes (sends notifications/elicitation/complete on 2025 connections). */
+    /** Called when the browser flow finishes. elicit_url_legacy_push uses it to send notifications/elicitation/complete (2025 only); elicit_url does not set it. */
     onComplete?: () => void | Promise<void>;
 }
 
