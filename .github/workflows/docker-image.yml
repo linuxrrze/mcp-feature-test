@@ -73,6 +73,8 @@ jobs:
       build: ${{ steps.base.outputs.build }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       # The image version is the package version: bump `version` in
       # package.json for a release; a rebuild re-publishes the same version
@@ -125,6 +127,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -152,6 +156,9 @@ jobs:
       contents: write   # commit the new base digest pin
       packages: write   # push to ghcr.io
     env:
+      # Job outputs come from repository files (package.json, Dockerfile); use
+      # them only through env vars, never as ${{ }} inside run: scripts.
+      VERSION: ${{ needs.base.outputs.version }}
       TAG: ${{ needs.base.outputs.tag }}
       BASE_REF: ${{ needs.base.outputs.base_tag }}@${{ needs.base.outputs.digest }}
     steps:
@@ -164,7 +171,7 @@ jobs:
           set -euo pipefail
           docker build --pull \
             --build-arg "NODE_IMAGE=$BASE_REF" \
-            --build-arg "VERSION=${{ needs.base.outputs.version }}" \
+            --build-arg "VERSION=$VERSION" \
             --build-arg "REVISION=$GITHUB_SHA" \
             --build-arg "CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --build-arg "SOURCE=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
