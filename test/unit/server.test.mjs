@@ -96,6 +96,9 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
             'inspect_client',
             'list_seen_clients',
             'open_dialog_lab',
+            'pick_color',
+            'pick_color_result',
+            'pick_color_submit',
             'slow_task'
         ]);
         for (const t of tools) {

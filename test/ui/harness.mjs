@@ -109,3 +109,52 @@ export async function fillDemoAnswers(lab) {
     await app.locator('#comment').fill('Works in headless Chromium');
     await lab.draw();
 }
+
+/**
+ * Open the pick_color colour picker the way a host would: call pick_color
+ * (model side), then render the ui:// resource with that tool input and result.
+ * `unsupported` lists host methods left unhandled (→ "Method not found").
+ */
+export async function openColorPicker(browser, { theme = 'light', args = { prompt: 'Favourite colour?', initial: '#336699' }, unsupported = [] } = {}) {
+    const { client } = makeClient('modern', { name: 'ui-test-host' });
+    const conn = await connectStdio(client);
+    const toolResult = await client.callTool({ name: 'pick_color', arguments: args });
+    const res = await client.readResource({ uri: 'ui://feature-test/color-picker.html' });
+    const appHtml = res.contents[0].text;
+
+    const viewport = { width: 560, height: 420 };
+    const context = await browser.newContext({ viewport, colorScheme: theme, deviceScaleFactor: 2 });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.exposeFunction('callTool', p => client.callTool(p));
+    const inline = v => JSON.stringify(v).replace(/</g, '\\u003c');
+    await page.setContent(
+        `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:${theme === 'dark' ? '#111214' : '#e9ebef'}}` +
+            `iframe{display:block;width:100%;height:${viewport.height}px;border:0}</style></head><body>` +
+            `<iframe id="app" sandbox="allow-scripts allow-forms"></iframe>` +
+            `<script>window.appHtml=${inline(appHtml)};window.hostConfig=${inline({ theme, toolInput: args, toolResult, unsupported })}</script>` +
+            `<script type="module">${await hostBundle()}</script></body></html>`
+    );
+    await page.waitForFunction(() => window.hostReady === true, null, { timeout: 10_000 });
+    const app = page.frameLocator('#app');
+    // OK is enabled once the tool result (with the requestId) has been applied.
+    await app.locator('#ok:not([disabled])').waitFor({ timeout: 10_000 });
+
+    return {
+        page,
+        app,
+        client,
+        errors,
+        requestId: toolResult.structuredContent.requestId,
+        hostEvents: () => page.evaluate(() => window.hostEvents),
+        async waitForHostEvent(type) {
+            await page.waitForFunction(t => window.hostEvents.some(e => e.type === t), type, { timeout: 5000 });
+            return (await page.evaluate(t => window.hostEvents.filter(e => e.type === t), type)).at(-1);
+        },
+        async close() {
+            await context.close();
+            await conn.close();
+        }
+    };
+}

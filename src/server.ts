@@ -42,6 +42,7 @@ import {
     type Era,
     type TransportKind
 } from './clients.js';
+import { registerColorPicker } from './colorPicker.js';
 import { createFlow, flowWaitMs, getFlow, waitForFlow } from './flows.js';
 import { errorData, logger } from './log.js';
 
@@ -857,6 +858,8 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
             return { content, structuredContent: { submissions: summarized } };
         }
     );
+
+    registerColorPicker(server); // pick_color, pick_color_submit, pick_color_result (src/colorPicker.ts)
 
     // --------------------------------------------------------------- prompt
     server.registerPrompt(

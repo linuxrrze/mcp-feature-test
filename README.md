@@ -51,6 +51,8 @@ These screenshots come from the automated browser test (`npm run screenshots`). 
 | `open_dialog_lab` | MCP App: tool `_meta.ui.resourceUri`, then a `ui://` resource rendered in an iframe (colour picker, slider, star rating, date, drag-to-rank list, sketch canvas). Buttons exercise `tools/call`, `ui/message`, `ui/update-model-context`, `ui/request-display-mode` and `ui/download-file` | MCP Apps extension `io.modelcontextprotocol/ui` (ext-apps spec 2026-01-26) |
 | `dialog_lab_submit` | App-only tool (`_meta.ui.visibility: ["app"]`). The UI calls it and hosts should hide it from the model | MCP Apps |
 | `dialog_lab_results` | Returns what was submitted in the Dialog Lab, with the sketch as an image | n/a |
+| `pick_color` | MCP App used like a question: a small colour picker (`ui://feature-test/color-picker.html`; `prompt`, `initial` `#rrggbb`). The call returns at once with a `requestId`; the answer comes back in a later step through `pick_color_submit` (app-only), `ui/update-model-context` and `ui/message`, each reported in the UI. See [server-vs-app.md](docs/server-vs-app.md#second-example-a-colour-picker-as-a-question) | MCP Apps extension |
+| `pick_color_result` | Returns the colour the user picked (or "cancelled" / "still waiting") for a `requestId`, or for the latest `pick_color` | n/a |
 | Prompt `try_all_dialogs` | A prompt that walks the assistant through every tool above | Prompts |
 
 Nothing these tools do has side effects: "delete" and "order" are only pretend, and the tokens entered on the URL page are kept in memory and shown masked.
@@ -202,6 +204,7 @@ curl -s http://127.0.0.1:3457/          # "mcp-feature-test is running."
 | `slow_task` | A progress indicator counting up. Cancelling stops it early | Result text: *"Client did not request progress."* |
 | `open_dialog_lab` | The Dialog Lab UI (screenshots above) | Only the text result, which says that no UI appeared because the client does not render MCP Apps |
 | `dialog_lab_results` | The last submissions as JSON, plus the sketch as an image | |
+| `pick_color` | A small colour picker with the question, OK and Cancel. After OK the assistant learns the colour from the model context and/or a chat message ("I picked #xxxxxx for: …"); the picker lists which of the three channels worked | Only the text result; `pick_color_result` then keeps answering "still waiting" |
 
 ![URL-mode elicitation page, light](docs/images/url-flow-light.png)
 
@@ -265,4 +268,4 @@ npm run screenshots        # regenerates docs/images/*.png
 
 CI ([.github/workflows/docker-image.yml](.github/workflows/docker-image.yml)) runs the full suite, builds and smoke-tests the image, scans it with Trivy and publishes it; see [docs/docker.md](docs/docker.md#ci-and-published-images). See [docs/testing.md](docs/testing.md) for what each suite covers, and [docs/architecture.md](docs/architecture.md) for how the server is put together.
 
-Source layout: `src/server.ts` (tools and factory), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `ui/` (the MCP App).
+Source layout: `src/server.ts` (tools and factory), `src/clients.ts` (capability summary and seen-clients registry), `src/log.ts` (stderr logger), `src/flows.ts` (URL-elicitation pages), `src/httpServer.ts` + `src/http.ts` (HTTP), `src/stdio.ts` (stdio), `src/banner.ts` (container startup banner), `ui/` (the MCP Apps), `src/colorPicker.ts` (the `pick_color` tools).

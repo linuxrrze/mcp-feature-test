@@ -157,6 +157,20 @@ The Dialog Lab rendered inline:
 
 The app runs from an opaque `srcdoc` origin. Every app request goes through the Open WebUI backend (`POST /api/v1/tools/id/server:mcp:<id>/mcp/app/rpc`), authenticated with the user's token plus an HMAC binding to the server and tool. That backend opens a fresh MCP connection without the elicitation capability for each request, so **a tool called from an app cannot elicit**.
 
+#### Colour picker (`pick_color`): expected behaviour, not yet verified
+
+`pick_color` has **not** been run against Open WebUI yet, and the harness in `openwebui/` has no scenario for it. Based on the Dialog Lab results above, this is what should happen:
+
+| Step | Expected in Open WebUI 0.13.2 |
+|---|---|
+| `pick_color` | The picker renders inline under the tool call; the tool result text tells the model to wait. |
+| OK → `tools/call pick_color_submit` | A "Tool call" confirmation dialog; after *Confirm* the picker reports *Server: stored*. |
+| `ui/update-model-context` | `Method not found`; the picker reports *not supported by host*. |
+| `ui/message` (checkbox on, the default) | A "Confirm Prompt from Embed" dialog, then "I picked #xxxxxx for: …" is sent as the next user message, which starts the model's next turn. This is the only channel that tells the model without the user typing. |
+| `pick_color_result` | Returns the stored answer. Server state is module-level, so the per-request MCP connections of Open WebUI don't lose it. |
+
+So in Open WebUI the user confirms twice per answer. Unchecking *Also tell the assistant* leaves only the server-side answer, which the model sees only when it calls `pick_color_result` on a later turn.
+
 ## 4. mcpo: what is lost
 
 mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
@@ -220,7 +234,7 @@ mcpo 0.0.20 was tested hands-on against this server's Streamable HTTP endpoint.
   - **2025-11-25:** wait for the flow and send `notifications/elicitation/complete`.
 
   This server waits for the page after `accept` (both tools, both eras), sends progress heartbeats while it waits if the client asked for progress, gives up with an error after `FLOW_WAIT_MS` (default 300000 ms), and stops waiting when the call is cancelled.
-- **No `ui/update-model-context`.** Use `ui/message` (which needs user confirmation) or `tools/call` into an app-only tool that stores the data, as `dialog_lab_submit` and `dialog_lab_results` do here. Both work in Open WebUI.
+- **No `ui/update-model-context`.** Use `ui/message` (which needs user confirmation) or `tools/call` into an app-only tool that stores the data, as `dialog_lab_submit` and `dialog_lab_results` do here. Both work in Open WebUI. `pick_color` tries all three and reports which worked (not yet verified in Open WebUI).
 - **No fullscreen.** Design apps for inline width. The iframe grows to the reported height, 100–10000 px.
 - **No browser storage in apps.** The iframe has an opaque origin.
 - **Elicitation only works in an interactive browser chat.** Tools that elicit should degrade gracefully when the capability is absent (API usage, app-initiated calls, mcpo).
