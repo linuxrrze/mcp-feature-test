@@ -9,7 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { createMcpHandler, isInitializeRequest, isLegacyRequest } from '@modelcontextprotocol/server';
+import { createMcpHandler, InMemoryServerEventBus, isInitializeRequest, isLegacyRequest } from '@modelcontextprotocol/server';
 import {
     NodeStreamableHTTPServerTransport,
     hostHeaderValidation,
@@ -23,6 +23,7 @@ import { maxRequestBodyBytes } from './files.js';
 import { handleFlowRequest, setFlowBaseUrl } from './flows.js';
 import { errorData, logger } from './log.js';
 import { createFeatureTestServer } from './server.js';
+import { forwardToNotifier } from './listChanged.js';
 
 export interface HttpServerOptions {
     /** 0 picks a free port. Default 3457. */
@@ -131,11 +132,15 @@ async function readJsonBody(req: IncomingMessage, limit: number): Promise<unknow
 export async function startHttpServer(options: HttpServerOptions = {}): Promise<RunningHttpServer> {
     const host = options.host ?? '127.0.0.1';
     const maxBody = maxRequestBodyBytes();
-    const modern = createMcpHandler(() => createFeatureTestServer({ transport: 'http' }), {
+    // 2026-07-28 change notifications go to the subscriptions/listen streams through this bus (src/listChanged.ts).
+    const bus = new InMemoryServerEventBus(e => logger.warn('http.listen', e.message, errorData(e)));
+    const modern = createMcpHandler(() => createFeatureTestServer({ transport: 'http', perRequest: true }), {
         legacy: 'reject',
+        bus,
         onerror: e => logger.warn('http.modern', e.message, errorData(e))
     });
     const modernNode = toNodeHandler(modern);
+    const stopForwarding = forwardToNotifier(modern.notify, () => bus.listenerCount);
 
     /** 2025-era sessions: sessionId → transport */
     const legacySessions = new Map<string, NodeStreamableHTTPServerTransport>();
@@ -286,6 +291,7 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
         url: publicUrl,
         port,
         async close() {
+            stopForwarding();
             await modern.close();
             for (const t of legacySessions.values()) await t.close().catch(() => {});
             httpServer.closeAllConnections();

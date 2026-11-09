@@ -86,6 +86,7 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
         const { tools } = await client.listTools();
         const names = tools.map(t => t.name).sort();
         assert.deepEqual(names, [
+            'change_lists',
             'dialog_lab_results',
             'dialog_lab_submit',
             'dialog_lab_upload',
@@ -108,6 +109,7 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
             'slow_task',
             'structured_output',
             'structured_output_array',
+            'update_live_resource',
             'upload_file_experimental',
             'view_3d',
             'view_3d_select',

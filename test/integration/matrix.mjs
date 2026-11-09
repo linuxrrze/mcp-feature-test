@@ -9,6 +9,7 @@ import { colorPickerTests } from './color-picker.matrix.mjs';
 import { viewer3dTests } from './viewer-3d.matrix.mjs';
 import { samplingRootsTests } from './sampling-roots.matrix.mjs';
 import { structuredOutputTests } from './structured-output.matrix.mjs';
+import { listChangedTests } from './list-changed.matrix.mjs';
 
 const FORM_TOOLS = [
     { name: 'elicit_confirm', declined: /User DECLINED/, cancelled: /User CANCELLED/ },
@@ -364,6 +365,7 @@ export function eraSuite({ transport, era, connect, logs }) {
         viewer3dTests({ client, call }); // view_3d (test/integration/viewer-3d.matrix.mjs)
         samplingRootsTests({ transport, era, connect }); // sample_llm, list_roots (test/integration/sampling-roots.matrix.mjs)
         structuredOutputTests({ era, client, call }); // structured_output* (test/integration/structured-output.matrix.mjs)
+        listChangedTests({ transport, era, connect }); // change_lists, update_live_resource (test/integration/list-changed.matrix.mjs)
 
         // ------------------------------------------------ capability handling
         it('a client without elicitation gets a tool error, not a hang', async () => {
