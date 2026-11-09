@@ -49,6 +49,12 @@ export interface RunningHttpServer {
 
 const LOCAL_NAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
+/** `0.0.0.0` / `::`: the server listens on every interface. */
+export const isWildcardHost = (host: string) => host === '0.0.0.0' || host === '::';
+
+/** `host:port` as written in a URL authority (`[::]:3457` for IPv6). */
+export const hostPort = (host: string, port: number) => `${host.includes(':') ? `[${host}]` : host}:${port}`;
+
 /** Read `ALLOWED_HOSTS`-style input: comma separated, whitespace tolerant, empty → undefined. */
 export function parseAllowedHosts(raw: string | undefined): string[] | undefined {
     const list = (raw ?? '')
@@ -243,19 +249,31 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
         });
     });
     const port = (httpServer.address() as AddressInfo).port;
-    const localName = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host.includes(':') ? `[${host}]` : host;
+    const localName = isWildcardHost(host) ? '127.0.0.1' : host.includes(':') ? `[${host}]` : host;
     publicUrl = (options.publicUrl ?? `http://${localName}:${port}`).replace(/\/$/, '');
     setFlowBaseUrl(publicUrl);
     const validation = chooseValidation({ host, publicUrl, allowedHosts: options.allowedHosts });
     validators = validation.validators;
 
-    logger.info('http.listening', `Streamable HTTP MCP endpoint: ${publicUrl}/mcp`, {
+    // The endpoint URL is what clients should use; the bind address is shown separately because
+    // a wildcard bind (0.0.0.0 / ::) is not a URL anyone can open.
+    logger.info('http.listening', `Streamable HTTP MCP endpoint: ${publicUrl}/mcp (listening on ${hostPort(host, port)})`, {
         url: `${publicUrl}/mcp`,
         port,
         host,
         hostValidation: validation.mode,
         allowedHosts: options.allowedHosts ?? validation.allowed ?? null
     });
+    if (isWildcardHost(host) && !options.publicUrl) {
+        logger.warn(
+            'http.public_url',
+            `Listening on all interfaces (HOST=${host}) but PUBLIC_URL is not set: URL-elicitation links point to ${publicUrl}` +
+                (validation.mode === 'localhost' ? ', and only requests addressed to localhost or 127.0.0.1 are accepted (other Host names get 403)' : '') +
+                `. That is fine behind a local port forward (e.g. docker run -p 127.0.0.1:${port}:${port}). ` +
+                `For clients on other machines, set PUBLIC_URL to the URL they use, e.g. PUBLIC_URL=http://<this-host>:${port}.`,
+            { host, port, url: publicUrl, hostValidation: validation.mode }
+        );
+    }
     if (validation.mode === 'public-url') {
         logger.info('http.security', `Host/Origin validation accepts the PUBLIC_URL host and localhost: ${validation.allowed!.join(', ')}. Set ALLOWED_HOSTS if clients use other names (e.g. a Docker service name).`);
     }

@@ -45,6 +45,7 @@ describe('stdio specifics', () => {
             assert.match(dialogs[0].url, /^http:\/\/flows\.example\.test:9999\/flow\/[0-9a-f-]{36}$/);
             const ev = await c.logs.waitFor(e => e.event === 'flows.listening');
             assert.equal(ev.host, '0.0.0.0');
+            assert.match(ev.msg, /\(listening on 0\.0\.0\.0:\d+\)$/);
             // The page itself is reachable on the real port.
             const res = await fetch(`http://127.0.0.1:${ev.port}${new URL(dialogs[0].url).pathname}`);
             assert.equal(res.status, 200);

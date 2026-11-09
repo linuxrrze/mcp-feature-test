@@ -276,6 +276,33 @@ describe('http configuration', () => {
         }
     });
 
+    it('HOST=0.0.0.0 without PUBLIC_URL: logs the bind address and warns that remote clients are refused', async () => {
+        const srv = await startHttp({ HOST: '0.0.0.0' });
+        try {
+            const ev = srv.logs.find(e => e.event === 'http.listening');
+            assert.match(ev.msg, /^Streamable HTTP MCP endpoint: http:\/\/127\.0\.0\.1:\d+\/mcp \(listening on 0\.0\.0\.0:\d+\)$/);
+            assert.equal(ev.host, '0.0.0.0');
+            const warn = await srv.logs.waitFor(e => e.event === 'http.public_url');
+            assert.equal(warn.level, 'warn');
+            assert.equal(warn.hostValidation, 'localhost');
+            assert.match(warn.msg, /HOST=0\.0\.0\.0.*PUBLIC_URL is not set.*other Host names get 403.*set PUBLIC_URL/);
+        } finally {
+            await srv.stop();
+        }
+    });
+
+    it('a localhost bind or a set PUBLIC_URL logs no PUBLIC_URL warning', async () => {
+        for (const env of [{}, { HOST: '0.0.0.0', PUBLIC_URL: 'http://localhost:3457' }]) {
+            const srv = await startHttp(env);
+            try {
+                assert.match(srv.logs.find(e => e.event === 'http.listening').msg, /\(listening on (127\.0\.0\.1|0\.0\.0\.0):\d+\)$/);
+                assert.equal(srv.logs.find(e => e.event === 'http.public_url'), undefined, JSON.stringify(env));
+            } finally {
+                await srv.stop();
+            }
+        }
+    });
+
     it('HOST=0.0.0.0 with a localhost PUBLIC_URL keeps localhost validation', async () => {
         const srv = await startHttp({ HOST: '0.0.0.0', PUBLIC_URL: 'http://localhost:3457' });
         try {

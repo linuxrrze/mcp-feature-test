@@ -101,11 +101,11 @@ HTTP mode serves both protocol generations on one endpoint. 2026-07-28 requests 
 | Variable | Default | Mode | Meaning |
 | --- | --- | --- | --- |
 | `PORT` | `3457` | HTTP | Listen port. `0` picks a free port, and the actual URL is logged. |
-| `HOST` | `127.0.0.1` | HTTP | Bind address. Use `0.0.0.0` in containers. |
+| `HOST` | `127.0.0.1` | HTTP | Bind address. Use `0.0.0.0` in containers or to accept clients on other machines; then also set `PUBLIC_URL`, or the server warns at startup: without it, URL-elicitation links point to `127.0.0.1` and only requests addressed to localhost are accepted. The startup log shows both the endpoint URL and the bind address (`… /mcp (listening on 0.0.0.0:3457)`). |
 | `PUBLIC_URL` | `http://<HOST>:<PORT>` | HTTP | Externally visible base URL, without `/mcp`. Used for URL-elicitation links. Also enables localhost Host/Origin validation when it points at `localhost`/`127.0.0.1`. |
 | `ALLOWED_HOSTS` | (unset) | HTTP | Comma-separated hostnames accepted in the `Host` and `Origin` headers, for example `mcp.example.com`. When unset, localhost names are enforced if `HOST` or `PUBLIC_URL` is local; otherwise the `PUBLIC_URL` hostname plus the localhost names are accepted. Set it when clients use another name (for example a Docker service name). |
 | `FLOW_PORT` | `3458` | stdio | Port for the URL-elicitation pages. Falls back to a free port (with a warning) if it is busy. `0` always picks a free port. |
-| `FLOW_HOST` | `127.0.0.1` | stdio | Bind address of that listener. Use `0.0.0.0` in Docker. |
+| `FLOW_HOST` | `127.0.0.1` | stdio | Bind address of that listener. Use `0.0.0.0` in Docker. Has no effect in HTTP mode, which serves the flow pages on its own port: use `HOST` there. |
 | `FLOW_PUBLIC_URL` | `http://<FLOW_HOST>:<port>` | stdio | Base URL that the URL-elicitation links point to, when the browser has to use a different address or port. |
 | `FLOW_WAIT_MS` | `300000` | both | How long `elicit_url` / `elicit_url_legacy_push` wait for the browser page after the client already answered `accept` (clients may accept when the link is opened). |
 | `UPLOAD_MAX_BYTES` | `10485760` (10 MiB) | both | Largest decoded file `dialog_lab_upload` and `upload_file_experimental` accept. Also sizes the HTTP request-body limit (this value as base64 plus 1 MiB; larger bodies get **413**) and the stdio message buffer. |
@@ -282,6 +282,7 @@ When a client connects, the server writes a summary to stderr. Some clients surf
 | `elicit_url` seems to hang after you accepted | Some clients (e.g. Open WebUI) answer `accept` as soon as the link is opened; the tool then waits for the browser page to be submitted. Submit the page, or the tool returns an error after `FLOW_WAIT_MS` (default 5 min). |
 | No graphical UI for `open_dialog_lab` | Check `MCP Apps UI` in `inspect_client`. The client must declare the `io.modelcontextprotocol/ui` extension with `text/html;profile=mcp-app`. |
 | HTTP answers 403 | Host/Origin validation (DNS-rebinding protection). Add your hostname to `ALLOWED_HOSTS`. |
+| The startup log says `http://127.0.0.1:3457/mcp` although you want remote clients | Set `HOST=0.0.0.0` (not `FLOW_HOST`, which only applies in stdio mode) and `PUBLIC_URL` to the address clients use. The `(listening on …)` part of the log line shows the actual bind address. |
 | HTTP answers 413, or a Dialog Lab upload fails | The request body was above `UPLOAD_MAX_BYTES` as base64 plus 1 MiB, or the file was above `UPLOAD_MAX_BYTES`. Raise the variable. If the server never logs `upload.received`/`upload.rejected`, the host refused the message before it reached the server. |
 | The URL page answers 409 | The flow was already submitted once. Run the tool again for a new link. |
 | HTTP answers 400 "Missing session" or 404 "Unknown session" | A 2025-era client sent a request without `initialize` first, or after the server restarted. Reconnect. |

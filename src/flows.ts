@@ -76,7 +76,8 @@ async function startStandalone(): Promise<string> {
     }
     const localName = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
     baseUrl = (process.env.FLOW_PUBLIC_URL ?? `http://${localName}:${actualPort}`).replace(/\/$/, '');
-    logger.info('flows.listening', `URL-elicitation web flows on ${baseUrl}/flow/…`, { url: baseUrl, host, port: actualPort });
+    const bind = `${host.includes(':') ? `[${host}]` : host}:${actualPort}`;
+    logger.info('flows.listening', `URL-elicitation web flows on ${baseUrl}/flow/… (listening on ${bind})`, { url: baseUrl, host, port: actualPort });
     return baseUrl;
 }
 
