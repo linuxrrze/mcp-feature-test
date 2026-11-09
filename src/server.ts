@@ -9,6 +9,7 @@
  *  6. Files: returning files (embedded resources, resource_link, image, audio),
  *     uploads from the MCP App, and non-spec form-schema probes
  *  7. Sampling and roots – the client's LLM and folders (src/samplingRoots.ts)
+ *  8. Structured output – outputSchema + structuredContent (src/structuredOutput.ts)
  *
  * Elicitation is written with the 2026-07-28 "input_required" (multi-round-trip)
  * pattern. The SDK's legacy shim turns the same code into classic
@@ -66,6 +67,7 @@ import {
 import { registerColorPicker } from './colorPicker.js';
 import { registerViewer3d } from './viewer3d.js';
 import { registerSamplingAndRoots, type SamplingRootsState } from './samplingRoots.js';
+import { registerStructuredOutput } from './structuredOutput.js';
 import { createFlow, flowWaitMs, getFlow, waitForFlow } from './flows.js';
 import { errorData, logger } from './log.js';
 
@@ -1182,6 +1184,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
     registerColorPicker(server); // pick_color, pick_color_submit, pick_color_result (src/colorPicker.ts)
     registerViewer3d(server); // view_3d, view_3d_select, view_3d_state, test://models/sample.glb (src/viewer3d.ts)
     registerSamplingAndRoots(server, { clientOf, mintState: s => stateCodec.mint(s) }); // sample_llm, list_roots (src/samplingRoots.ts)
+    registerStructuredOutput(server); // structured_output, structured_output_array (src/structuredOutput.ts)
 
     // --------------------------------------------------------------- prompt
     server.registerPrompt(
@@ -1199,7 +1202,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
                         text:
                             'Please test the MCP user-interaction features of the mcp-feature-test server, one at a time, telling me what to expect before each: ' +
                             '1) inspect_client, 2) elicit_confirm, 3) elicit_all_field_types, 4) elicit_parallel, 5) elicit_wizard, 6) elicit_url, ' +
-                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields), 12) view_3d and afterwards view_3d_state, 13) sample_llm (sampling), 14) list_roots. Summarize which features worked in this client.'
+                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields), 12) view_3d and afterwards view_3d_state, 13) sample_llm (sampling), 14) list_roots, 15) structured_output with each variant (afterwards tell me how many tests passed according to the text_differs result) and structured_output_array. Summarize which features worked in this client.'
                     }
                 }
             ]

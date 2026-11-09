@@ -106,6 +106,8 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
             'return_files',
             'sample_llm',
             'slow_task',
+            'structured_output',
+            'structured_output_array',
             'upload_file_experimental',
             'view_3d',
             'view_3d_select',
