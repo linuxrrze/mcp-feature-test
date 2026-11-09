@@ -2,7 +2,7 @@
 
 How mcp-feature-test serves one set of tools to two protocol generations over two transports, and what to know about its security.
 
-![Architecture overview: stdio and HTTP clients enter through src/stdio.ts and src/http.ts / src/httpServer.ts (routes GET /, /mcp split by protocol era, /flow/<uuid>); both call createFeatureTestServer() in src/server.ts per connection, request or session, which uses clients.ts, files.ts, flows.ts, log.ts and the colour picker app in colorPicker.ts; long-lived state is kept at module level](diagrams/architecture-overview.png)
+![Architecture overview: stdio and HTTP clients enter through src/stdio.ts and src/http.ts / src/httpServer.ts (routes GET /, /mcp split by protocol era, /flow/<uuid>); both call createFeatureTestServer() in src/server.ts per connection, request or session, which uses clients.ts, files.ts, flows.ts, log.ts and the two MCP Apps in colorPicker.ts (colour picker) and viewer3d.ts (3D viewer); long-lived state is kept at module level](diagrams/architecture-overview.png)
 
 Source: [architecture-overview.vectorcraft](diagrams/architecture-overview.vectorcraft) (VectorCraft) · [SVG](diagrams/architecture-overview.svg). See [Editing the diagrams](elicitation.md#editing-the-diagrams).
 
@@ -18,7 +18,7 @@ Source: [architecture-overview.vectorcraft](diagrams/architecture-overview.vecto
 
 A client picks its era: the official TypeScript client uses the 2025 handshake by default and negotiates 2026-07-28 only with `versionNegotiation: { mode: { pin: '2026-07-28' } }` (or `'auto'`).
 
-`createFeatureTestServer()` is a factory. Under `serveStdio` it runs once per connection. Under `createMcpHandler` it runs **once per HTTP request**, so anything that must outlive a request (Dialog Lab submissions, URL flows, the seen-clients registry, the `requestState` signing key) lives at module level.
+`createFeatureTestServer()` is a factory. Under `serveStdio` it runs once per connection. Under `createMcpHandler` it runs **once per HTTP request**, so anything that must outlive a request (Dialog Lab submissions, colour requests, 3D views, URL flows, the seen-clients registry, the `requestState` signing key) lives at module level.
 
 ## input_required vs. push elicitation, and the legacy shim
 

@@ -16,7 +16,7 @@
           "x0": 0.0,
           "y0": 0.0,
           "x1": 1600.0,
-          "y1": 958.0
+          "y1": 1068.0
         },
         "show_center_mark": false,
         "show_cross_hairs": false
@@ -74,13 +74,13 @@
                         {
                           "p": [
                             1600.0,
-                            958.0
+                            1068.0004339999998
                           ]
                         },
                         {
                           "p": [
                             0.0,
-                            958.0
+                            1068.0004339999998
                           ]
                         }
                       ],
@@ -3895,6 +3895,132 @@
               }
             },
             {
+              "id": 100,
+              "name": "viewer3d box",
+              "appearance": {
+                "items": [
+                  {
+                    "kind": "fill",
+                    "paint": {
+                      "type": "solid",
+                      "color": {
+                        "model": "rgb",
+                        "r": 0.9607843,
+                        "g": 0.9529412,
+                        "b": 1.0
+                      }
+                    }
+                  },
+                  {
+                    "kind": "stroke",
+                    "paint": {
+                      "type": "solid",
+                      "color": {
+                        "model": "rgb",
+                        "r": 0.42745098,
+                        "g": 0.15686275,
+                        "b": 0.8509804
+                      }
+                    },
+                    "width": 2.0,
+                    "miter_limit": 4.0
+                  }
+                ]
+              },
+              "kind": {
+                "type": "path",
+                "path": {
+                  "subpaths": [
+                    {
+                      "anchors": [
+                        {
+                          "p": [
+                            1060.0,
+                            766.0
+                          ],
+                          "in": [
+                            1054.4771728515625,
+                            766.0
+                          ]
+                        },
+                        {
+                          "p": [
+                            1550.0,
+                            766.0
+                          ],
+                          "out": [
+                            1555.5228271484375,
+                            766.0
+                          ]
+                        },
+                        {
+                          "p": [
+                            1560.0,
+                            776.0
+                          ],
+                          "in": [
+                            1560.0,
+                            770.4771728515625
+                          ]
+                        },
+                        {
+                          "p": [
+                            1560.0,
+                            852.0
+                          ],
+                          "out": [
+                            1560.0,
+                            857.5228271484375
+                          ]
+                        },
+                        {
+                          "p": [
+                            1550.0,
+                            862.0
+                          ],
+                          "in": [
+                            1555.5228271484375,
+                            862.0
+                          ]
+                        },
+                        {
+                          "p": [
+                            1060.0,
+                            862.0
+                          ],
+                          "out": [
+                            1054.4771728515625,
+                            862.0
+                          ]
+                        },
+                        {
+                          "p": [
+                            1050.0,
+                            852.0
+                          ],
+                          "in": [
+                            1050.0,
+                            857.5228271484375
+                          ]
+                        },
+                        {
+                          "p": [
+                            1050.0,
+                            776.0
+                          ],
+                          "out": [
+                            1050.0,
+                            770.4771728515625
+                          ]
+                        }
+                      ],
+                      "closed": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": 59,
               "kind": {
                 "type": "text",
@@ -3912,6 +4038,64 @@
                 "runs": [
                   {
                     "text": "src/colorPicker.ts",
+                    "style": {
+                      "font_family": "Inter",
+                      "font_style": "Bold",
+                      "size": 17.0,
+                      "tracking": 0.0,
+                      "baseline_shift": 0.0,
+                      "h_scale": 100.0,
+                      "v_scale": 100.0,
+                      "rotation": 0.0,
+                      "fill": {
+                        "type": "solid",
+                        "color": {
+                          "model": "rgb",
+                          "r": 0.06666667,
+                          "g": 0.09411765,
+                          "b": 0.15294118
+                        }
+                      },
+                      "stroke": {
+                        "type": "none"
+                      },
+                      "stroke_width": 0.0,
+                      "underline": false,
+                      "strikethrough": false,
+                      "all_caps": false
+                    }
+                  }
+                ],
+                "para": {
+                  "justify": "Left",
+                  "left_indent": 0.0,
+                  "right_indent": 0.0,
+                  "first_line_indent": 0.0,
+                  "space_before": 0.0,
+                  "space_after": 0.0,
+                  "hyphenate": false
+                }
+              }
+            },
+            {
+              "id": 101,
+              "name": "src/viewer3d.ts",
+              "kind": {
+                "type": "text",
+                "kind": {
+                  "kind": "point"
+                },
+                "xf": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  1070.0,
+                  796.0
+                ],
+                "runs": [
+                  {
+                    "text": "src/viewer3d.ts",
                     "style": {
                       "font_family": "Inter",
                       "font_style": "Bold",
@@ -4009,6 +4193,64 @@
               }
             },
             {
+              "id": 102,
+              "name": "third MCP App, registered by serv",
+              "kind": {
+                "type": "text",
+                "kind": {
+                  "kind": "point"
+                },
+                "xf": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  1240.0,
+                  796.0
+                ],
+                "runs": [
+                  {
+                    "text": "third MCP App, registered by server.ts",
+                    "style": {
+                      "font_family": "Inter",
+                      "font_style": "Regular",
+                      "size": 13.5,
+                      "tracking": 0.0,
+                      "baseline_shift": 0.0,
+                      "h_scale": 100.0,
+                      "v_scale": 100.0,
+                      "rotation": 0.0,
+                      "fill": {
+                        "type": "solid",
+                        "color": {
+                          "model": "rgb",
+                          "r": 0.29411766,
+                          "g": 0.33333334,
+                          "b": 0.3882353
+                        }
+                      },
+                      "stroke": {
+                        "type": "none"
+                      },
+                      "stroke_width": 0.0,
+                      "underline": false,
+                      "strikethrough": false,
+                      "all_caps": false
+                    }
+                  }
+                ],
+                "para": {
+                  "justify": "Left",
+                  "left_indent": 0.0,
+                  "right_indent": 0.0,
+                  "first_line_indent": 0.0,
+                  "space_before": 0.0,
+                  "space_after": 0.0,
+                  "hyphenate": false
+                }
+              }
+            },
+            {
               "id": 61,
               "kind": {
                 "type": "text",
@@ -4066,6 +4308,64 @@
               }
             },
             {
+              "id": 103,
+              "name": "view_3d, view_3d_select, view_3d_",
+              "kind": {
+                "type": "text",
+                "kind": {
+                  "kind": "point"
+                },
+                "xf": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  1070.0,
+                  822.0
+                ],
+                "runs": [
+                  {
+                    "text": "view_3d, view_3d_select, view_3d_state",
+                    "style": {
+                      "font_family": "Inter",
+                      "font_style": "Regular",
+                      "size": 15.0,
+                      "tracking": 0.0,
+                      "baseline_shift": 0.0,
+                      "h_scale": 100.0,
+                      "v_scale": 100.0,
+                      "rotation": 0.0,
+                      "fill": {
+                        "type": "solid",
+                        "color": {
+                          "model": "rgb",
+                          "r": 0.06666667,
+                          "g": 0.09411765,
+                          "b": 0.15294118
+                        }
+                      },
+                      "stroke": {
+                        "type": "none"
+                      },
+                      "stroke_width": 0.0,
+                      "underline": false,
+                      "strikethrough": false,
+                      "all_caps": false
+                    }
+                  }
+                ],
+                "para": {
+                  "justify": "Left",
+                  "left_indent": 0.0,
+                  "right_indent": 0.0,
+                  "first_line_indent": 0.0,
+                  "space_before": 0.0,
+                  "space_after": 0.0,
+                  "hyphenate": false
+                }
+              }
+            },
+            {
               "id": 62,
               "kind": {
                 "type": "text",
@@ -4083,6 +4383,64 @@
                 "runs": [
                   {
                     "text": "ui://feature-test/color-picker.html; uses colorMath.ts",
+                    "style": {
+                      "font_family": "Inter",
+                      "font_style": "Regular",
+                      "size": 15.0,
+                      "tracking": 0.0,
+                      "baseline_shift": 0.0,
+                      "h_scale": 100.0,
+                      "v_scale": 100.0,
+                      "rotation": 0.0,
+                      "fill": {
+                        "type": "solid",
+                        "color": {
+                          "model": "rgb",
+                          "r": 0.06666667,
+                          "g": 0.09411765,
+                          "b": 0.15294118
+                        }
+                      },
+                      "stroke": {
+                        "type": "none"
+                      },
+                      "stroke_width": 0.0,
+                      "underline": false,
+                      "strikethrough": false,
+                      "all_caps": false
+                    }
+                  }
+                ],
+                "para": {
+                  "justify": "Left",
+                  "left_indent": 0.0,
+                  "right_indent": 0.0,
+                  "first_line_indent": 0.0,
+                  "space_before": 0.0,
+                  "space_after": 0.0,
+                  "hyphenate": false
+                }
+              }
+            },
+            {
+              "id": 104,
+              "name": "ui://feature-test/viewer-3d.html",
+              "kind": {
+                "type": "text",
+                "kind": {
+                  "kind": "point"
+                },
+                "xf": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  1070.0,
+                  846.0
+                ],
+                "runs": [
+                  {
+                    "text": "ui://feature-test/viewer-3d.html (three.js); test://models/sample.glb",
                     "style": {
                       "font_family": "Inter",
                       "font_style": "Regular",
@@ -5051,81 +5409,81 @@
                         {
                           "p": [
                             34.0,
-                            786.0
+                            896.0
                           ],
                           "in": [
                             28.47715187072754,
-                            786.0
+                            896.0
                           ]
                         },
                         {
                           "p": [
                             1566.0,
-                            786.0
+                            896.0
                           ],
                           "out": [
                             1571.5228271484375,
-                            786.0
+                            896.0
                           ]
                         },
                         {
                           "p": [
                             1576.0,
-                            796.0
+                            906.0
                           ],
                           "in": [
                             1576.0,
-                            790.4771728515625
+                            900.4771728515625
                           ]
                         },
                         {
                           "p": [
                             1576.0,
-                            864.0
+                            974.0
                           ],
                           "out": [
                             1576.0,
-                            869.5228271484375
+                            979.5228271484375
                           ]
                         },
                         {
                           "p": [
                             1566.0,
-                            874.0
+                            984.0
                           ],
                           "in": [
                             1571.5228271484375,
-                            874.0
+                            984.0
                           ]
                         },
                         {
                           "p": [
                             34.0,
-                            874.0
+                            984.0
                           ],
                           "out": [
                             28.47715187072754,
-                            874.0
+                            984.0
                           ]
                         },
                         {
                           "p": [
                             24.0,
-                            864.0
+                            974.0
                           ],
                           "in": [
                             24.0,
-                            869.5228271484375
+                            979.5228271484375
                           ]
                         },
                         {
                           "p": [
                             24.0,
-                            796.0
+                            906.0
                           ],
                           "out": [
                             24.0,
-                            790.4771728515625
+                            900.4771728515625
                           ]
                         }
                       ],
@@ -5148,7 +5506,7 @@
                   0.0,
                   1.0,
                   44.0,
-                  818.0
+                  928.0
                 ],
                 "runs": [
                   {
@@ -5205,7 +5563,7 @@
                   0.0,
                   1.0,
                   212.0,
-                  818.0
+                  928.0
                 ],
                 "runs": [
                   {
@@ -5251,6 +5609,7 @@
             },
             {
               "id": 78,
+              "name": "Dialog Lab submissions (last 50)",
               "kind": {
                 "type": "text",
                 "kind": {
@@ -5262,11 +5621,11 @@
                   0.0,
                   1.0,
                   212.0,
-                  846.0
+                  956.0
                 ],
                 "runs": [
                   {
-                    "text": "Dialog Lab submissions (last 50) · colour requests (200, 1 h) · URL flows (1000, 1 h) · seen clients (200) · requestState HMAC key",
+                    "text": "Dialog Lab submissions (last 50) · colour requests (200, 1 h) · 3D views (200, 1 h) · URL flows (1000, 1 h) · seen clients (200) · requestState HMAC key",
                     "style": {
                       "font_family": "Inter",
                       "font_style": "Regular",
@@ -6000,7 +6359,7 @@
                   0.0,
                   1.0,
                   40.0,
-                  924.0
+                  1034.0
                 ],
                 "runs": [
                   {
@@ -6076,13 +6435,13 @@
                         {
                           "p": [
                             140.0,
-                            918.0
+                            1028.0
                           ]
                         },
                         {
                           "p": [
                             200.0,
-                            918.0
+                            1028.0
                           ]
                         }
                       ],
@@ -6105,7 +6464,7 @@
                   0.0,
                   1.0,
                   212.0,
-                  924.0
+                  1034.0
                 ],
                 "runs": [
                   {
@@ -6181,13 +6540,13 @@
                         {
                           "p": [
                             335.6000061035156,
-                            918.0
+                            1028.0
                           ]
                         },
                         {
                           "p": [
                             395.6000061035156,
-                            918.0
+                            1028.0
                           ]
                         }
                       ],
@@ -6210,7 +6569,7 @@
                   0.0,
                   1.0,
                   407.6,
-                  924.0
+                  1034.0
                 ],
                 "runs": [
                   {
@@ -6286,13 +6645,13 @@
                         {
                           "p": [
                             614.7999877929688,
-                            918.0
+                            1028.0
                           ]
                         },
                         {
                           "p": [
                             674.7999877929688,
-                            918.0
+                            1028.0
                           ]
                         }
                       ],
@@ -6315,7 +6674,7 @@
                   0.0,
                   1.0,
                   686.8,
-                  924.0
+                  1034.0
                 ],
                 "runs": [
                   {
@@ -6400,81 +6759,81 @@
                         {
                           "p": [
                             982.5999755859375,
-                            907.0
+                            1017.0
                           ],
                           "in": [
                             979.8385620117188,
-                            907.0
+                            1017.0
                           ]
                         },
                         {
                           "p": [
                             1016.5999755859375,
-                            907.0
+                            1017.0
                           ],
                           "out": [
                             1019.3613891601562,
-                            907.0
+                            1017.0
                           ]
                         },
                         {
                           "p": [
                             1021.5999755859375,
-                            912.0
+                            1022.0
                           ],
                           "in": [
                             1021.5999755859375,
-                            909.2385864257812
+                            1019.2385864257812
                           ]
                         },
                         {
                           "p": [
                             1021.5999755859375,
-                            924.0
+                            1034.0
                           ],
                           "out": [
                             1021.5999755859375,
-                            926.7614135742188
+                            1036.7614135742188
                           ]
                         },
                         {
                           "p": [
                             1016.5999755859375,
-                            929.0
+                            1039.0
                           ],
                           "in": [
                             1019.3613891601562,
-                            929.0
+                            1039.0
                           ]
                         },
                         {
                           "p": [
                             982.5999755859375,
-                            929.0
+                            1039.0
                           ],
                           "out": [
                             979.8385620117188,
-                            929.0
+                            1039.0
                           ]
                         },
                         {
                           "p": [
                             977.5999755859375,
-                            924.0
+                            1034.0
                           ],
                           "in": [
                             977.5999755859375,
-                            926.7614135742188
+                            1036.7614135742188
                           ]
                         },
                         {
                           "p": [
                             977.5999755859375,
-                            912.0
+                            1022.0
                           ],
                           "out": [
                             977.5999755859375,
-                            909.2385864257812
+                            1019.2385864257812
                           ]
                         }
                       ],
@@ -6497,7 +6856,7 @@
                   0.0,
                   1.0,
                   1033.6,
-                  924.0
+                  1034.0
                 ],
                 "runs": [
                   {
@@ -7477,7 +7836,7 @@
     },
     "raster_effects_ppi": 72.0,
     "images": {},
-    "next_id": 100,
+    "next_id": 105,
     "metadata": {
       "author": "",
       "authorTitle": "",
@@ -7488,7 +7847,7 @@
       "copyrightNotice": "",
       "copyrightUrl": "",
       "created": 1794171208,
-      "modified": 1794171226
+      "modified": 1794226116
     }
   },
   "images": {}

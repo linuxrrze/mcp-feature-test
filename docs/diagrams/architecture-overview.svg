@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="958" viewBox="0 0 1600 958">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1068" viewBox="0 0 1600 1068">
   <title>architecture-overview</title>
   <g id="Layer_1" data-name="Layer 1">
-    <rect id="background" x="0" y="0" width="1600" height="958" fill="#ffffff"/>
+    <rect id="background" x="0" y="0" width="1600" height="1068" fill="#ffffff"/>
     <text transform="matrix(1 0 0 1 40 58)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="32" font-weight="bold" fill="#111827"><tspan x="0" y="0">mcp-feature-test: architecture overview</tspan></text>
     <text transform="matrix(1 0 0 1 40 92)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="16.5" fill="#4b5563"><tspan x="0" y="0">Two transports and two protocol eras feed one server factory. Each connection or request gets its own McpServer; what must outlive it is kept at module level.</tspan></text>
     <path d="M340 140 L860 140 C865.523 140 870 144.477 870 150 L870 280 C870 285.523 865.523 290 860 290 L340 290 C334.477 290 330 285.523 330 280 L330 150 C330 144.477 334.477 140 340 140 Z" fill="#f3f4f6" stroke="#374151" stroke-width="2"/>
@@ -59,10 +59,15 @@
     <text transform="matrix(1 0 0 1 1327 603)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">logger (stderr, text</tspan></text>
     <text transform="matrix(1 0 0 1 1327 621)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">or JSON)</tspan></text>
     <path d="M1060 656 L1550 656 C1555.523 656 1560 660.477 1560 666 L1560 742 C1560 747.523 1555.523 752 1550 752 L1060 752 C1054.477 752 1050 747.523 1050 742 L1050 666 C1050 660.477 1054.477 656 1060 656 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
+    <path id="viewer3d_box" data-name="viewer3d box" d="M1060 766 L1550 766 C1555.523 766 1560 770.477 1560 776 L1560 852 C1560 857.523 1555.523 862 1550 862 L1060 862 C1054.477 862 1050 857.523 1050 852 L1050 776 C1050 770.477 1054.477 766 1060 766 Z" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2"/>
     <text transform="matrix(1 0 0 1 1070 686)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/colorPicker.ts</tspan></text>
+    <text id="src_viewer3d.ts" data-name="src/viewer3d.ts" transform="matrix(1 0 0 1 1070 796)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">src/viewer3d.ts</tspan></text>
     <text transform="matrix(1 0 0 1 1240 686)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">second MCP App, registered by server.ts</tspan></text>
+    <text id="third_MCP_App__registered_by_serv" data-name="third MCP App, registered by serv" transform="matrix(1 0 0 1 1240 796)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563"><tspan x="0" y="0">third MCP App, registered by server.ts</tspan></text>
     <text transform="matrix(1 0 0 1 1070 712)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">pick_color, pick_color_submit, pick_color_result</tspan></text>
+    <text id="view_3d__view_3d_select__view_3d_" data-name="view_3d, view_3d_select, view_3d_" transform="matrix(1 0 0 1 1070 822)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">view_3d, view_3d_select, view_3d_state</tspan></text>
     <text transform="matrix(1 0 0 1 1070 736)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">ui://feature-test/color-picker.html; uses colorMath.ts</tspan></text>
+    <text id="ui___feature-test_viewer-3d.html" data-name="ui://feature-test/viewer-3d.html" transform="matrix(1 0 0 1 1070 846)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">ui://feature-test/viewer-3d.html (three.js); test://models/sample.glb</tspan></text>
     <path d="M50 173 L250 173 C255.523 173 260 177.477 260 183 L260 247 C260 252.523 255.523 257 250 257 L50 257 C44.477 257 40 252.523 40 247 L40 183 C40 177.477 44.477 173 50 173 Z" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
     <text transform="matrix(1 0 0 1 150 203)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">stdio client</tspan></text>
     <text transform="matrix(1 0 0 1 150 225)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">launches node dist/stdio.js</tspan></text>
@@ -75,10 +80,10 @@
     <text transform="matrix(1 0 0 1 150 631)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="19" font-weight="bold" fill="#111827" text-anchor="middle"><tspan x="0" y="0">Browser</tspan></text>
     <text transform="matrix(1 0 0 1 150 653)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">opens the link from elicit_url</tspan></text>
     <text transform="matrix(1 0 0 1 150 671)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="13.5" fill="#4b5563" text-anchor="middle"><tspan x="0" y="0">(not MCP)</tspan></text>
-    <path d="M34 786 L1566 786 C1571.523 786 1576 790.477 1576 796 L1576 864 C1576 869.523 1571.523 874 1566 874 L34 874 C28.477 874 24 869.523 24 864 L24 796 C24 790.477 28.477 786 34 786 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
-    <text transform="matrix(1 0 0 1 44 818)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#b45309"><tspan x="0" y="0">Module-level state</tspan></text>
-    <text transform="matrix(1 0 0 1 212 818)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">outlives a per-request McpServer (2026-07-28 HTTP) and is shared by all connections; lost on restart:</tspan></text>
-    <text transform="matrix(1 0 0 1 212 846)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">Dialog Lab submissions (last 50) · colour requests (200, 1 h) · URL flows (1000, 1 h) · seen clients (200) · requestState HMAC key</tspan></text>
+    <path d="M34 896 L1566 896 C1571.523 896 1576 900.477 1576 906 L1576 974 C1576 979.523 1571.523 984 1566 984 L34 984 C28.477 984 24 979.523 24 974 L24 906 C24 900.477 28.477 896 34 896 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 44 928)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" font-weight="bold" fill="#b45309"><tspan x="0" y="0">Module-level state</tspan></text>
+    <text transform="matrix(1 0 0 1 212 928)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">outlives a per-request McpServer (2026-07-28 HTTP) and is shared by all connections; lost on restart:</tspan></text>
+    <text id="Dialog_Lab_submissions__last_50_" data-name="Dialog Lab submissions (last 50)" transform="matrix(1 0 0 1 212 956)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15.5" fill="#111827"><tspan x="0" y="0">Dialog Lab submissions (last 50) · colour requests (200, 1 h) · 3D views (200, 1 h) · URL flows (1000, 1 h) · seen clients (200) · requestState HMAC key</tspan></text>
     <g id="arrow-1">
       <g>
         <path d="M260 213.75 L325 213.75 L325 216.25 L260 216.25 Z" fill="#1d4ed8"/>
@@ -126,29 +131,29 @@
         <path d="M1050 595 L1042 599 L1042 591 Z" fill="#6d28d9"/>
       </g>
     </g>
-    <text transform="matrix(1 0 0 1 40 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">Legend</tspan></text>
+    <text transform="matrix(1 0 0 1 40 1034)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="17" font-weight="bold" fill="#111827"><tspan x="0" y="0">Legend</tspan></text>
     <g id="arrow-8">
       <g>
-        <path d="M140 916.75 L195 916.75 L195 919.25 L140 919.25 Z" fill="#1d4ed8"/>
-        <path d="M200 918 L190 923 L190 913 Z" fill="#1d4ed8"/>
+        <path d="M140 1026.75 L195 1026.75 L195 1029.25 L140 1029.25 Z" fill="#1d4ed8"/>
+        <path d="M200 1028 L190 1033 L190 1023 Z" fill="#1d4ed8"/>
       </g>
     </g>
-    <text transform="matrix(1 0 0 1 212 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP traffic</tspan></text>
+    <text transform="matrix(1 0 0 1 212 1034)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">MCP traffic</tspan></text>
     <g id="arrow-9">
       <g>
-        <path d="M335.6 916.75 L390.6 916.75 L390.6 919.25 L335.6 919.25 Z" fill="#6d28d9"/>
-        <path d="M395.6 918 L385.6 923 L385.6 913 Z" fill="#6d28d9"/>
+        <path d="M335.6 1026.75 L390.6 1026.75 L390.6 1029.25 L335.6 1029.25 Z" fill="#6d28d9"/>
+        <path d="M395.6 1028 L385.6 1033 L385.6 1023 Z" fill="#6d28d9"/>
       </g>
     </g>
-    <text transform="matrix(1 0 0 1 407.6 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">browser page (not MCP)</tspan></text>
+    <text transform="matrix(1 0 0 1 407.6 1034)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">browser page (not MCP)</tspan></text>
     <g id="arrow-10">
       <g>
-        <path d="M614.8 916.75 L669.8 916.75 L669.8 919.25 L614.8 919.25 Z" fill="#374151"/>
-        <path d="M674.8 918 L664.8 923 L664.8 913 Z" fill="#374151"/>
+        <path d="M614.8 1026.75 L669.8 1026.75 L669.8 1029.25 L614.8 1029.25 Z" fill="#374151"/>
+        <path d="M674.8 1028 L664.8 1033 L664.8 1023 Z" fill="#374151"/>
       </g>
     </g>
-    <text transform="matrix(1 0 0 1 686.8 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">calls the server factory / module</tspan></text>
-    <path d="M982.6 907 L1016.6 907 C1019.361 907 1021.6 909.239 1021.6 912 L1021.6 924 C1021.6 926.761 1019.361 929 1016.6 929 L982.6 929 C979.839 929 977.6 926.761 977.6 924 L977.6 912 C977.6 909.239 979.839 907 982.6 907 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
-    <text transform="matrix(1 0 0 1 1033.6 924)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">state kept at module level</tspan></text>
+    <text transform="matrix(1 0 0 1 686.8 1034)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">calls the server factory / module</tspan></text>
+    <path d="M982.6 1017 L1016.6 1017 C1019.361 1017 1021.6 1019.239 1021.6 1022 L1021.6 1034 C1021.6 1036.761 1019.361 1039 1016.6 1039 L982.6 1039 C979.839 1039 977.6 1036.761 977.6 1034 L977.6 1022 C977.6 1019.239 979.839 1017 982.6 1017 Z" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+    <text transform="matrix(1 0 0 1 1033.6 1034)" x="0" y="0" xml:space="preserve" font-family="Inter, sans-serif" font-size="15" fill="#111827"><tspan x="0" y="0">state kept at module level</tspan></text>
   </g>
 </svg>
