@@ -11,6 +11,7 @@
  *  7. Sampling and roots – the client's LLM and folders (src/samplingRoots.ts)
  *  8. Structured output – outputSchema + structuredContent (src/structuredOutput.ts)
  *  9. List-changed notifications and resource subscriptions (src/listChanged.ts)
+ * 10. Tasks – long tool calls polled via tasks/*, both generations (src/tasks.ts)
  *
  * Elicitation is written with the 2026-07-28 "input_required" (multi-round-trip)
  * pattern. The SDK's legacy shim turns the same code into classic
@@ -70,6 +71,7 @@ import { registerViewer3d } from './viewer3d.js';
 import { registerSamplingAndRoots, type SamplingRootsState } from './samplingRoots.js';
 import { registerStructuredOutput } from './structuredOutput.js';
 import { registerListChanged } from './listChanged.js';
+import { installTaskSupport, registerTasks } from './tasks.js';
 import { createFlow, flowWaitMs, getFlow, waitForFlow } from './flows.js';
 import { errorData, logger } from './log.js';
 
@@ -435,7 +437,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
             instructions:
                 'Test server for MCP user-interaction features. Call the tools when the user wants to try dialogs: ' +
                 'elicit_* tools show native client dialogs (elicitation), open_dialog_lab shows an interactive HTML UI (MCP Apps), pick_color asks the user for a colour in a small app (fetch the answer with pick_color_result), return_files returns files in every content form, ' +
-                'sample_llm asks the client’s own LLM (sampling), list_roots lists the client’s folders (roots), change_lists and update_live_resource test list_changed notifications and resource subscriptions. ' +
+                'sample_llm asks the client’s own LLM (sampling), list_roots lists the client’s folders (roots), change_lists and update_live_resource test list_changed notifications and resource subscriptions, run_task runs a long job as a task (tasks). ' +
                 'Call inspect_client first to see what the current client supports.'
         }
     );
@@ -444,6 +446,8 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
 
     // Must run before the first registerTool (the SDK installs tools/* handlers lazily).
     instrumentRequests(server, transport);
+    // Also before the first registerTool: answers task-augmented tools/call in front of the SDK's result validation.
+    installTaskSupport(server, { clientOf });
 
     // 2025-era: capabilities are known once the handshake completes.
     server.server.oninitialized = () => {
@@ -1190,6 +1194,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
     registerSamplingAndRoots(server, { clientOf, mintState: s => stateCodec.mint(s) }); // sample_llm, list_roots (src/samplingRoots.ts)
     registerStructuredOutput(server); // structured_output, structured_output_array (src/structuredOutput.ts)
     registerListChanged(server, { perRequest: options.perRequest }); // change_lists, update_live_resource, test://live/counter (src/listChanged.ts)
+    registerTasks(server, { clientOf }); // run_task, run_task_required, tasks/* (src/tasks.ts)
 
     // --------------------------------------------------------------- prompt
     server.registerPrompt(
@@ -1207,7 +1212,7 @@ export function createFeatureTestServer(options: FeatureTestServerOptions = {}):
                         text:
                             'Please test the MCP user-interaction features of the mcp-feature-test server, one at a time, telling me what to expect before each: ' +
                             '1) inspect_client, 2) elicit_confirm, 3) elicit_all_field_types, 4) elicit_parallel, 5) elicit_wizard, 6) elicit_url, ' +
-                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields), 12) view_3d and afterwards view_3d_state, 13) sample_llm (sampling), 14) list_roots, 15) structured_output with each variant (afterwards tell me how many tests passed according to the text_differs result) and structured_output_array, 16) change_lists (afterwards check whether dynamic_tool_1 is now in your tool list and call it; then call change_lists with action reset), 17) update_live_resource. Summarize which features worked in this client.'
+                            '7) open_dialog_lab and afterwards dialog_lab_results, 8) pick_color and afterwards pick_color_result, 9) slow_task, 10) return_files, 11) elicit_format_probe (non-spec fields), 12) view_3d and afterwards view_3d_state, 13) sample_llm (sampling), 14) list_roots, 15) structured_output with each variant (afterwards tell me how many tests passed according to the text_differs result) and structured_output_array, 16) change_lists (afterwards check whether dynamic_tool_1 is now in your tool list and call it; then call change_lists with action reset), 17) update_live_resource, 18) run_task with askConfirmation true, and run_task_required. Summarize which features worked in this client.'
                     }
                 }
             ]

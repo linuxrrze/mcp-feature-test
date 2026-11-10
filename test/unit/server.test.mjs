@@ -105,6 +105,8 @@ describe('server tools (in-memory, 2025-11-25 handshake)', () => {
             'pick_color_result',
             'pick_color_submit',
             'return_files',
+            'run_task',
+            'run_task_required',
             'sample_llm',
             'slow_task',
             'structured_output',
